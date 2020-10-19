@@ -29,5 +29,5 @@ val get_wait_time : t -> int
 val from_json : 'a -> t (* Consider using Yojson.Basic.t as 'a *)
 
 (** Returns a new wait time as time passes or incase there is a sudden 
-    change in business at the restaurant*)
+    change in business at the restaurant, extra comment for push check - zach*)
 val change_wait_time : int -> t
