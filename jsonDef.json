@@ -4,7 +4,11 @@
         "username": "Zach123",
         "password": "FindingFood934",
         "name": "Zach",
-        "friends": "[2; 3; 4]",
+        "friends": [
+            2,
+            3,
+            4
+        ],
         "preferences": {
             "time": "15",
             "dist": "10",
@@ -12,11 +16,9 @@
             "openness": "true",
             "restrictions": "Dairy"
         },
-        "Visited Restaurants": {
-            "_comment2": "This component only includes the name for each Restaurant, which can be used as a pointer to find other information",
-            "Restaurant1": "Luna's Inspired Street Food",
-            "Restaurant2": "Wings Over Ithaca"
-        }
+        "Visited Restaurants": [
+            123
+        ]
     },
     "Restaurant": {
         "id": 123,
