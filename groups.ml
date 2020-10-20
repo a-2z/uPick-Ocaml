@@ -26,9 +26,9 @@ let has_group_voted t =
 
 let groups_info json = 
   {
-    users = json |> member "users" |> List.map to_string;
-    restaurants = json |> member "restaurants" |> List.map to_string;
+    users = json |> member "users" |> to_list |> List.map to_string;
+    restaurants = json |> member "restaurants" |> to_list |> List.map to_string;
     voting_progress = json |> member "voting_progress" |> to_bool;
     user_voted = json |> member "user_voted" |> to_bool;
-    group_voted = json |> member "group_voted" |> List.map to_int;
+    group_voted = json |> member "group_voted" |> to_list |> List.map to_int;
   }
