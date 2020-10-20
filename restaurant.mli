@@ -26,7 +26,7 @@ val get_price : t -> string
 
 (** Returns the data for the restaurant taken as a json as type t to be used 
     with our built functionality for the restaurant module. *)
-val from_json : Yojson.Basic.t -> t (* Consider using Yojson.Basic.t as 'a *)
+val restaurant_info : Yojson.Basic.t -> t (* Consider using Yojson.Basic.t as 'a *)
 
 (** Returns a new wait time as time passes or incase there is a sudden 
     change in business at the restaurant, extra comment for push check - zach*)
