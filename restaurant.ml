@@ -28,8 +28,7 @@ let get_rating t =
 let get_price t =
   t.avg_price
 
-(* yojson problem *)
-let from_json json = 
+let restaurant_info json = 
   {
     id = json |> member "id" |> to_int;
     name = json |> member "name" |> to_string;
