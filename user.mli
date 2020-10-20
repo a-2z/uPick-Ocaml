@@ -1,5 +1,9 @@
 open Yojson.Basic.Util
 
+(** The id of the user, identified here because this is often what will be 
+    used to access the user for functions.*)
+type id
+
 (** The type for the user. Regardless of implementation this should include
     a user's username, password, name, visited restaurants list, friends list,    and the automatic ranked preference between location, price, and meal 
     quality, and if the user is currently in a group *)
@@ -7,6 +11,8 @@ type t
 
 (** The following are all get functions for data stored in type t, be sure to 
     implement them consistently based on the implementation of t *)
+
+val get_id : t -> int
 
 val get_username : t -> string 
 
@@ -45,6 +51,6 @@ val add_restaurant : string -> t -> t
 val change_preferences: 'a -> 'a -> 'a -> t
 
 (** Updates if the user joins or leaves a group*)
-val update_in_group : bool -> t
+val update_in_group : bool -> t -> t
 
 
