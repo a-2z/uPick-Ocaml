@@ -1,3 +1,4 @@
+open Yojson.Basic.Util
 (** A type representation containing all information that would be 
     relevant for a group. This would include a list of users, list of available
     restaurants, if voting has taken place / is in progress, and for each 
