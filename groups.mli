@@ -23,5 +23,5 @@ val has_user_voted : t -> string -> bool
 
 (** Returns a list of every user with if they have or have not voted. 
     Could change output to 'a if a different data type is preferred *)
-val has_group_voted : t -> (string * bool) list
+val has_group_voted : t -> int list
 
