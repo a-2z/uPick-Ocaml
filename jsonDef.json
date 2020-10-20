@@ -1,33 +1,31 @@
 {
     "User": {
-        "_comment1": "The user which includes basic user information,
-        visited restaurants, and friends they might have"
-        "Username": "Zach123",
-        "Password": "FindingFood934",
-        "Name": "Zach"
+        "id": "1",
+        "username": "Zach123",
+        "password": "FindingFood934",
+        "name": "Zach",
+        "friends": "[2; 3; 4]",
+        "preferences": {
+            "time": "15",
+            "dist": "10",
+            "price": "moderate",
+            "openness": "true",
+            "restrictions": "Dairy"
+        },
         "Visited Restaurants": {
-            "_comment2": "This component only includes the name for each
-            Restaurant, which can be used as a pointer to find other
-            information"
+            "_comment2": "This component only includes the name for each Restaurant, which can be used as a pointer to find other information",
             "Restaurant1": "Luna's Inspired Street Food",
-            "Restaurant2": "Wings Over Ithaca",
-        },
-        "Friends": {
-            "_comment3": "This component only includes the username for each
-            user, which can be used as a pointer to find other information"
-            "Friend1": "AndrewZ46",
-            "Friend2": "AndrewO48",
-            "Friend3": "ReetuP134",
-            "Friend4": "Chtneq46",
-            "Friend5": "FoodNow52",
-        },
+            "Restaurant2": "Wings Over Ithaca"
+        }
     },
     "Restaurant": {
-        "_comment4": "Basic information about the restaurant. Rating is
-        assumed as of now to be on a scale out of 100"
-        "Name": "Wings Over Ithaca"
-        "Address": "121 Dryden Rd. Ithaca, NY 14850"
-        "Rating": 90
+        "id": 123,
+        "name": "Wings Over Ithaca",
+        "location": "121 Dryden Rd. Ithaca, NY 14850",
+        "food_type": "Mexican",
+        "rating": 4.3,
+        "allergies": "['egg', 'peanut']",
+        "avg_price": "moderate"
     },
-    "SessionID": 4839102,
+    "SessionID": 4839102
 }
