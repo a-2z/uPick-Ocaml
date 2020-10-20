@@ -18,7 +18,7 @@ val get_allergies : t -> string list
 
 val get_rating : t -> float 
 
-val get_price : t -> string
+val get_price : t -> float 
 (*could be done in many ways, string, float, variant, etc.*)
 
 (* val get_wait_time : t -> int *)
