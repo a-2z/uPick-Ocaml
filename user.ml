@@ -1,7 +1,5 @@
 open Yojson.Basic.Util
 
-type restrictions = Dairyallergy | Shellfish
-
 type foods = Dairy | Shellfish | Cake | Mexican 
 
 type preference = {
@@ -9,7 +7,7 @@ type preference = {
   dist : int;
   price : int;
   openness : bool;
-  restrictions : restrictions list;
+  restrictions : int list;
 }
 
 type t = {
@@ -37,8 +35,7 @@ let get_preferences t = t.preferences
 
 let get_in_group t = t.in_group
 
-
-
+(* Do we need this function? *)
 let create_user user pass name preferences = {
   id = 0; (*??*)
   username = user;
@@ -50,15 +47,12 @@ let create_user user pass name preferences = {
   in_group = false
 }
 
-let t_of_restrictions json = Dairyallergy
-
 let t_of_preference json = {
   time = json |> member "time" |> to_int;
   dist = json |> member "dist" |> to_int;
   price = json |> member "price" |> to_int;
   openness = json |> member "id" |> to_bool;
-  restrictions = json |> member "restrictions" |> to_list |> 
-                 List.map t_of_restrictions;
+  restrictions = json |> member "restrictions" |> to_list |> List.map to_int;
 }
 
 let t_of_json json = {
