@@ -23,7 +23,6 @@ type t =
     preferences : preference;
     visited : int list;
   }
-<<<<<<< HEAD
 
 let get_id t = t.id
 
@@ -38,5 +37,3 @@ let get_friends t = t.username
 let get_preferences t = t.preferences
 
 let get_in_group t = failwith "Unimplemented"
-=======
->>>>>>> 16f2d63ff0dc0802a2b124953feb2c997eaebbe6
