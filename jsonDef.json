@@ -26,7 +26,10 @@
         "location": "121 Dryden Rd. Ithaca, NY 14850",
         "food_type": "Mexican",
         "rating": 4.3,
-        "allergies": "['egg', 'peanut']",
+        "allergies": [
+            "egg",
+            "peanut"
+        ],
         "avg_price": "moderate"
     },
     "SessionID": 4839102
