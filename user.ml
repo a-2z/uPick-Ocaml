@@ -37,5 +37,3 @@ let get_friends t = t.username
 let get_preferences t = t.preferences
 
 let get_in_group t = failwith "Unimplemented"
-
-let update_in_group b t = 
