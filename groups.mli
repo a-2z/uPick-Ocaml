@@ -5,6 +5,10 @@ open Yojson.Basic.Util
     user if they have voted*)
 type t
 
+exception NoVotes
+
+exception NoGroup
+
 (** The following are all get functions for data stored in type t, be sure to 
     implement them consistently based on the implementation of t *)
 val get_users : t -> string list
