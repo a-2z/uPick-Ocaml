@@ -32,5 +32,21 @@
         ],
         "avg_price": "moderate"
     },
+    "Groups": {
+        "users": [
+            "Zach123",
+            "Andrew1",
+            "Andrew2",
+            "Reetu123"
+        ],
+        "resautrants": [
+            "Mango Mango",
+            "Wings Over Ithaca",
+            "Luna"
+        ],
+        "voting_progess": "true",
+        "user_voted": "true",
+        "group_voted": "true"
+    },
     "SessionID": 4839102
 }
