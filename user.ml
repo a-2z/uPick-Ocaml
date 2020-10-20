@@ -12,10 +12,6 @@ type preference = {
   restrictions : restrictions list;
 }
 
-type friend = {id : int}
-
-type restaurant = {id_r : int}
-
 type t = {
   id : int; 
   username : string;
