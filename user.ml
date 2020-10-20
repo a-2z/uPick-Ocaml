@@ -1,7 +1,7 @@
 open Yojson.Basic.Util
 
 type foods = Dairy | Shellfish | Cake | Mexican 
-
+(*
 type preference = {
   time : int;
   dist : int;
@@ -9,14 +9,14 @@ type preference = {
   openness : bool;
   restrictions : int list;
 }
-
+*)
 type t = {
   id : int; 
   username : string;
   password : string;
   name : string; 
   friends : int list;
-  preferences : preference;
+  (*preferences : preference;*)
   visited : int list;
   in_group : bool;
 }
@@ -29,24 +29,24 @@ let get_name t = t.name
 
 let get_restaurants t = t.visited
 
-let get_friends t = t.username
+let get_friends t = t.friends
 
-let get_preferences t = t.preferences
+(*let get_preferences t = t.preferences*)
 
 let get_in_group t = t.in_group
 
 (* Do we need this function? *)
-let create_user user pass name preferences = {
+let create_user user pass name = {
   id = 0; (*??*)
   username = user;
   password = pass;
   name = name;
   friends = [];
-  preferences = preferences;
+  (*preferences = preferences;*)
   visited = [];
   in_group = false
 }
-
+(*
 let t_of_preference json = {
   time = json |> member "time" |> to_int;
   dist = json |> member "dist" |> to_int;
@@ -54,6 +54,7 @@ let t_of_preference json = {
   openness = json |> member "id" |> to_bool;
   restrictions = json |> member "restrictions" |> to_list |> List.map to_int;
 }
+*)
 
 let t_of_json json = {
   id = json |> member "id" |> to_int;
@@ -61,7 +62,7 @@ let t_of_json json = {
   password = json |> member "password" |> to_string;
   name = json |> member "name" |> to_string;
   friends = json |> member "friends" |> to_list |> List.map to_int;
-  preferences = json |> member "preferences" |> t_of_preference;
+  (*preferences = json |> member "preferences" |> t_of_preference;*)
   visited = json |> member "restaurants" |> to_list |> List.map to_int;
   in_group = json |> member "in_group" |> to_bool;
 }
@@ -78,7 +79,7 @@ let rec is_friend id t =
 
 let add_restaurant id t = {t with visited = id :: t.visited}
 
-let change_preferences preference t = {t with preferences = preference}
+(*let change_preferences preference t = {t with preferences = preference}*)
 
 let update_in_group t = {t with in_group = not t.in_group}
 
