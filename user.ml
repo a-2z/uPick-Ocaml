@@ -1,7 +1,6 @@
-type restrictions = Dairy | Shellfish 
-
+type restrictions = Dairy | Shellfish
+(** *)
 type foods = Dairy | Shellfish | Cake | Mexican 
-
 type preference = 
 {
 	time : int;

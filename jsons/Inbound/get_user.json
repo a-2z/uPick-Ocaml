@@ -1,0 +1,42 @@
+{
+	"success": {
+		"success": true,
+		"data": {
+			"user_id": 5,
+			"username": "name",
+			"password": "pass",
+			"friend_ids": [
+				1,
+				3,
+				6
+			],
+			"pref_ids": [
+				2,
+				5,
+				8
+			],
+			"allergen_ids": [
+				2,
+				5,
+				7
+			],
+			"visited": [
+				2,
+				5,
+				7
+			]
+		}
+	},
+	"failure": {
+		"success": false,
+		"data": {
+			"user_id": null,
+			"username": null,
+			"password": null,
+			"friend_ids": null,
+			"pref_ids": null,
+			"allergen_ids": null,
+			"visited": null
+		}
+	}
+}

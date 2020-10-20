@@ -1,0 +1,14 @@
+{
+	"in": {
+		"user_id": 1,
+		"votes": [
+			1,
+			3,
+			2
+		]
+	},
+	"out": {
+		"success": true,
+		"group_id": 1
+	}
+}
