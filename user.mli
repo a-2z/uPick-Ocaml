@@ -18,35 +18,30 @@ val get_restaurants : t -> int list
 
 val get_friends : t -> int list
 
-(*val get_preferences : t -> preference (*maybe??*)*)
+(**Check whether or not a user is in a group*)
+val in_group : t -> int -> bool
 
-val get_in_group : t -> bool
-
-(** Returns the data for the user taken as a json as type t to be used with
+(**Returns the data for the user taken as a json as type t to be used with
     our built functionality for the user module. *)
-val get_json : Yojson.Basic.t -> t (* Consider using Yojson.Basic.t as 'a *)
+val to_json : Yojson.Basic.t -> t (* Consider using Yojson.Basic.t as 'a *)
 
-(** Returns a new user. Takes a username, password, and name
-    as an input, and the ranked preference between location, price, and meal 
-    quality. !!We need to consider checking for matching usernames ign the 
-    database !!*)
-val create_user : string -> string -> string -> t
+(**Creates a user based on username, password, and name. Returns true
+if creation was successful and false if it failed.*)
+val create_user : string -> string -> string -> unit -> bool
 
 (** Take's in the id of a user and adds that to a list of friends*)
-val add_friend : int -> t -> t
+val add_friend : t -> t -> unit
 
-(** Returns true if a user is on the friends list of the user of interest*)
-val is_friend : int -> t -> bool
+(** Returns true if a user is on the friends list of the user of interest
+    and vice-versa*)
+val is_friend : t -> t -> bool
 
-(** Take's in the id of a restaurant and adds that to a list of restaurants 
+(** Takes in the id of a restaurant and adds that to a list of restaurants 
     visited*)
-val add_restaurant : int -> t -> t
+val add_restaurant : int -> t -> unit
 
-(** Take's in the new preferences the user would like to be automatic or for 
-    this current group and updates *)
-(*val change_preferences: preference -> t*)
+(** Take's in the new preference list and updates it for the user.*)
+val change_preferences: int list -> t -> unit
 
 (** Updates if the user joins or leaves a group*)
-val update_in_group : t -> t
-
-
+val update_groups : t -> unit

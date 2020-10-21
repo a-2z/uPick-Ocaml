@@ -1,40 +1,16 @@
 ### Starting build.
 # Target: user.mli.depends, tags: { package(oUnit), package(yojson), extension:mli, file:user.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package oUnit -modules user.mli > user.mli.depends # cached
+ocamlfind ocamldep -package yojson -package oUnit -modules user.mli > user.mli.depends
 # Target: user.cmi, tags: { package(oUnit), package(yojson), byte, compile, extension:mli, file:user.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmi user.mli # cached
+ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmi user.mli
 # Target: user.ml.depends, tags: { package(oUnit), package(yojson), extension:ml, file:user.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package oUnit -modules user.ml > user.ml.depends # cached
+ocamlfind ocamldep -package yojson -package oUnit -modules user.ml > user.ml.depends
 # Target: user.cmo, tags: { package(oUnit), package(yojson), byte, compile, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmo user.ml
 + ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmo user.ml
-File "user.ml", line 1:
-Error: The implementation user.ml does not match the interface user.cmi:
-       The value `update_in_group' is required but not provided
-       File "user.mli", line 48, characters 0-31: Expected declaration
-       The value `change_preferences' is required but not provided
-       File "user.mli", line 45, characters 0-43: Expected declaration
-       The value `add_restaurant' is required but not provided
-       File "user.mli", line 41, characters 0-37: Expected declaration
-       The value `is_friend' is required but not provided
-       File "user.mli", line 37, characters 0-35: Expected declaration
-       The value `add_friend' is required but not provided
-       File "user.mli", line 34, characters 0-33: Expected declaration
-       The value `create_user' is required but not provided
-       File "user.mli", line 31, characters 0-74: Expected declaration
-       The value `from_json' is required but not provided
-       File "user.mli", line 25, characters 0-35: Expected declaration
-       The value `get_in_group' is required but not provided
-       File "user.mli", line 21, characters 0-28: Expected declaration
-       The value `get_preferences' is required but not provided
-       File "user.mli", line 19, characters 0-34: Expected declaration
-       The value `get_friends' is required but not provided
-       File "user.mli", line 17, characters 0-34: Expected declaration
-       The value `get_restaurants' is required but not provided
-       File "user.mli", line 15, characters 0-38: Expected declaration
-       The value `get_name' is required but not provided
-       File "user.mli", line 13, characters 0-26: Expected declaration
-       The value `get_username' is required but not provided
-       File "user.mli", line 11, characters 0-30: Expected declaration
+File "user.ml", line 67, characters 2-7:
+67 |   group = json |> member "in_group" |> to_list |> List.map to_int;
+       ^^^^^
+Error: Unbound record field group
 Command exited with code 2.
 # Compilation unsuccessful.

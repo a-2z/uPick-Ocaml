@@ -1,0 +1,20 @@
+{
+	"in": {
+		"name": "name",
+		"host": 5,
+		"members": 1,
+		"date": "5/2/20"
+	},
+	"out_success": {
+		"success": true,
+		"data": {
+			"group_id": 5
+		}
+	},
+	"out_failure": {
+		"success": false,
+		"data": {
+			"group_id": null
+		}
+	}
+}

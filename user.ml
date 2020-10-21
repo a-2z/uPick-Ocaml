@@ -15,10 +15,10 @@ type t = {
   username : string;
   password : string;
   name : string; 
-  friends : int list;
+  mutable friends : int list;
   (*preferences : preference;*)
-  visited : int list;
-  in_group : bool;
+  mutable visited : int list;
+  mutable in_group : bool;
 }
 
 let get_id t = t.id
@@ -64,10 +64,14 @@ let t_of_json json = {
   friends = json |> member "friends" |> to_list |> List.map to_int;
   (*preferences = json |> member "preferences" |> t_of_preference;*)
   visited = json |> member "restaurants" |> to_list |> List.map to_int;
-  in_group = json |> member "in_group" |> to_bool;
+  group = json |> member "in_group" |> to_list |> List.map to_int;
 }
 
-let get_json json = t_of_json json
+let to_json json = t_of_json json
+
+let create_user username password name = 
+  failwith "unimplemented"
+
 
 let add_friend id t = {t with friends = id :: t.friends}
 
@@ -79,7 +83,7 @@ let rec is_friend id t =
 
 let add_restaurant id t = {t with visited = id :: t.visited}
 
-(*let change_preferences preference t = {t with preferences = preference}*)
+let change_preferences preference t = {t with preferences = preference}
 
-let update_in_group t = {t with in_group = not t.in_group}
+let update_groups t = {t with in_group = not t.in_group}
 

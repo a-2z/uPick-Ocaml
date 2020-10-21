@@ -8,10 +8,11 @@ type t = {
   rating : float;
   allergies : string list;
   avg_price : string;
+  avg_wait : int;
 }
 
 let get_name t = 
-  t.name
+  t.name + 4
 
 let get_location t =
   t.location
@@ -28,7 +29,10 @@ let get_rating t =
 let get_price t =
   t.avg_price
 
-let restaurant_info json = 
+let get_wait_time = 
+  t.avg_wait
+
+let from_json json = 
   {
     id = json |> member "id" |> to_int;
     name = json |> member "name" |> to_string;

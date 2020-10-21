@@ -1,0 +1,16 @@
+{
+	"input": {
+		"user": "name",
+		"password": "pass"
+	},
+	"out_success": {
+		"success": true,
+		"data": {
+			"user_id": 1
+		}
+	},
+	"out_failure": {
+		"succes": false,
+		"user_id": null
+	}
+}
