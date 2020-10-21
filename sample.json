@@ -1,0 +1,187 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "reetuparikh",
+      "password": "reetu123",
+      "name": "Reetu",
+      "friends": [
+        2,
+        3,
+        4
+      ],
+      "preferences": {
+        "time": 10,
+        "dist": 5,
+        "price": "cheap",
+        "openness": false,
+        "restrictions": [
+          2
+        ]
+      },
+      "visited": [
+        11,
+        33
+      ],
+      "in_group": true
+    },
+    {
+      "id": 2,
+      "username": "zachtegtmeier",
+      "password": "zach123",
+      "name": "Zach",
+      "friends": [
+        1,
+        3,
+        4
+      ],
+      "preferences": {
+        "time": 8,
+        "dist": 10,
+        "price": "moderate",
+        "openness": true,
+        "restrictions": []
+      },
+      "visited": [
+        11,
+        22
+      ],
+      "in_group": true
+    },
+    {
+      "id": 3,
+      "username": "andrewosorio",
+      "password": "andrewo123",
+      "name": "Andrew",
+      "friends": [
+        1,
+        2,
+        4
+      ],
+      "preferences": {
+        "time": 5,
+        "dist": 10,
+        "price": "moderate",
+        "openness": false,
+        "restrictions": [
+          1
+        ]
+      },
+      "visited": [
+        33
+      ],
+      "in_group": true
+    },
+    {
+      "id": 4,
+      "username": "andrewzeng",
+      "password": "andrewz123",
+      "name": "Andrew",
+      "friends": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "preferences": {
+        "time": 15,
+        "dist": 15,
+        "price": "cheap",
+        "openness": true,
+        "restrictions": []
+      },
+      "visited": [],
+      "in_group": true
+    },
+    {
+      "id": 5,
+      "username": "randomperson",
+      "password": "random123",
+      "name": "Random",
+      "friends": [
+        4
+      ],
+      "preferences": {
+        "time": 5,
+        "dist": 20,
+        "price": "expensive",
+        "openness": false,
+        "restrictions": [
+          1,
+          2
+        ]
+      },
+      "visited": [
+        22
+      ],
+      "in_group": false
+    }
+  ],
+  "restaurants": [
+    {
+      "id": 11,
+      "name": "Wings Over Ithaca",
+      "location": "121 Dryden Rd, Ithaca, NY 14850",
+      "food_type": "Fast Food",
+      "rating": 4.3,
+      "allergies": [
+        "Dairy",
+        "Egg"
+      ],
+      "avg_price": "moderate",
+      "avg_wait": 10
+    },
+    {
+      "id": 22,
+      "name": "Collegetown Bagels",
+      "location": "420 College Ave, Ithaca, NY 14850",
+      "food_type": "Fast Food",
+      "rating": 4.3,
+      "allergies": [
+        "Dairy",
+        "Egg"
+      ],
+      "avg_price": "moderate",
+      "avg_wait": 5
+    },
+    {
+      "id": 22,
+      "name": "Collegetown Bagels",
+      "location": "420 College Ave, Ithaca, NY 14850",
+      "food_type": "Fast Food",
+      "rating": 4.4,
+      "allergies": [
+        "Dairy",
+        "Egg"
+      ],
+      "avg_price": "moderate",
+      "avg_wait": 10
+    },
+    {
+      "id": 33,
+      "name": "The Heights Restaurant and H Bar",
+      "location": "903 Hanshaw Rd, Ithaca, NY 14850",
+      "food_type": "Mediterranean",
+      "rating": 4.3,
+      "allergies": [
+        "Dairy",
+        "Egg"
+      ],
+      "avg_price": "moderate",
+      "avg_wait": 20
+    },
+    {
+      "id": 44,
+      "name": "Shortstop Deli",
+      "location": "200 W Seneca St, Ithaca, NY 14850",
+      "food_type": "Sandwiches",
+      "rating": 4.5,
+      "allergies": [
+        "Dairy"
+      ],
+      "avg_price": "cheap",
+      "avg_wait": 8
+    }
+  ],
+  "groups": []
+}
