@@ -1,4 +1,4 @@
-MODULES=user restaurant groups
+MODULES=user restaurant groups test
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)

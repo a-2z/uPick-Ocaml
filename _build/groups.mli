@@ -19,6 +19,8 @@ val get_candidates : t -> int list option
 
 val get_winner : t -> int option
 
+
+
 (** Returns if the voting process has started in the group. *)
 val surveys_done : t -> bool
 

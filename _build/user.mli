@@ -18,6 +18,7 @@ val get_restaurants : t -> int list
 
 val get_friends : t -> int list
 
+val get_restrictions : t -> int list
 (**Check whether or not a user is in a group*)
 val in_group : t -> int -> bool
 
@@ -28,9 +29,6 @@ val to_json : t -> string
 
 (**Creates a user based on username, password, and name. Returns true if creation was successful and false if it failed.*)
 val create_user : string -> string -> string -> t
-
-(**Returns whether or not a user's username and password match those stored. *)
-val authenticate : string -> string -> bool
 
 (** Take's in the id of a user and adds that to a list of friends*)
 val add_friend : t -> t -> unit
@@ -46,4 +44,4 @@ val add_visited : int -> t -> unit
 val change_restrictions : int list -> t -> unit
 
 (** Updates if the user joins or leaves a group*)
-val update_groups : t -> unit
+val update_groups : t -> int -> unit

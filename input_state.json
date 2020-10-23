@@ -1,0 +1,35 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "reetuparikh",
+      "name": "Reetu"
+    },
+    {
+      "id": 2,
+      "username": "zachtegtmeier",
+      "name": "Zach"
+    },
+    {
+      "id": 3,
+      "username": "andrewosorio",
+      "name": "Andrew"
+    },
+    {
+      "id": 4,
+      "username": "andrewzeng",
+      "name": "Andrew"
+    },
+    {
+      "id": 5,
+      "username": "randomperson",
+      "name": "Random"
+    }
+  ],
+  "groups": [
+    {
+      "oldgroup": [],
+      "newgroup": []
+    }
+  ]
+}

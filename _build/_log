@@ -1,22 +1,27 @@
 ### Starting build.
-# Target: user.mli.depends, tags: { package(oUnit), package(yojson), extension:mli, file:user.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package oUnit -modules user.mli > user.mli.depends
-# Target: user.cmi, tags: { package(oUnit), package(yojson), byte, compile, extension:mli, file:user.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmi user.mli
-# Target: user.ml.depends, tags: { package(oUnit), package(yojson), extension:ml, file:user.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package oUnit -modules user.ml > user.ml.depends
-# Target: user.cmo, tags: { package(oUnit), package(yojson), byte, compile, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmo user.ml
-+ ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmo user.ml
-File "user.ml", line 1:
-Error: The implementation user.ml does not match the interface user.cmi:
-       The value `update_groups' is required but not provided
-       File "user.mli", line 49, characters 0-29: Expected declaration
-       The value `change_restrictions' is required but not provided
-       File "user.mli", line 46, characters 0-47: Expected declaration
-       The value `add_visited' is required but not provided
-       File "user.mli", line 43, characters 0-34: Expected declaration
-       The value `authenticate' is required but not provided
-       File "user.mli", line 33, characters 0-43: Expected declaration
+# Target: test.ml.depends, tags: { package(oUnit), package(re2), package(yojson), extension:ml, file:test.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package oUnit -package re2 -modules test.ml > test.ml.depends
+# Target: app_state.mli.depends, tags: { package(oUnit), package(re2), package(yojson), extension:mli, file:app_state.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package oUnit -package re2 -modules app_state.mli > app_state.mli.depends
+# Target: groups.mli.depends, tags: { package(oUnit), package(re2), package(yojson), extension:mli, file:groups.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package oUnit -package re2 -modules groups.mli > groups.mli.depends
+# Target: restaurant.mli.depends, tags: { package(oUnit), package(re2), package(yojson), extension:mli, file:restaurant.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package oUnit -package re2 -modules restaurant.mli > restaurant.mli.depends
+# Target: user.mli.depends, tags: { package(oUnit), package(re2), package(yojson), extension:mli, file:user.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package oUnit -package re2 -modules user.mli > user.mli.depends # cached
+# Target: user.cmi, tags: { package(oUnit), package(re2), package(yojson), byte, compile, extension:mli, file:user.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package oUnit -package re2 -o user.cmi user.mli # cached
+# Target: groups.cmi, tags: { package(oUnit), package(re2), package(yojson), byte, compile, extension:mli, file:groups.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package oUnit -package re2 -o groups.cmi groups.mli
+# Target: restaurant.cmi, tags: { package(oUnit), package(re2), package(yojson), byte, compile, extension:mli, file:restaurant.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package oUnit -package re2 -o restaurant.cmi restaurant.mli
+# Target: app_state.cmi, tags: { package(oUnit), package(re2), package(yojson), byte, compile, extension:mli, file:app_state.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package oUnit -package re2 -o app_state.cmi app_state.mli
++ ocamlfind ocamlc -c -package yojson -package oUnit -package re2 -o app_state.cmi app_state.mli
+File "app_state.mli", line 16, characters 0-6:
+16 | type t 
+     ^^^^^^
+Error: Multiple definition of the type name t.
+       Names must be unique in a given structure or signature.
 Command exited with code 2.
 # Compilation unsuccessful.
