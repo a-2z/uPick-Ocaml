@@ -9,6 +9,10 @@ exception NoVotes
 
 exception NoGroup
 
+val from_json : Yojson.Basic.t -> t
+
+val to_json : t -> Yojson.Basic.t
+
 (** The following are all get functions for data stored in type t, be sure to 
     implement them consistently based on the implementation of t *)
 val get_name : t -> string
@@ -26,3 +30,6 @@ val surveys_done : t -> bool
     Could change output to 'a if a different data type is preferred *)
 val voting_done : t -> int list
 
+val add_user : t -> int -> unit 
+
+val create : string -> string -> t

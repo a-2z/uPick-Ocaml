@@ -34,7 +34,7 @@ val in_group : t -> int -> bool
 val is_friend : t -> t -> bool
 
 (**Creates a user based on username, password, and name. Returns true if creation was successful and false if it failed.*)
-val create_user : string -> string -> string -> t
+val create : string -> string -> string -> t
 
 (** Take's in the id of a user and adds that to a list of friends*)
 val add_friend : t -> t -> unit

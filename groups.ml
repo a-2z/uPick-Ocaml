@@ -4,6 +4,7 @@ open Yojson.Basic.Util
 type t = {
   id : int;
   name : string;
+  host : string;
   users : int list;
   survey_complete : int list;
   voting_complete : int list;
@@ -11,6 +12,7 @@ type t = {
   final_choice : int option;
 }
 
+(* FIX THIS *)
 let from_json json = 
   {
     id = json |> member "group_id" |> to_string;
@@ -23,6 +25,7 @@ let from_json json =
   }
 
 let to_json t = 
+  failwith "unimplemented"
 
 let get_name t = t.name
 
@@ -38,6 +41,7 @@ let has_user_voted t user =
 let has_group_voted t = 
   List.length t.voting_complete = List.length t.voting_complete
 
-let create name location cuisine_type rating allergens price wait_time = failwith "unimplemented"
+let create name location cuisine_type rating allergens price wait_time = 
+  failwith "unimplemented"
 
 
