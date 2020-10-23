@@ -1,4 +1,5 @@
 open Yojson.Basic.Util
+include Json_help
 
 type t = {
   id : int;
@@ -25,11 +26,16 @@ let from_json json =
     avg_wait = json |> member "avg_wait" |> to_int
   }
 
+
 let to_json t = 
-{|{"id": |} ^ string_of_int t.id ^ {|, "name": |} ^ t.name ^ 
-{|, "location_x": |} ^ string_of_float t.location_x ^ {|, "location_y": |} ^ t.location_y ^ 
-{|, "food_type": |} ^ t.name ^ {|, "friend": |} 
-{|, "username": |} {|, "username": |}
+  {|{"id": "|} ^ string_of_int t.id ^ {|", "name": "|} ^ t.name ^ 
+  {|", "location_x": |} ^ string_of_float t.location_x ^ {|, "location_y": |} ^ 
+  string_of_float t.location_y ^ {|, "food_type": "|} ^ t.food_type ^ 
+  {|", "rating": |} ^ string_of_float t.rating ^ {|, "allergies": |} ^ 
+  (json_string_lst t.allergies) ^ {|, "avg_price": |} ^ 
+  string_of_int t.avg_price ^ {|, "avg_wait": |} ^ string_of_int t.avg_wait ^
+  "}"
+
 
 let get_name t = 
   t.name 
@@ -53,16 +59,16 @@ let get_price t =
   t.avg_price
 
 let create name loc_x loc_y cuisine_type rating allergens price wait_time =
-{
-  id = 0;
-  name = name;
-  loc_x = loc_x;
-  loc_y = loc_y;
-  food_type = cuisine_type;
-  rating = rating;
-  allergies = allergens;
-  avg_price = price;
-  avg_wait = wait_time;
-}
+  {
+    id = 0;
+    name = name;
+    location_x = loc_x;
+    location_y = loc_y;
+    food_type = cuisine_type;
+    rating = rating;
+    allergies = allergens;
+    avg_price = price;
+    avg_wait = wait_time;
+  }
 
 

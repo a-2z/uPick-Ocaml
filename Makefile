@@ -2,7 +2,7 @@ MODULES=user restaurant groups test
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
-OCAMLBUILD=ocamlbuild -use-ocamlfind -package re2
+OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build
 	utop

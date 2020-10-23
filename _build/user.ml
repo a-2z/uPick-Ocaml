@@ -67,10 +67,15 @@ let json_int_lst (lst : int list) =
     | h :: t -> aux t (acc ^ (string_of_int h) ^ ", ") in
   aux lst "["
 
-(**[to_json user] is a valid JSON string representing a user. Raw strings are used to name the fields and add brackets.*)
+(**[to_json user] is a valid JSON string representing a user. 
+   Raw strings are used to name the fields and add brackets.*)
 let to_json user = 
-  {|{"user_id": |} ^ (string_of_int 1) ^ {|, "name": "|} ^ user.name ^ {|", "username": "|} ^ user.username ^ {|", "password": "|} ^ user.password ^ {|", "friend_ids": |} ^ json_int_lst user.friends ^ {|, "restriction_ids": |} ^
-  json_int_lst user.restrictions ^ {|, "visited": |} ^ json_int_lst user.visited ^ "}"
+  {|{"user_id": |} ^ (string_of_int 1) ^ {|, "name": "|} ^ user.name ^ 
+  {|", "username": "|} ^ user.username ^ {|", "password": "|} ^ user.password ^ 
+  {|", "friend_ids": |} ^ json_int_lst user.friends ^ 
+  {|, "restriction_ids": |} ^
+  json_int_lst user.restrictions ^ {|, "visited": |} ^ 
+  json_int_lst user.visited ^ "}"
 
 (* "user: {id: 1}" ^ (string_of_int user.id) ^ "}" *)
 (*Instantiate a user*)
