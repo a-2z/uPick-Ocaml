@@ -11,11 +11,15 @@ exception NoGroup
 
 (** The following are all get functions for data stored in type t, be sure to 
     implement them consistently based on the implementation of t *)
+val get_name : t -> string
+
 val get_users : t -> int list
 
 val get_candidates : t -> int list option
 
 val get_winner : t -> int option
+
+
 
 (** Returns if the voting process has started in the group. *)
 val surveys_done : t -> bool

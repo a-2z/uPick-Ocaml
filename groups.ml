@@ -2,30 +2,33 @@ open Yojson.Basic.Util
 
 
 type t = {
-  users : string list;
-  restaurants : string list;
-  voting_progress : bool;
-  user_voted : bool;
-  group_voted : int list
+  id : int;
+  name : string;
+  users : int list;
+  survey_complete : int list;
+  voting_complete : int list;
+  candidates : int list option;
+  final_choice : int option;
 }
 
-let get_users t = 
-  t.users
+let get_name t = t.name
 
-let get_restaurants t =
-  t.restaurants
+let get_users t = t.users
 
-let voting_in_progress t =
-  t.voting_progress
+let get_candidates t = t.candidates
 
-let has_user_voted t =
-  t.user_voted
+let get_winner t = t.final_choice
+
+let has_user_voted t user =
+  List.mem user t.voting_complete
 
 let has_group_voted t = 
-  t.group_voted
+  List.length t.voting_complete = List.length t.voting_complete
 
-let groups_info json = 
+let from_json json = 
   {
+    id = json |> member "group_id" |> to_string;
+    name = json |> member "group_name" |> to_string;
     users = json |> member "users" |> to_list |> List.map to_string;
     restaurants = json |> member "restaurants" |> to_list |> List.map to_string;
     voting_progress = json |> member "voting_progress" |> to_bool;

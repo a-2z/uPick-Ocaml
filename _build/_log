@@ -8,9 +8,15 @@ ocamlfind ocamldep -package yojson -package oUnit -modules user.ml > user.ml.dep
 # Target: user.cmo, tags: { package(oUnit), package(yojson), byte, compile, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmo user.ml
 + ocamlfind ocamlc -c -package yojson -package oUnit -o user.cmo user.ml
-File "user.ml", line 67, characters 2-7:
-67 |   group = json |> member "in_group" |> to_list |> List.map to_int;
-       ^^^^^
-Error: Unbound record field group
+File "user.ml", line 1:
+Error: The implementation user.ml does not match the interface user.cmi:
+       The value `update_groups' is required but not provided
+       File "user.mli", line 49, characters 0-29: Expected declaration
+       The value `change_restrictions' is required but not provided
+       File "user.mli", line 46, characters 0-47: Expected declaration
+       The value `add_visited' is required but not provided
+       File "user.mli", line 43, characters 0-34: Expected declaration
+       The value `authenticate' is required but not provided
+       File "user.mli", line 33, characters 0-43: Expected declaration
 Command exited with code 2.
 # Compilation unsuccessful.

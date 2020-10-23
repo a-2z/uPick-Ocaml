@@ -18,16 +18,17 @@ val get_restaurants : t -> int list
 
 val get_friends : t -> int list
 
+val get_restrictions : t -> int list
 (**Check whether or not a user is in a group*)
 val in_group : t -> int -> bool
 
-(**Returns the data for the user taken as a json as type t to be used with
-    our built functionality for the user module. *)
-val to_json : Yojson.Basic.t -> t (* Consider using Yojson.Basic.t as 'a *)
+(**Returns the data for the user taken as a json as type t to be used with our built functionality for the user module. *)
+val from_json : Yojson.Basic.t -> t (* Consider using Yojson.Basic.t as 'a *)
 
-(**Creates a user based on username, password, and name. Returns true
-if creation was successful and false if it failed.*)
-val create_user : string -> string -> string -> unit -> bool
+val to_json : t -> string
+
+(**Creates a user based on username, password, and name. Returns true if creation was successful and false if it failed.*)
+val create_user : string -> string -> string -> t
 
 (** Take's in the id of a user and adds that to a list of friends*)
 val add_friend : t -> t -> unit
@@ -36,12 +37,11 @@ val add_friend : t -> t -> unit
     and vice-versa*)
 val is_friend : t -> t -> bool
 
-(** Takes in the id of a restaurant and adds that to a list of restaurants 
-    visited*)
-val add_restaurant : int -> t -> unit
+(** Takes in the id of a restaurant and adds that to a list of restaurants visited*)
+val add_visited : int -> t -> unit
 
 (** Take's in the new preference list and updates it for the user.*)
-val change_preferences: int list -> t -> unit
+val change_restrictions : int list -> t -> unit
 
 (** Updates if the user joins or leaves a group*)
-val update_groups : t -> unit
+val update_groups : t -> int -> unit

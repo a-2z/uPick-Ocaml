@@ -13,12 +13,12 @@ type preference = {
 type t = {
   id : int; 
   username : string;
-  password : string;
+  mutable password : string;
   name : string; 
   mutable friends : int list;
-  (*preferences : preference;*)
+  preferences : int list;
   mutable visited : int list;
-  mutable in_group : bool;
+  mutable groups : int list;
 }
 
 let get_id t = t.id
@@ -33,20 +33,10 @@ let get_friends t = t.friends
 
 (*let get_preferences t = t.preferences*)
 
-let get_in_group t = t.in_group
+let in_group t group = List.mem group t.groups
 
-(* Do we need this function? *)
-let create_user user pass name = {
-  id = 0; (*??*)
-  username = user;
-  password = pass;
-  name = name;
-  friends = [];
-  (*preferences = preferences;*)
-  visited = [];
-  in_group = false
-}
-(*
+let login = 
+  failwith "unimplemented"(*
 let t_of_preference json = {
   time = json |> member "time" |> to_int;
   dist = json |> member "dist" |> to_int;
@@ -56,18 +46,32 @@ let t_of_preference json = {
 }
 *)
 
-let t_of_json json = {
+let from_json json = {
   id = json |> member "id" |> to_int;
   username = json |> member "username" |> to_string;
   password = json |> member "password" |> to_string;
   name = json |> member "name" |> to_string;
   friends = json |> member "friends" |> to_list |> List.map to_int;
-  (*preferences = json |> member "preferences" |> t_of_preference;*)
+  preferences = json |> member "preferences" |> to_list |> List.map to_int;
   visited = json |> member "restaurants" |> to_list |> List.map to_int;
-  group = json |> member "in_group" |> to_list |> List.map to_int;
+  groups = json |> member "in_group" |> to_list |> List.map to_int;
 }
 
-let get_json json = t_of_json json
+(*Instantiate a user*)
+let create_user user pass name = {
+  id = 0; 
+  username = user;
+  password = pass;
+  name = name;
+  friends = [];
+  preferences = [];
+  visited = [];
+  groups = []
+}
+
+let to_json user = 
+  "user: {id: 1}" 
+(* "user: {id: 1}" ^ (string_of_int user.id) ^ "}" *)
 
 let add_friend id t = {t with friends = id :: t.friends}
 
@@ -79,7 +83,7 @@ let rec is_friend id t =
 
 let add_restaurant id t = {t with visited = id :: t.visited}
 
-(*let change_preferences preference t = {t with preferences = preference}*)
+let change_preferences preference t = {t with preferences = preference}
 
-let update_in_group t = {t with in_group = not t.in_group}
+(* let update_groups t = {t with in_group = not t.in_group} *)
 

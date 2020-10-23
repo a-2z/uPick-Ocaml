@@ -3,6 +3,7 @@
 		"success": true,
 		"data": {
 			"user_id": 5,
+			"name": "Alice",
 			"username": "name",
 			"password": "pass",
 			"friend_ids": [
@@ -10,17 +11,17 @@
 				3,
 				6
 			],
-			"pref_ids": [
+			"restriction_ids": [
 				2,
 				5,
 				8
 			],
-			"allergen_ids": [
+			"visited": [
 				2,
 				5,
 				7
 			],
-			"visited": [
+			"groups": [
 				2,
 				5,
 				7
@@ -28,15 +29,18 @@
 		}
 	},
 	"failure": {
-		"success": false,
-		"data": {
-			"user_id": null,
-			"username": null,
-			"password": null,
-			"friend_ids": null,
-			"pref_ids": null,
-			"allergen_ids": null,
-			"visited": null
+		"success": {
+			"success": false,
+			"data": {
+				"user_id": null,
+				"name": null,
+				"username": null,
+				"password": null,
+				"friend_ids": null,
+				"restriction_ids": null,
+				"visited": null,
+				"groups": null
+			}
 		}
 	}
 }
