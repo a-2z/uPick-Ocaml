@@ -16,8 +16,14 @@ open Yojson.Basic.Util
 
 type t 
 
-(** Returns id of user about to be added *)
+(**Instantiate a person given a username, password, and name./*)
 val add_user : string -> string -> string -> unit 
+
+(**Instantiate a person given a username, password, and name./*)
+val add_restaurant : string -> string -> string -> unit 
+
+(**Instantiate a person given a username, password, and name./*)
+val add_group : string -> string -> string -> unit 
 
 (**Returns group list user about to be added *)
 val join_group : group_id -> user_id -> unit

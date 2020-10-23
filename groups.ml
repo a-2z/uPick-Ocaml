@@ -11,6 +11,19 @@ type t = {
   final_choice : int option;
 }
 
+let from_json json = 
+  {
+    id = json |> member "group_id" |> to_string;
+    name = json |> member "group_name" |> to_string;
+    users = json |> member "users" |> to_list |> List.map to_string;
+    restaurants = json |> member "restaurants" |> to_list |> List.map to_string;
+    voting_progress = json |> member "voting_progress" |> to_bool;
+    user_voted = json |> member "user_voted" |> to_bool;
+    group_voted = json |> member "group_voted" |> to_list |> List.map to_int;
+  }
+
+let to_json t = 
+
 let get_name t = t.name
 
 let get_users t = t.users
@@ -25,13 +38,6 @@ let has_user_voted t user =
 let has_group_voted t = 
   List.length t.voting_complete = List.length t.voting_complete
 
-let from_json json = 
-  {
-    id = json |> member "group_id" |> to_string;
-    name = json |> member "group_name" |> to_string;
-    users = json |> member "users" |> to_list |> List.map to_string;
-    restaurants = json |> member "restaurants" |> to_list |> List.map to_string;
-    voting_progress = json |> member "voting_progress" |> to_bool;
-    user_voted = json |> member "user_voted" |> to_bool;
-    group_voted = json |> member "group_voted" |> to_list |> List.map to_int;
-  }
+let create name location cuisine_type rating allergens price wait_time = failwith "unimplemented"
+
+

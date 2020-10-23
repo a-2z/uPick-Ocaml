@@ -104,7 +104,7 @@
       "preferences": {
         "time": 5,
         "dist": 20,
-        "price": "expensive",
+        "price": 500,
         "openness": false,
         "restrictions": [
           1,
@@ -128,7 +128,7 @@
         "Dairy",
         "Egg"
       ],
-      "avg_price": "moderate",
+      "avg_price": 17,
       "avg_wait": 10
     },
     {
@@ -141,7 +141,7 @@
         "Dairy",
         "Egg"
       ],
-      "avg_price": "moderate",
+      "avg_price": 24,
       "avg_wait": 5
     },
     {
@@ -154,7 +154,7 @@
         "Dairy",
         "Egg"
       ],
-      "avg_price": "moderate",
+      "avg_price": 18,
       "avg_wait": 10
     },
     {
@@ -167,7 +167,7 @@
         "Dairy",
         "Egg"
       ],
-      "avg_price": "moderate",
+      "avg_price": 20,
       "avg_wait": 20
     },
     {
@@ -179,7 +179,7 @@
       "allergies": [
         "Dairy"
       ],
-      "avg_price": "cheap",
+      "avg_price": 10,
       "avg_wait": 8
     }
   ],
