@@ -1,4 +1,5 @@
 open Yojson.Basic.Util
+open Restaurant
 
 (*
 type preference = {
@@ -30,7 +31,7 @@ let get_restaurants t = t.visited
 
 let get_friends t = t.friends
 
-let get_preferences t = t.restrictions
+let get_restrictions t = t.restrictions
 
 let in_group t group = List.mem group t.groups
 
@@ -78,9 +79,10 @@ let to_json user =
   json_int_lst user.visited ^ "}"
 
 (* "user: {id: 1}" ^ (string_of_int user.id) ^ "}" *)
-(*Instantiate a user*)
-let create user pass name = {
-  id = 0; 
+(*Instantiate a user, 
+  added a id variable, pretty sure we need that as an input? -Zach*)
+let create_user user_id user pass name = {
+  id = user_id; 
   username = user;
   password = pass;
   name = name;
@@ -90,20 +92,33 @@ let create user pass name = {
   groups = []
 }
 
-let add_friend id t = t.friends <- t.friends @ [id]
-
-let is_friend id t = 
+let is_friend other_t t =
   let rec helper id = function
     | [] -> false
     | h :: t -> 
       if h == id then true 
       else helper id t in 
-  helper id t.friends
+  helper other_t.id t.friends
 
-let add_restaurant id t = t.visited <- t.visited @ [id]
+(* Does the order for these lists matter? I would change to prepending function
+   to make it constant time efficiency. *)
+let add_friend other_t t = t.friends <- other_t.id :: t.friends
 
-let change_preferences restrictions t = t.restrictions <- restrictions
+(* Based on interface type definitions for other functions like add_friend 
+   I am guessing that we would want this to in some way take a restaurant in as
+   an input and grab its id, however with functions that we can access outside
+   the restaurant module I am not quite sure how to do this, might just be 
+   missing something - Zach. *)
+let add_visited int t = t.visited <- int :: t.visited
 
-(**Appends the id of the last group joined to the end of the group list*)
+(*Commented out guessing we don't want this function in user*)
+(*let add_restaurant id t = t.visited <- t.visited @ [id]*)
+
+let change_restrictions restrictions t = t.restrictions <- restrictions
+
+(**Appends the id of the last group joined to the end of the group list. 
+   Specification says it should go to end of the list, However I would change it
+   in the same way I did for add_friend and add_visited if order does not matter
+   .*)
 let update_groups t group = t.groups <- t.groups @ [group]
 

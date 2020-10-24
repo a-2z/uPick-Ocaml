@@ -1,4 +1,5 @@
 open Yojson.Basic.Util
+open Restaurant
 
 (** The type for the user. Regardless of implementation this should include
     a user's username, password, name, visited restaurants list, friends list,    and the automatic ranked preference between location, price, and meal 
@@ -34,7 +35,7 @@ val in_group : t -> int -> bool
 val is_friend : t -> t -> bool
 
 (**Creates a user based on username, password, and name. Returns true if creation was successful and false if it failed.*)
-val create : string -> string -> string -> t
+val create_user : int -> string -> string -> string -> t
 
 (** Take's in the id of a user and adds that to a list of friends*)
 val add_friend : t -> t -> unit
