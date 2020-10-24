@@ -108,7 +108,8 @@ let add_friend other_t t = t.friends <- other_t.id :: t.friends
    I am guessing that we would want this to in some way take a restaurant in as
    an input and grab its id, however with functions that we can access outside
    the restaurant module I am not quite sure how to do this, might just be 
-   missing something - Zach. *)
+   missing something. Would just require a get id function in Restaurant just 
+   don't want to mess with Restaurant.ml- Zach. *)
 let add_visited int t = t.visited <- int :: t.visited
 
 (*Commented out guessing we don't want this function in user*)
