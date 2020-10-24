@@ -1,4 +1,4 @@
-MODULES=user restaurant groups test
+MODULES=user restaurant groups test app_state
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)

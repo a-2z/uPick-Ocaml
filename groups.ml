@@ -8,12 +8,12 @@ type t = {
   id : int;
   name : string;
   host : string;
-  users : int list;
-  restaurants : int list;
-  survey_complete : int list;
-  voting_complete : int list;
-  candidates : int list option;
-  final_choice : int option;
+  mutable users : int list;
+  mutable restaurants : int list;
+  mutable survey_complete : int list;
+  mutable voting_complete : int list;
+  mutable candidates : int list option;
+  mutable final_choice : int option;
 }
 
 (* FIX THIS, working on it, do not see a json schema to show exactly what
@@ -73,22 +73,33 @@ let to_json t =
   {|, "candidates": |} ^ json_int_lst_opt t.candidates ^ 
   {|, "final_choice": |} ^ string_of_int (unoption t.final_choice) ^ "}"
 
-let get_users t = t.users
-
 let get_name t = t.name
+
+let get_users t = t.users
 
 let get_candidates t = t.candidates
 
 let get_winner t = t.final_choice
 
-let has_user_voted t user =
-  List.mem user t.voting_complete
+let surveys_done t = 
+  List.length t.survey_complete = List.length t.users
 
-let has_group_voted t = 
-  List.length t.voting_complete = List.length t.voting_complete
+let voting_done t = 
+  List.length t.voting_complete = List.length t.users
+
+let add_user t user= 
+  t.users <- t.users @ [user]
 
 (*We want a function to create a restaurant in group.ml?*)
-let create name location cuisine_type rating allergens price wait_time = 
-  failwith "unimplemented"
-
-
+let create name host = 
+  {
+    id = 0;
+    name = name;
+    host = host;
+    users = [];
+    restaurants = [];
+    survey_complete = [];
+    voting_complete = [];
+    candidates = None;
+    final_choice = None;
+  }

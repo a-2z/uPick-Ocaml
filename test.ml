@@ -1,7 +1,8 @@
+open App_state
+open Groups
+open OUnit2
 open Restaurant
 open User
-open Groups
-open App_state
 
 (** [pp_string s] pretty-prints string [s]. *)
 let pp_string s = "\"" ^ s ^ "\""
@@ -19,6 +20,20 @@ let pp_list pp_elt lst =
     in loop 0 "" lst
   in "[" ^ pp_elts lst ^ "]"
 
+(** [cmp_set_like_lists lst1 lst2] compares two lists to see whether
+    they are equivalent set-like lists.  That means checking two things.
+    First, they must both be {i set-like}, meaning that they do not
+    contain any duplicates.  Second, they must contain the same elements,
+    though not necessarily in the same order. *)
+let cmp_set_like_lists lst1 lst2 =
+  let uniq1 = List.sort_uniq compare lst1 in
+  let uniq2 = List.sort_uniq compare lst2 in
+  List.length lst1 = List.length uniq1
+  &&
+  List.length lst2 = List.length uniq2
+  &&
+  uniq1 = uniq2
+
 let sample = Yojson.Basic.from_file "sample.json"
 let input_state = Yojson.Basic.from_file "input_state.json"
 
@@ -29,7 +44,6 @@ let add_restaurant_tests =
   [ 
     (* "test restaurant1" 
        >:: (fun -> assert_equal "taco bell" (add_restaurant sample_t)); *)
-
   ]
 
 let add_user_test = 
@@ -57,7 +71,7 @@ let join_group_test =
   ]
 
 let suite = 
-  "test suite for uPick" >::: List. flatten [
+  "test suite for uPick" >::: List.flatten [
     add_restaurant_tests;
     add_user_test;
     make_friends_test;
@@ -65,4 +79,4 @@ let suite =
     join_group_test;
   ]
 
-let _ = run_test_main suite
+let _ = run_test_tt_main suite

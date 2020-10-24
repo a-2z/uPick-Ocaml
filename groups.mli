@@ -3,15 +3,18 @@ open Yojson.Basic.Util
     relevant for a group. This would include a list of users, list of available
     restaurants, if voting has taken place / is in progress, and for each 
     user if they have voted*)
-type t
 
 exception NoVotes
 
 exception NoGroup
 
+type t
+
+
+
 val from_json : Yojson.Basic.t -> t
 
-val to_json : t -> Yojson.Basic.t
+val to_json : t -> string
 
 (** The following are all get functions for data stored in type t, be sure to 
     implement them consistently based on the implementation of t *)
@@ -28,7 +31,7 @@ val surveys_done : t -> bool
 
 (** Returns a list of every user with if they have or have not voted. 
     Could change output to 'a if a different data type is preferred *)
-val voting_done : t -> int list
+val voting_done : t -> bool
 
 val add_user : t -> int -> unit 
 

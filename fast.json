@@ -1,30 +1,5 @@
-{"users": [],
+{
 	"groups": [],
-	"restaurants": [ 
-	{
-		"id": "0",
-		"name": "taco bell",
-		"location_x": 32.23598,
-		"location_y": 42.2893,
-		"food_type": "fast food",
-		"rating": 4.3,
-		"allergies": [
-			"eggs"
-		],
-		"avg_price": 6,
-		"avg_wait": 5
-	},
-	{
-  "id": "0",
-  "name": "taco bell",
-  "location_x": 32.23598,
-  "location_y": 42.2893,
-  "food_type": "fast food",
-  "rating": 4.3,
-  "allergies": [
-    "eggs"
-  ],
-  "avg_price": 6,
-	"avg_wait": 5
-}]
+	"restaurants": [],
+	"users": []
 }
