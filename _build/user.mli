@@ -31,7 +31,7 @@ val get_restrictions : t -> int list
 val in_group : t -> int -> bool
 
 (**Creates a user based on username, password, and name. Returns true if creation was successful and false if it failed.*)
-val create : int -> string -> string -> string -> t
+val create_user : int -> string -> string -> string -> t
 
 (** Returns true if a user is on the friends list of the user of interest
     and vice-versa*)

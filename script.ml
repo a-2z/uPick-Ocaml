@@ -1,7 +1,7 @@
-open App_state
+(* open App_state
 
-let run_script () = fun _ ->
-  let instance = load "state.json";
+   let run_script () = fun _ ->
+   let instance = load "state.json";
     add_restaurant instance "taco bell" 30.12 44.15 "fast food" 4.67 ["eggs", "dairy"] 15 30;
     add_restaurant instance "taco bell" 30.12 44.15 "fast food" 4.67 ["eggs", "dairy"] 15 30;
     add_restaurant "taco bell" 30.12 44.15 "fast food" 4.67 ["eggs", "dairy"] 15 30;
@@ -18,5 +18,5 @@ let run_script () = fun _ ->
     join_group (get_user "andrew1234") (get_group "andrew123" "Martha's tea party");
     join_group (get_user "andrew123") (get_group "andrew1234" "Martha's tea party");
     save instance
-
+*)
 

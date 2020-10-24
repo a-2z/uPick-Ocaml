@@ -1,5 +1,6 @@
 MODULES=user restaurant groups test app_state
 OBJECTS=$(MODULES:=.cmo)
+TEST=test.byte
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
 OCAMLBUILD=ocamlbuild -use-ocamlfind 

@@ -71,7 +71,7 @@ let to_json user =
 (* "user: {id: 1}" ^ (string_of_int user.id) ^ "}" *)
 (*Instantiate a user, 
   added a id variable, pretty sure we need that as an input? -Zach*)
-let create user_id user pass name = {
+let create_user user_id user pass name = {
   id = user_id; 
   username = user;
   password = pass;
