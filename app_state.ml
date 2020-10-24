@@ -11,10 +11,18 @@ type t = {
 let add_user t = 
   t.id
 
-let old_group t =
-  t.groups
+let add_restaurant t = 
+  failwith "Unimplemented"
 
-let new_group id new_group = 
-  fun new_group -> {id :: t.new_group}
+let add_groupt t = 
+  failwith "Unimplemented"
+
+let make_friends t = 
+  failwith "Unimplemented"
+
+let join_group t = 
+  failwith "Unimplemented"
+
+
 
 
