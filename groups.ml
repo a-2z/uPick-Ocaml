@@ -1,5 +1,8 @@
 open Yojson.Basic.Util
 
+exception NoVotes
+
+exception NoGroup
 
 type t = {
   id : int;
@@ -70,9 +73,9 @@ let to_json t =
   {|, "candidates": |} ^ json_int_lst_opt t.candidates ^ 
   {|, "final_choice": |} ^ string_of_int (unoption t.final_choice) ^ "}"
 
-let get_name t = t.name
-
 let get_users t = t.users
+
+let get_name t = t.name
 
 let get_candidates t = t.candidates
 
