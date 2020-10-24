@@ -61,20 +61,20 @@ let save state =
   {|, {"users": |} ^ json_dict_lst (users_to_list state.users) ^
   "}"
 
-let add_user new_user t = 
-  t.username <- new_user.id :: t.username
+let add_user t username password name = 
+  failwith "Unimplemented"
 
 let add_restaurant t new_restaurant = 
-  t.restaurant <- new_restaurant :: t.restaurant
+  failwith "Unimplemented"
 
 let add_group t group_name host = 
-  t.groups <- new_group :: t.groups
+  failwith "Unimplemented"
 
 let make_friends new_friends t = 
-  t.friends <- new_friends :: t.friends
+  failwith "Unimplemented"
 
 let join_group t group_id  = 
-  t.new_group <- new_group ::  t.groups 
+  failwith "Unimplemented"
 
 
 
