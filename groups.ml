@@ -69,7 +69,7 @@ let to_json t =
   {|, "users": |} ^ json_int_lst t.users ^ 
   {|", "restaurants": |} ^ json_int_lst t.restaurants ^ 
   {|", "survey": |} ^ json_int_lst t.survey_complete ^ 
-  {|, "voting": |} ^ (json_int_lst t.voting_complete) ^ 
+  {|, "voting": |} ^ json_int_lst t.voting_complete ^ 
   {|, "candidates": |} ^ json_int_lst_opt t.candidates ^ 
   {|, "final_choice": |} ^ string_of_int (unoption t.final_choice) ^ "}"
 

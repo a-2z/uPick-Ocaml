@@ -61,20 +61,22 @@ let save state =
   {|, {"users": |} ^ json_dict_lst (users_to_list state.users) ^
   "}"
 
-let add_user t username password name = 
-  failwith "Unimplemented"
+let add_user t id username password name = 
+  t.users <- ref (User.create id username password name) :: t.users
 
 let add_restaurant t new_restaurant = 
   failwith "Unimplemented"
+(*t.restaurants <- ref (Restaurant.create id username password name) :: t.restaurants*)
 
 let add_group t group_name host = 
-  failwith "Unimplemented"
+  t.groups <- ref (Groups.create group_name host) :: t.groups
 
-let make_friends new_friends t = 
-  failwith "Unimplemented"
+let make_friends t user_1 user_2 = 
+  User.add_friend !user_1 !user_2;
+  User.add_friend !user_2 !user_1
 
-let join_group t group_id  = 
-  failwith "Unimplemented"
+let join_group t group_id user_id = 
+  Groups.add_user group_id user_id
 
 
 

@@ -17,12 +17,12 @@ val load : string -> t
 val save : t -> unit 
 
 (**Instantiate a person given a username, password, and name./*)
-val add_user : t -> string -> string -> string -> unit 
+val add_user : t -> int -> string -> string -> string -> unit 
 
 (**Instantiate a person given a username, password, and name./*)
 val add_restaurant : t -> string -> string -> string -> unit 
 
-(**Instantiate a person given a username, password, and name./*)
+(**Instantiate a group given a username and hostname./*)
 val add_group : t -> string -> string -> string -> unit 
 
 val make_friends : t -> User.t ref -> User.t ref -> unit
