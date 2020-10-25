@@ -92,8 +92,8 @@ let rec users_to_list = function
 
 let save state = 
   {|{"groups": |} ^ json_dict_lst (groups_to_list state.groups) ^
-  {|, "restaurants : |} ^ json_dict_lst (rests_to_list state.restaurants) ^ 
-  {|, {"users": |} ^ json_dict_lst (users_to_list state.users) ^
+  {|, "restaurants": |} ^ json_dict_lst (rests_to_list state.restaurants) ^ 
+  {|, "users": |} ^ json_dict_lst (users_to_list state.users) ^
   "}" |> from_string |> to_file !file_name
 
 let get_head_id (id_getter : 'a -> int) list =

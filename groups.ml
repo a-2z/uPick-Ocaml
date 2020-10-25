@@ -40,17 +40,17 @@ let from_json json =
 let to_json t = 
   let unoption optional = 
     match optional with 
-    | None -> 0
-    | Some v -> v in
+    | None -> "null"
+    | Some v -> string_of_int v in
   {|{"group_id": "|} ^ string_of_int t.id ^ 
   {|", "group_name": "|} ^ t.name ^ 
-  {|", "host": |} ^ t.host ^ 
-  {|, "users": |} ^ json_int_lst t.users ^ 
-  {|", "restaurants": |} ^ json_int_lst t.restaurants ^ 
-  {|", "survey": |} ^ json_int_lst t.survey_complete ^ 
+  {|", "host": "|} ^ t.host ^ 
+  {|", "users": |} ^ json_int_lst t.users ^ 
+  {|, "restaurants": |} ^ json_int_lst t.restaurants ^ 
+  {|, "survey": |} ^ json_int_lst t.survey_complete ^ 
   {|, "voting": |} ^ json_int_lst t.voting_complete ^ 
   {|, "candidates": |} ^ json_int_lst_opt t.candidates ^ 
-  {|, "final_choice": |} ^ string_of_int (unoption t.final_choice) ^ "}"
+  {|, "final_choice": |} ^ unoption t.final_choice ^ "}"
 
 let get_id t = t.id
 

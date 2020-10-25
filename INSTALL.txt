@@ -1,0 +1,9 @@
+Upon installation this should include an interface and implementation for a 
+group, user, restaurant. Other scripts are either helpers or include json
+files to test the functionality of our scripts (not all json files have
+been used for testing as of 10-24-20).
+
+In order to use current version make sure to first run "make build" in terminal 
+(in the 3110Project folder) to compile all necessary files. After run 
+"make script" to test any functionality that would involve changing
+information from a json and adding it to a group. 

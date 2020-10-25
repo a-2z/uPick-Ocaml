@@ -29,5 +29,5 @@ let json_int_lst_opt (lst : int list option) =
     | last :: [] -> acc ^ string_of_int last ^ "]"
     | h :: t -> aux t (acc ^ (string_of_int h) ^ ", ") in
   match lst with
-  | None -> ""
+  | None -> "[]"
   | Some v -> aux v "["
