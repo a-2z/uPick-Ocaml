@@ -1,42 +1,48 @@
 ### Starting build.
-# Target: user.mli.depends, tags: { package(ounit2), package(yojson), extension:mli, file:user.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules user.mli > user.mli.depends # cached
-# Target: user.cmi, tags: { package(ounit2), package(yojson), byte, compile, extension:mli, file:user.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o user.cmi user.mli # cached
-# Target: user.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:user.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules user.ml > user.ml.depends # cached
-# Target: user.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o user.cmo user.ml # cached
-# Target: restaurant.mli.depends, tags: { package(ounit2), package(yojson), extension:mli, file:restaurant.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules restaurant.mli > restaurant.mli.depends # cached
-# Target: restaurant.cmi, tags: { package(ounit2), package(yojson), byte, compile, extension:mli, file:restaurant.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o restaurant.cmi restaurant.mli # cached
-# Target: restaurant.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:restaurant.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules restaurant.ml > restaurant.ml.depends # cached
-# Target: json_helpers.mli.depends, tags: { package(ounit2), package(yojson), extension:mli, file:json_helpers.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules json_helpers.mli > json_helpers.mli.depends # cached
-# Target: json_helpers.cmi, tags: { package(ounit2), package(yojson), byte, compile, extension:mli, file:json_helpers.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o json_helpers.cmi json_helpers.mli # cached
-# Target: restaurant.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:restaurant.cmo, file:restaurant.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o restaurant.cmo restaurant.ml # cached
-# Target: groups.mli.depends, tags: { package(ounit2), package(yojson), extension:mli, file:groups.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules groups.mli > groups.mli.depends # cached
-# Target: groups.cmi, tags: { package(ounit2), package(yojson), byte, compile, extension:mli, file:groups.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o groups.cmi groups.mli # cached
-# Target: groups.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:groups.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules groups.ml > groups.ml.depends # cached
-# Target: groups.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:groups.cmo, file:groups.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o groups.cmo groups.ml # cached
-# Target: test.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:test.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules test.ml > test.ml.depends # cached
-# Target: app_state.mli.depends, tags: { package(ounit2), package(yojson), extension:mli, file:app_state.mli, ocaml, ocamldep, quiet, traverse }
+# Target: test.ml.depends, tags: { package(ounit2), package(yojson), debug, extension:ml, file:test.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules test.ml > test.ml.depends
+# Target: app_state.mli.depends, tags: { package(ounit2), package(yojson), debug, extension:mli, file:app_state.mli, ocaml, ocamldep, quiet, traverse }
 ocamlfind ocamldep -package yojson -package ounit2 -modules app_state.mli > app_state.mli.depends # cached
-# Target: app_state.cmi, tags: { package(ounit2), package(yojson), byte, compile, extension:mli, file:app_state.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o app_state.cmi app_state.mli # cached
-# Target: test.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:test.cmo, file:test.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o test.cmo test.ml # cached
-# Target: app_state.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:app_state.ml, ocaml, ocamldep, quiet, traverse }
+# Target: app_state.cmi, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:mli, file:app_state.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o app_state.cmi app_state.mli # cached
+# Target: groups.mli.depends, tags: { package(ounit2), package(yojson), debug, extension:mli, file:groups.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules groups.mli > groups.mli.depends # cached
+# Target: groups.cmi, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:mli, file:groups.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o groups.cmi groups.mli # cached
+# Target: restaurant.mli.depends, tags: { package(ounit2), package(yojson), debug, extension:mli, file:restaurant.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules restaurant.mli > restaurant.mli.depends # cached
+# Target: restaurant.cmi, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:mli, file:restaurant.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o restaurant.cmi restaurant.mli # cached
+# Target: user.mli.depends, tags: { package(ounit2), package(yojson), debug, extension:mli, file:user.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules user.mli > user.mli.depends # cached
+# Target: user.cmi, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:mli, file:user.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o user.cmi user.mli # cached
+# Target: test.cmo, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:cmo, extension:ml, file:test.cmo, file:test.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o test.cmo test.ml
+# Target: app_state.ml.depends, tags: { package(ounit2), package(yojson), debug, extension:ml, file:app_state.ml, ocaml, ocamldep, quiet, traverse }
 ocamlfind ocamldep -package yojson -package ounit2 -modules app_state.ml > app_state.ml.depends # cached
-# Target: app_state.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:app_state.cmo, file:app_state.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o app_state.cmo app_state.ml # cached
+# Target: json_helpers.mli.depends, tags: { package(ounit2), package(yojson), debug, extension:mli, file:json_helpers.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules json_helpers.mli > json_helpers.mli.depends # cached
+# Target: json_helpers.cmi, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:mli, file:json_helpers.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o json_helpers.cmi json_helpers.mli # cached
+# Target: app_state.cmo, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:cmo, extension:ml, file:app_state.cmo, file:app_state.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o app_state.cmo app_state.ml # cached
+# Target: groups.ml.depends, tags: { package(ounit2), package(yojson), debug, extension:ml, file:groups.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules groups.ml > groups.ml.depends # cached
+# Target: groups.cmo, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:cmo, extension:ml, file:groups.cmo, file:groups.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o groups.cmo groups.ml # cached
+# Target: restaurant.ml.depends, tags: { package(ounit2), package(yojson), debug, extension:ml, file:restaurant.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules restaurant.ml > restaurant.ml.depends # cached
+# Target: restaurant.cmo, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:cmo, extension:ml, file:restaurant.cmo, file:restaurant.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o restaurant.cmo restaurant.ml # cached
+# Target: user.ml.depends, tags: { package(ounit2), package(yojson), debug, extension:ml, file:user.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules user.ml > user.ml.depends # cached
+# Target: user.cmo, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o user.cmo user.ml # cached
+# Target: json_helpers.ml.depends, tags: { package(ounit2), package(yojson), debug, extension:ml, file:json_helpers.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules json_helpers.ml > json_helpers.ml.depends # cached
+# Target: json_helpers.cmo, tags: { package(ounit2), package(yojson), byte, compile, debug, extension:cmo, extension:ml, file:json_helpers.cmo, file:json_helpers.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -g -package yojson -package ounit2 -o json_helpers.cmo json_helpers.ml # cached
+# Target: test.byte, tags: { package(ounit2), package(yojson), byte, debug, dont_link_with, extension:byte, file:test.byte, link, ocaml, program, quiet, traverse }
+ocamlfind ocamlc -linkpkg -g -package yojson -package ounit2 json_helpers.cmo groups.cmo restaurant.cmo user.cmo app_state.cmo test.cmo -o test.byte
 # Compilation successful.

@@ -1,0 +1,30 @@
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Runner: sequential
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Chooser: simple
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration suite_name = "test suite for uPick"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration cache_filename = "/Users/reetuparikh/Desktop/3110project/3110Project/_build/oUnit-$(suite_name).cache"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration run_gc_full_major = "true"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration display = "true"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration results_style_1_X = "false"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration testdata_dir = "none"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration health_check_interval = "1."
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration verbose = "false"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration chooser = "simple"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration output_html_dir = "none"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration processes_kill_period = "5."
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration runner = "sequential"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration shards = "2"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration processes_grace_period = "5."
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration log_encoding = "utf-8"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration output_junit_file = "none"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration ci = "false"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Configuration output_file = "/Users/reetuparikh/Desktop/3110project/3110Project/_build/oUnit-$(suite_name)-$(shard_id).log"
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: ==============
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Summary:
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Ran: 0 tests in: 0.00 seconds.
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Cases: 0.
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Tried: 0.
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Errors: 0.
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Failures: 0.
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Skip: 0.
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Todo: 0.
+2020-10-25T02:54:38+00:00 Reetus-MacBook-Pro.local#00 I: Timeout: 0.

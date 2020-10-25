@@ -34,35 +34,56 @@ let cmp_set_like_lists lst1 lst2 =
   &&
   uniq1 = uniq2
 
+
+let instance = load "state.json" 
+
+(* let add_restaurant_test  
+    (t : App_state.t) 
+    (name : string) 
+    (loc_x : float)
+    (loc_y : float)
+    (cuisine_type : string)
+    (rating : float)
+    (allergens : string list)
+    (price : int)
+    (wait_time : int)
+    (expected_output : unit) : test = 
+   name >:: (fun _ ->
+      assert_equal expected_output (add_restaurant t name loc_x loc_y cuisine_type 
+                                      rating allergens price wait_time))
+*)
 let add_restaurant_tests = 
   [ 
-    (* "test restaurant1" 
-       >:: (fun -> assert_equal "taco bell" (add_restaurant sample_t)); *)
+    (* add_restaurant instance 
+       "taco bell" 30.12 44.15 "fast food" 4.67 ["eggs"; "dairy"] 15 30;
+       add_restaurant instance 
+       "mcDonalds" 33.12 92.15 "fast food" 4.67 ["dairy"] 5 20;
+       add_restaurant instance  
+       "pizza hut" 30.12 44.15 "fast food" 4.67 ["eggs"; "dairy"] 15 30;
+       add_restaurant instance 
+       "Outback Steakhouse" 30.12 44.15 "fast food" 4.67 ["eggs"; "dairy"] 15 30;
+       save instance; *)
   ]
+
+(* let add_user_test
+    (t : User.t)
+    (username : string)
+    (password : string)
+    (name : string)
+    (expected_output : unit) : test = 
+   name >:: (fun _ ->  *)
 
 let add_user_test = 
-  [
-    (* "test user added" 
-       >:: (fun -> assert_equal "reetuparikh" (add_user sample_t)); *)
-  ]
+  []
 
 let make_friends_test = 
-  [
-    (* "Test if friends" 
-       >:: (fun -> assert_equal (True) (make_friends sample_t)); *)
-  ]
+  []
 
 let make_group_test =
-  [
-    (* "test if new group created"
-       >:: (fun -> assert_equal (True) (make_group sample_t)); *)
-  ]
+  []
 
 let join_group_test = 
-  [
-    (* "test if joined group"
-       >:: (fun -> assert_equal (True) (join_group sample_t)); *)
-  ]
+  []
 
 let suite = 
   "test suite for uPick" >::: List.flatten [
@@ -74,3 +95,4 @@ let suite =
   ]
 
 let _ = run_test_tt_main suite
+

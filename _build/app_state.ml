@@ -37,8 +37,18 @@ let load file =
     users = state |> member "users" |> to_list |> load_users;
   }
 
-let compare_user x y =
-  compare (User.get_username x) (User.get_username y)
+let user_pred x y = (User.get_username !x = User.get_username !y)
+
+let rest_pred x y = (Restaurant.get_name !x = Restaurant.get_name !y) && 
+                    (Restaurant.get_x !x = Restaurant.get_x !y) && 
+                    (Restaurant.get_y !x = Restaurant.get_y !y)
+
+let group_pred x y = ((Groups.get_name !x = Groups.get_name !y) && 
+                      (Groups.get_host !x = Groups.get_host !y)) 
+
+let compare_nosort pred x y = 
+  if pred x y then 0 else ~-1
+
 
 let get_restaurant t name loc_x loc_y =  
   let rec aux = function
@@ -94,21 +104,22 @@ let get_head_id (id_getter : 'a -> int) list =
 let add_user t username password name = 
   let deref_user = List.map (fun x -> !x) t.users in
   let top_id = 1 + (get_head_id User.get_id deref_user) in 
-  t.users <- ref (User.create top_id username password name) :: t.users
+  t.users <- List.sort_uniq (compare_nosort user_pred) 
+      (ref (User.create top_id username password name) :: t.users)
 
 let add_restaurant 
     t name loc_x loc_y cuisine_type rating allergens price wait_time = 
   let deref_rest = List.map (fun x -> !x) t.restaurants in
   let top_id = 1 + (get_head_id Restaurant.get_id deref_rest) in 
-  t.restaurants <- 
-    ref (Restaurant.create top_id name loc_x loc_y cuisine_type 
-           rating allergens price wait_time) :: t.restaurants
+  t.restaurants <- List.sort_uniq (compare_nosort rest_pred)
+      (ref (Restaurant.create top_id name loc_x loc_y cuisine_type 
+              rating allergens price wait_time) :: t.restaurants)
 
 let add_group t group_name host = 
   let deref_group = List.map (fun x -> !x) t.groups in
   let top_id = 1 + (get_head_id Groups.get_id deref_group) in 
-  t.groups <- 
-    ref(Groups.create top_id group_name host) :: t.groups
+  t.groups <- List.sort_uniq (compare_nosort group_pred)
+      (ref(Groups.create top_id group_name host) :: t.groups)
 
 let find_user t id_number = 
   let rec helper id = function 
@@ -123,16 +134,20 @@ let find_group t id_number =
   helper id_number (List.map (fun x -> !x) t.groups)
 
 let make_friends t sender recipient = 
-  let sender_t = Option.get (find_user t sender) in 
-  let recipient_t = Option.get (find_user t recipient) in 
-  User.add_friend sender_t recipient_t;
-  User.add_friend recipient_t sender_t
+  try 
+    let sender_t = Option.get (find_user t sender) in 
+    let recipient_t = Option.get (find_user t recipient) in
+    User.add_friend sender_t recipient_t;
+    User.add_friend recipient_t sender_t;
+  with Invalid_argument _ -> ()
 
-let join_group t group_id user_id = 
-  (* let group_t = Option.get (find_user t group_id) in
-     Groups.add_user group_id user_id *)
-  ()
-
+let join_group t group_id user_id =
+  try 
+    let usr = Option.get (find_user t user_id) in
+    let grp = Option.get (find_group t group_id) in
+    User.update_groups usr group_id;
+    Groups.add_user grp user_id;
+  with Invalid_argument _ -> ()
 
 
 
