@@ -1,4 +1,5 @@
 open Yojson.Basic.Util
+open Json_helpers
 
 type t = {
   id : int;
@@ -11,16 +12,6 @@ type t = {
   avg_price : int;
   avg_wait : int;
 }
-
-(**Returns a string representing [lst] in a JSON format.
-   Note: the return is not a valid JSON itself.*)
-let json_string_lst (lst : string list) = 
-  let rec aux in_lst acc = 
-    match in_lst with 
-    | [] -> acc ^ "]"
-    | last :: [] -> acc ^ "\"" ^ last ^ "\"" ^ "]"
-    | h :: t -> aux t (acc ^ "\"" ^ h ^ "\"" ^ ", ") in
-  aux lst "["
 
 let from_json json = 
   {
@@ -45,6 +36,9 @@ let to_json t =
   string_of_int t.avg_price ^ {|, "avg_wait": |} ^ string_of_int t.avg_wait ^
   "}"
 
+let get_id t = 
+  t.id
+
 let get_name t = 
   t.name 
 
@@ -66,9 +60,10 @@ let get_rating t =
 let get_price t =
   t.avg_price
 
-let create name loc_x loc_y cuisine_type rating allergens price wait_time =
+let create 
+    res_id name loc_x loc_y cuisine_type rating allergens price wait_time =
   {
-    id = 0;
+    id = res_id;
     name = name;
     location_x = loc_x;
     location_y = loc_y;

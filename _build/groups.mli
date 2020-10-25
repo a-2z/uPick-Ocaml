@@ -18,7 +18,12 @@ val to_json : t -> string
 
 (** The following are all get functions for data stored in type t, be sure to 
     implement them consistently based on the implementation of t *)
+
+val get_id : t -> int
+
 val get_name : t -> string
+
+val get_host : t -> string
 
 val get_users : t -> int list
 
@@ -35,4 +40,4 @@ val voting_done : t -> bool
 
 val add_user : t -> int -> unit 
 
-val create : string -> string -> t
+val create : int -> string -> string -> t

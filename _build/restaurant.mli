@@ -13,6 +13,8 @@ val from_json : Yojson.Basic.t -> t
 (** [to_json restaurant] is the string representing the restaurant*)
 val to_json : t -> string
 
+val get_id : t -> int
+
 val get_name : t -> string 
 
 val get_x : t -> float 
@@ -28,6 +30,6 @@ val get_rating : t -> float
 val get_price : t -> int
 
 (** [create name loc_x loc_y cuisine_type rating allergens price wait_time]
-returns a restaurant given its attributes*)
-val create : string -> float -> float -> string -> float -> string list -> 
-int -> int -> t
+    returns a restaurant given its attributes*)
+val create : int -> string -> float -> float -> string -> float -> string list -> 
+  int -> int -> t

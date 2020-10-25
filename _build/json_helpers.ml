@@ -1,9 +1,9 @@
-module type Json_helper = sig 
+module type Json_helpers = sig 
   val json_string_lst : string list -> string
   val json_dict_lst : string list -> string
 end
 
-module Json_helper = struct  
+module Json_helpers = struct  
   (**Returns a string representing [lst] in a JSON format.
      Note: the return is not a valid JSON itself.*)
   let json_string_lst (lst : string list) = 

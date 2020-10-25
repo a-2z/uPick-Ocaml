@@ -12,10 +12,6 @@ type t = {
   mutable users : User.t ref list;
 }
 
-type group_id = string
-type res_id = string
-type user_id = string
-
 let file_name = ref "" 
 
 (**[load_users group_list] is a list of [Groups.t ref].
@@ -41,6 +37,35 @@ let load file =
     users = state |> member "users" |> to_list |> load_users;
   }
 
+let compare_user x y =
+  compare (User.get_username x) (User.get_username y)
+
+let get_restaurant t name loc_x loc_y =  
+  let rec aux = function
+    | [] -> None 
+    | hd :: tl -> begin 
+        if (Restaurant.get_name hd == name) && (Restaurant.get_x hd == loc_x) && 
+           (Restaurant.get_y hd == loc_y) then Some (Restaurant.get_id hd)
+        else aux tl end in 
+  aux (List.map (fun x -> !x) t.restaurants)
+
+let get_group t name host = 
+  let rec aux = function
+    | [] -> None
+    | hd :: tl ->  begin
+        if (Groups.get_name hd == name) && (Groups.get_host hd == host)  
+        then Some (Groups.get_id hd)
+        else aux tl end in
+  aux (List.map (fun x -> !x) t.groups)
+
+let get_user t username = 
+  let rec aux = function
+    | [] -> None 
+    | hd :: tl -> begin 
+        if User.get_username hd == username then Some (User.get_id hd)
+        else aux tl end in 
+  aux (List.map (fun x -> !x) t.users)
+
 (**[groups_to_list group_lst] converts a Groups.t list to a list of strings
    representing the groups in a JSON format.*)
 let rec groups_to_list = function 
@@ -59,22 +84,134 @@ let save state =
   {|{"groups": |} ^ json_dict_lst (groups_to_list state.groups) ^
   {|, "restaurants : |} ^ json_dict_lst (rests_to_list state.restaurants) ^ 
   {|, {"users": |} ^ json_dict_lst (users_to_list state.users) ^
-  "}"
+  "}" |> from_string |> to_file !file_name
+
+let get_head_id (id_getter : 'a -> int) list =
+  match list with
+  | [] -> -1
+  | h :: t -> id_getter h
 
 let add_user t username password name = 
-  failwith "Unimplemented"
+  let deref_user = List.map (fun x -> !x) t.users in
+  let top_id = 1 + (get_head_id User.get_id deref_user) in 
+  t.users <- ref (User.create top_id username password name) :: t.users
 
-let add_restaurant t new_restaurant = 
-  failwith "Unimplemented"
+let add_restaurant 
+    t name loc_x loc_y cuisine_type rating allergens price wait_time = 
+  let deref_rest = List.map (fun x -> !x) t.restaurants in
+  let top_id = 1 + (get_head_id Restaurant.get_id deref_rest) in 
+  t.restaurants <- 
+    ref (Restaurant.create top_id name loc_x loc_y cuisine_type 
+           rating allergens price wait_time) :: t.restaurants
 
 let add_group t group_name host = 
-  failwith "Unimplemented"
+  let deref_group = List.map (fun x -> !x) t.groups in
+  let top_id = 1 + (get_head_id Groups.get_id deref_group) in 
+  t.groups <- 
+    ref(Groups.create top_id group_name host) :: t.groups
 
-let make_friends new_friends t = 
-  failwith "Unimplemented"
+let find_user t id_number = 
+  let rec helper id = function 
+    | [] -> None
+    | h :: t -> if User.get_id h = id then Some h else helper id t in
+  helper id_number (List.map (fun x -> !x) t.users)
 
-let join_group t group_id  = 
-  failwith "Unimplemented"
+let find_group t id_number = 
+  let rec helper id = function 
+    | [] -> None
+    | h :: t -> if Groups.get_id h = id then Some h else helper id t in 
+  helper id_number (List.map (fun x -> !x) t.groups)
+
+let make_friends t sender recipient = 
+  let sender_t = Option.get (find_user t sender) in 
+  let recipient_t = Option.get (find_user t recipient) in 
+  User.add_friend sender_t recipient_t;
+  User.add_friend recipient_t sender_t
+
+let join_group t group_id user_id = 
+  (* let group_t = Option.get (find_user t group_id) in
+     Groups.add_user group_id user_id *)
+  ()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

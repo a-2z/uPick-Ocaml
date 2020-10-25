@@ -1,4 +1,5 @@
 open Yojson.Basic.Util
+open Json_helpers
 
 exception NoVotes
 
@@ -36,28 +37,6 @@ let from_json json =
     final_choice = json |> member "final_choice" |> to_int_option
   }
 
-(**Note: the return is not a valid JSON itself. Copied from user.ml*)
-let json_int_lst (lst : int list) = 
-  let rec aux in_lst acc = 
-    match in_lst with 
-    | [] -> acc ^ "]"
-    | last :: [] -> acc ^ string_of_int last ^ "]"
-    | h :: t -> aux t (acc ^ (string_of_int h) ^ ", ") in
-  aux lst "["
-
-(**Similar helper function but for a int list option, not sure if this can
-   be combined in any way with function above to save code since functions are 
-   two different types. *)
-let json_int_lst_opt (lst : int list option) = 
-  let rec aux in_lst acc = 
-    match in_lst with 
-    | [] -> acc ^ "]"
-    | last :: [] -> acc ^ string_of_int last ^ "]"
-    | h :: t -> aux t (acc ^ (string_of_int h) ^ ", ") in
-  match lst with
-  | None -> ""
-  | Some v -> aux v "["
-
 let to_json t = 
   let unoption optional = 
     match optional with 
@@ -73,7 +52,11 @@ let to_json t =
   {|, "candidates": |} ^ json_int_lst_opt t.candidates ^ 
   {|, "final_choice": |} ^ string_of_int (unoption t.final_choice) ^ "}"
 
+let get_id t = t.id
+
 let get_name t = t.name
+
+let get_host t = t.host
 
 let get_users t = t.users
 
@@ -87,13 +70,13 @@ let surveys_done t =
 let voting_done t = 
   List.length t.voting_complete = List.length t.users
 
-let add_user t user= 
-  t.users <- t.users @ [user]
+let add_user t user = 
+  t.users <- user :: t.users
 
 (*We want a function to create a restaurant in group.ml?*)
-let create name host = 
+let create grp_id name host = 
   {
-    id = 0;
+    id = grp_id;
     name = name;
     host = host;
     users = [];

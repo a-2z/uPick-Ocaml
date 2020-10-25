@@ -13,6 +13,10 @@ ocamlfind ocamldep -package yojson -package ounit2 -modules restaurant.mli > res
 ocamlfind ocamlc -c -package yojson -package ounit2 -o restaurant.cmi restaurant.mli # cached
 # Target: restaurant.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:restaurant.ml, ocaml, ocamldep, quiet, traverse }
 ocamlfind ocamldep -package yojson -package ounit2 -modules restaurant.ml > restaurant.ml.depends # cached
+# Target: json_helpers.mli.depends, tags: { package(ounit2), package(yojson), extension:mli, file:json_helpers.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -modules json_helpers.mli > json_helpers.mli.depends # cached
+# Target: json_helpers.cmi, tags: { package(ounit2), package(yojson), byte, compile, extension:mli, file:json_helpers.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -o json_helpers.cmi json_helpers.mli # cached
 # Target: restaurant.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:restaurant.cmo, file:restaurant.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package yojson -package ounit2 -o restaurant.cmo restaurant.ml # cached
 # Target: groups.mli.depends, tags: { package(ounit2), package(yojson), extension:mli, file:groups.mli, ocaml, ocamldep, quiet, traverse }
@@ -32,17 +36,7 @@ ocamlfind ocamlc -c -package yojson -package ounit2 -o app_state.cmi app_state.m
 # Target: test.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:test.cmo, file:test.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package yojson -package ounit2 -o test.cmo test.ml # cached
 # Target: app_state.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:app_state.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules app_state.ml > app_state.ml.depends
-# Target: json_helpers.ml.depends, tags: { package(ounit2), package(yojson), extension:ml, file:json_helpers.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -modules json_helpers.ml > json_helpers.ml.depends # cached
-# Target: json_helpers.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:json_helpers.cmo, file:json_helpers.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o json_helpers.cmo json_helpers.ml # cached
+ocamlfind ocamldep -package yojson -package ounit2 -modules app_state.ml > app_state.ml.depends # cached
 # Target: app_state.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:app_state.cmo, file:app_state.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -o app_state.cmo app_state.ml
-+ ocamlfind ocamlc -c -package yojson -package ounit2 -o app_state.cmo app_state.ml
-File "app_state.ml", line 59, characters 20-33:
-59 |   {|{"groups": |} ^ json_dict_lst (groups_to_list state.groups) ^
-                         ^^^^^^^^^^^^^
-Error: Unbound value json_dict_lst
-Command exited with code 2.
-# Compilation unsuccessful.
+ocamlfind ocamlc -c -package yojson -package ounit2 -o app_state.cmo app_state.ml # cached
+# Compilation successful.

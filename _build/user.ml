@@ -71,8 +71,8 @@ let to_json user =
 (* "user: {id: 1}" ^ (string_of_int user.id) ^ "}" *)
 (*Instantiate a user, 
   added a id variable, pretty sure we need that as an input? -Zach*)
-let create user_id user pass name = {
-  id = user_id; 
+let create id_user user pass name = {
+  id = id_user; 
   username = user;
   password = pass;
   name = name;
@@ -92,7 +92,11 @@ let is_friend other_t t =
 
 (* Does the order for these lists matter? I would change to prepending function
    to make it constant time efficiency. *)
-let add_friend other_t t = t.friends <- other_t.id :: t.friends
+let add_friend other_t t = 
+  if List.mem other_t.id t.friends 
+  then t.friends <- other_t.id :: t.friends 
+  else ()
+
 
 (* Based on interface type definitions for other functions like add_friend 
    I am guessing that we would want this to in some way take a restaurant in as
@@ -111,5 +115,5 @@ let change_restrictions restrictions t = t.restrictions <- restrictions
    Specification says it should go to end of the list, However I would change it
    in the same way I did for add_friend and add_visited if order does not matter
    .*)
-let update_groups t group = t.groups <- t.groups @ [group]
+let update_groups t group = t.groups <- group :: t.groups
 
