@@ -1,0 +1,12 @@
+### Starting build.
+# Target: graphqltest.ml.depends, tags: { package(graphql), extension:ml, file:graphqltest.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package graphql -modules graphqltest.ml > graphqltest.ml.depends
+# Target: graphqltest.cmo, tags: { package(graphql), byte, compile, extension:cmo, extension:ml, file:graphqltest.cmo, file:graphqltest.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package graphql -o graphqltest.cmo graphqltest.ml
++ ocamlfind ocamlc -c -package graphql -o graphqltest.cmo graphqltest.ml
+File "graphqltest.ml", line 1, characters 5-14:
+1 | open Lwt.Infix
+         ^^^^^^^^^
+Error: Unbound module Lwt
+Command exited with code 2.
+# Compilation unsuccessful.
