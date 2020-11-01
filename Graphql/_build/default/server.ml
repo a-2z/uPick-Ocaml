@@ -48,28 +48,29 @@ let user = Schema.(obj "user"
                              ~typ:(non_null string)
                              ~args:Arg.[]
                              ~resolve:(fun _ p -> p.password);
-
                            field "friends"
                              ~typ:(list(non_null int))
                              ~args:Arg.[]
                              ~resolve:(fun _ p -> p.friends);
-
                            field "restrictions"
                              ~typ:(list(non_null int))
                              ~args:Arg.[]
                              ~resolve:(fun _ p -> p.restrictions);
-
                            field "visited"
                              ~typ:(list(non_null int))
                              ~args:Arg.[]
-                             ~resolve:(fun _ p -> p.visited);
-
+                             ~resolve:(fun _ p -> p.visited); 
                            field "groups"
                              ~typ:(list(non_null int))
                              ~args:Arg.[]
                              ~resolve:(fun _ p -> p.groups);
-                         ])
-                  )
+                           (* io_field "print_input" 
+                             ~typ:(non_null int)
+                             ~args:[]
+                             ~resolve: (fun _ p -> (p.id, Ok p.id));
+                           Lwt.return (Ok input_int);
+                         ]) *)
+                     ]))
 
 let schema = Schema.(schema [
     field "users"

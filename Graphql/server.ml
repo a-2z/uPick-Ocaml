@@ -70,7 +70,7 @@ let user = Schema.(obj "user"
                              ~resolve: (fun _ p -> (p.id, Ok p.id));
                            Lwt.return (Ok input_int);
                          ]) *)
-                     ])
+                     ]))
 
 let schema = Schema.(schema [
     field "users"
