@@ -1,5 +1,143 @@
 {
-  "groups": [],
-  "restaurants": [],
-  "users": []
+	"groups": [
+		{
+			"group_id": "3",
+			"group_name": "christmas party",
+			"host": "zach123",
+			"users": [],
+			"restaurants": [],
+			"survey": [],
+			"voting": [],
+			"candidates": [],
+			"final_choice": null
+		},
+		{
+			"group_id": "2",
+			"group_name": "party",
+			"host": "reetu123",
+			"users": [],
+			"restaurants": [],
+			"survey": [],
+			"voting": [],
+			"candidates": [],
+			"final_choice": null
+		},
+		{
+			"group_id": "1",
+			"group_name": "pizza party",
+			"host": "andrew12",
+			"users": [],
+			"restaurants": [],
+			"survey": [],
+			"voting": [],
+			"candidates": [],
+			"final_choice": null
+		},
+		{
+			"group_id": "0",
+			"group_name": "birthday party",
+			"host": "andrew123",
+			"users": [],
+			"restaurants": [],
+			"survey": [],
+			"voting": [],
+			"candidates": [],
+			"final_choice": null
+		}
+	],
+	"restaurants": [
+		{
+			"id": "3",
+			"name": "outback steakhouse",
+			"location_x": 31.12,
+			"location_y": 49.15,
+			"food_type": "fast food",
+			"rating": 4.7,
+			"allergies": [
+				"eggs",
+				"dairy"
+			],
+			"avg_price": 6,
+			"avg_wait": 2
+		},
+		{
+			"id": "2",
+			"name": "pizza hut",
+			"location_x": 98.12,
+			"location_y": 94.15000000000001,
+			"food_type": "fast food",
+			"rating": 4.17,
+			"allergies": [
+				"eggs",
+				"dairy"
+			],
+			"avg_price": 3,
+			"avg_wait": 10
+		},
+		{
+			"id": "1",
+			"name": "mcDonalds",
+			"location_x": 33.12,
+			"location_y": 92.15000000000001,
+			"food_type": "fast food",
+			"rating": 4.27,
+			"allergies": [
+				"dairy"
+			],
+			"avg_price": 5,
+			"avg_wait": 20
+		},
+		{
+			"id": "0",
+			"name": "taco bell",
+			"location_x": 30.12,
+			"location_y": 44.15,
+			"food_type": "fast food",
+			"rating": 4.67,
+			"allergies": [
+				"eggs",
+				"dairy"
+			],
+			"avg_price": 15,
+			"avg_wait": 30
+		}
+	],
+	"users": [
+		{
+			"user_id": 1,
+			"name": "Zach",
+			"username": "zach123",
+			"password": "xxzach1234xx",
+			"friend_ids": [],
+			"restriction_ids": [],
+			"visited": []
+		},
+		{
+			"user_id": 1,
+			"name": "Reetu",
+			"username": "reetu123",
+			"password": "xxreetu1234xx",
+			"friend_ids": [],
+			"restriction_ids": [],
+			"visited": []
+		},
+		{
+			"user_id": 1,
+			"name": "Andrew",
+			"username": "andrew12",
+			"password": "xxandrew1234xx",
+			"friend_ids": [],
+			"restriction_ids": [],
+			"visited": []
+		},
+		{
+			"user_id": 1,
+			"name": "Andrew",
+			"username": "andrew123",
+			"password": "xxandrew1234xx",
+			"friend_ids": [],
+			"restriction_ids": [],
+			"visited": []
+		}
+	]
 }

@@ -1,0 +1,34 @@
+{
+	"users": [
+		{
+			"user_id": 1,
+			"name": "Zach",
+			"username": "zach123",
+			"password": "xxzach1234xx",
+			"friend_ids": [],
+			"restriction_ids": [],
+			"visited": [],
+			"groups": []
+		},
+		{
+			"user_id": 1,
+			"name": "Reetu",
+			"username": "reetu123",
+			"password": "xxreetu1234xx",
+			"friend_ids": [],
+			"restriction_ids": [],
+			"visited": [],
+			"groups": []
+		},
+		{
+			"user_id": 1,
+			"name": "Andrew",
+			"username": "andrew12",
+			"password": "xxandrew1234xx",
+			"friend_ids": [],
+			"restriction_ids": [],
+			"visited": [],
+			"groups": []
+		}
+	]
+}
