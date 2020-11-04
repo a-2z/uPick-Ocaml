@@ -18,7 +18,8 @@ let script () =
   add_group instance "pizza party" "andrew12";
   add_group instance "party" "reetu123";
   add_group instance "christmas party" "zach123";
-
+  make_friends instance (get_user instance "andrew123") 
+    (get_user instance "andrew12");
   (*Save the file*)
   save instance
 

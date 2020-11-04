@@ -27,8 +27,8 @@ val add_restaurant : t -> string -> float -> float -> string -> float ->
 (**Instantiate a group given a username and hostname./*)
 val add_group : t -> string -> string -> unit 
 
-val make_friends : t -> int -> int -> unit
+val make_friends : t -> int option -> int option -> unit
 
 (**Returns group list user about to be added *)
-val join_group : t -> int -> int -> unit
+val join_group : t -> int -> int option -> unit
 

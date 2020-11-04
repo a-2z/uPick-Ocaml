@@ -48,5 +48,5 @@ ocamlfind ocamldep -package yojson -package ounit2 -modules user.ml > user.ml.de
 # Target: user.cmo, tags: { package(ounit2), package(yojson), byte, compile, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package yojson -package ounit2 -o user.cmo user.ml # cached
 # Target: script.byte, tags: { package(ounit2), package(yojson), byte, dont_link_with, extension:byte, file:script.byte, link, ocaml, program, quiet, traverse }
-ocamlfind ocamlc -linkpkg -package yojson -package ounit2 json_helpers.cmo groups.cmo restaurant.cmo user.cmo app_state.cmo script.cmo -o script.byte # cached
+ocamlfind ocamlc -linkpkg -package yojson -package ounit2 json_helpers.cmo groups.cmo restaurant.cmo user.cmo app_state.cmo script.cmo -o script.byte
 # Compilation successful.

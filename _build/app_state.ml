@@ -125,7 +125,7 @@ let find_user t id_number =
   let rec helper id = function 
     | [] -> None
     | h :: t -> if User.get_id h = id then Some h else helper id t in
-  helper id_number (List.map (fun x -> !x) t.users)
+  helper (Option.get id_number) (List.map (fun x -> !x) t.users)
 
 let find_group t id_number = 
   let rec helper id = function 
@@ -146,14 +146,8 @@ let join_group t group_id user_id =
     let usr = Option.get (find_user t user_id) in
     let grp = Option.get (find_group t group_id) in
     User.update_groups usr group_id;
-    Groups.add_user grp user_id;
+    Groups.add_user grp (Option.get user_id);
   with Invalid_argument _ -> ()
-
-
-
-
-
-
 
 
 
