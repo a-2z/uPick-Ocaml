@@ -32,6 +32,14 @@ let generate_users json =
 (*Empty list as a placeholder *)
 let users = generate_users (from_file "users.json")
 
+let mutation_field name ~args ~typ ~resolve =
+  Schema.field name ~args ~typ ~resolve:(fun ctx ->
+      if ctx.readOnly then
+        failwith "readOnly"
+      else
+        resolve ctx
+    )
+
 let user = Schema.(obj "user"
                      ~doc:"A user in the system"
                      ~fields:(fun _ -> [
@@ -64,13 +72,14 @@ let user = Schema.(obj "user"
                              ~typ:(list(non_null int))
                              ~args:Arg.[]
                              ~resolve:(fun _ p -> p.groups);
-                           (* io_field "print_input" 
-                             ~typ:(non_null int)
-                             ~args:[]
-                             ~resolve: (fun _ p -> (p.id, Ok p.id));
-                           Lwt.return (Ok input_int);
-                         ]) *)
-                     ]))
+                         ]))
+    match Graphql_parser.parse "{ users(limit: $x) { name } }" with
+    | Ok query ->
+      let json_variables = Yojson.Basic.(from_string "{\"x\": 42}" |> Util.to_assoc) in
+      let variables = (json_variables :> (string * Graphql_parser.const_value) list)
+          Graphql.Schema.execute schema ctx ~variables query
+    | Error err ->
+      failwith err
 
 let schema = Schema.(schema [
     field "users"

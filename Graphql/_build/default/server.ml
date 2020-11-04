@@ -39,7 +39,8 @@ let user = Schema.(obj "user"
                              ~doc:"Unique user identifier"
                              ~typ:(non_null int)
                              ~args:Arg.[]
-                             ~resolve:(fun _ p -> p.id);
+                             ~resolve:(fun _ p -> 
+                                 print_endline "2"; p.id);
                            field "username"
                              ~typ:(non_null string)
                              ~args:Arg.[]
@@ -64,13 +65,7 @@ let user = Schema.(obj "user"
                              ~typ:(list(non_null int))
                              ~args:Arg.[]
                              ~resolve:(fun _ p -> p.groups);
-                           (* io_field "print_input" 
-                             ~typ:(non_null int)
-                             ~args:[]
-                             ~resolve: (fun _ p -> (p.id, Ok p.id));
-                           Lwt.return (Ok input_int);
-                         ]) *)
-                     ]))
+                         ]))
 
 let schema = Schema.(schema [
     field "users"

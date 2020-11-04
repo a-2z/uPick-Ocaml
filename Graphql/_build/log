@@ -1,10 +1,10 @@
 # dune exec ./server.exe
 # OCAMLPARAM: unset
 # Workspace root: /mnt/c/Users/drewm/desktop/3110/Graphql
-$ /usr/bin/nproc > /tmp/dune12b2c4.output 2> /dev/null
+$ /usr/bin/nproc > /tmp/dune9f687e.output 2> /dev/null
 # Auto-detected concurrency: 8
 # disable binary cache
-$ /home/andrew/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /tmp/dune86ac86.output
+$ /home/andrew/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /tmp/dune7d6cb8.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
