@@ -1,9 +1,9 @@
-MODULES=script user restaurant groups test app_state
+MODULES=script user restaurant groups test app_state db main
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
 TEST=test.byte
-SCRIPT=script.byte
+SCRIPT=main.byte
 OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build

@@ -110,8 +110,3 @@ S /Users/zacharytegtmeier/.opam/cs3110-2020fa/lib/uri/services
 S /Users/zacharytegtmeier/.opam/cs3110-2020fa/lib/yojson
 S .
 FLG -open Dune__exe -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -9 -principal
-
-B _build
-PKG ounit2
-PKG yojson
-PKG sqlite3

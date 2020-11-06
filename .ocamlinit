@@ -1,7 +1,9 @@
 #require "ounit2";;
 #require "yojson";;
+#require "sqlite3";;
 #directory "_build";;
 #load "user.cmo";;
+#load "db.cmo";;
 #load "restaurant.cmo";;
 #load "groups.cmo";;
 #load "app_state.cmo";;
