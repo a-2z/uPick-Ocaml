@@ -1,0 +1,20 @@
+(env
+  (dev
+    (flags (:standard -w -9 -principal))
+    (c_flags (:standard -Wall -pedantic -Wextra -Wunused)))
+  (release (ocamlopt_flags (:standard -O3))))
+ 
+(executable
+ (name main)
+ (libraries httpaf-lwt-unix))
+
+(alias
+ (name main)
+ (deps auth_middleware.exe exit_hook_example.exe hello_world_basic.exe
+   hello_world_html.exe hello_world.exe middleware_ua.exe read_json_body.exe
+   sample.exe static_serve_override.exe uppercase_middleware.exe
+   hello_world_log.exe))
+
+  (alias
+ (name DEFAULT)
+ (deps main.exe))

@@ -1,5 +1,0 @@
-"Resource: /Users/reetuparikh/Desktop/graphql/graphqltest.mli": "\212\029\140\217\143\000\178\004\233\128\t\152\236\248B~"
-"Resource: /Users/reetuparikh/Desktop/graphql/graphqltest.ml": "\020K\184w\238\200\154&\226!\170\158\222\131i\222"
-"Rule: ocaml: mli -> cmi (%=graphqltest )": "\187\211^\241\198\203\152Y\029%\241\150\155n \251"
-"Rule: ocaml dependencies ml (%=graphqltest )": "r0\1371\154\134\162}\202\003\234\023b\237\244\212"
-"Rule: ocaml dependencies mli (%=graphqltest )": "(\246\142s\133\192_\159\199\224\180\191I+\011\021"

@@ -1,1 +1,1 @@
-main.ml: App_state Db
+main.ml: App App_state Db Ezjsonm List Lwt Lwt_unix Opium Printf Sqlite3

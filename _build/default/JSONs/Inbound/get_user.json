@@ -1,0 +1,46 @@
+{
+	"success": {
+		"success": true,
+		"data": {
+			"user_id": 5,
+			"name": "Alice",
+			"username": "name",
+			"password": "pass",
+			"friend_ids": [
+				1,
+				3,
+				6
+			],
+			"restriction_ids": [
+				2,
+				5,
+				8
+			],
+			"visited": [
+				2,
+				5,
+				7
+			],
+			"groups": [
+				2,
+				5,
+				7
+			]
+		}
+	},
+	"failure": {
+		"success": {
+			"success": false,
+			"data": {
+				"user_id": null,
+				"name": null,
+				"username": null,
+				"password": null,
+				"friend_ids": null,
+				"restriction_ids": null,
+				"visited": null,
+				"groups": null
+			}
+		}
+	}
+}

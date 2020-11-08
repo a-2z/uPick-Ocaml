@@ -1,3 +1,0 @@
-#require "graphql";;
-#directory "_build";;
-#load "graphqltest.cmo";;

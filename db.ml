@@ -1,4 +1,5 @@
 open Sqlite3
+open Yojson
 
 let db = db_open "test.db"
 

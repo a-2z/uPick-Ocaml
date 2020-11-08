@@ -1,0 +1,1 @@
+val create_contacts_table: unit -> unit

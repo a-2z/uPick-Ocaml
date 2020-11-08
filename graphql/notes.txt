@@ -1,3 +1,0 @@
-./_build/default/server.exe to turn on the server. 
-
-Notes for each part of the graphqltest module (what each function does)

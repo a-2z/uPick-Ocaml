@@ -1,0 +1,19 @@
+{
+	"in": {
+		"user_id": 4,
+		"loc_x": 12,
+		"loc_y": 15,
+		"wait": 10,
+		"dist": 5,
+		"price": 15,
+		"visited": true
+	},
+	"out_success": {
+		"success": true,
+		"group_id": 4
+	},
+	"out_failure": {
+		"success": false,
+		"group_id": null
+	}
+}
