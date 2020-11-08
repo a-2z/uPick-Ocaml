@@ -1,1 +1,1 @@
-val create_contacts_table: unit -> unit
+val create_users_table: unit -> unit

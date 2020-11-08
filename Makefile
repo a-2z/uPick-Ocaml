@@ -1,4 +1,4 @@
-MODULES=script user restaurant groups test app_state db main
+MODULES=script user restaurant groups test app_state db main 
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
