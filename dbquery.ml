@@ -39,10 +39,10 @@ let serialize_friends id_1 id_2 =
   friend2 = id_2;
 }
 
-let serialize_restrictions id rstrct = 
+let serialize_restrictions id restrict = 
 {
     user_id = id;
-    restriction = rstrct;
+    restriction = restrict;
 }
 
 let serialize_groups group_id host_id member_id = 
@@ -62,9 +62,7 @@ let add_user username password name =
           Printf.printf "Row inserted with id %Ld\n" id
         | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
       
-let add_friends friends = 
-  match friends with
-    | {friend1; friend2} ->
+let add_friends friend1 friend2 = 
       let sql =
         Printf.sprintf "INSERT INTO Friends VALUES(%d, %d)"
           friend1 friend2 in
@@ -86,14 +84,22 @@ let add_restrictions user_id restriction =
     | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
 
-let add_groups groups = 
-  match groups with
-    | {host_id; member_id} ->
-      let sql =
-        Printf.sprintf "INSERT INTO Groups VALUES(%d, %d)"
-          host_id member_id in
-        match exec db sql with
-        | Rc.OK ->
-          let id = Sqlite3.last_insert_rowid db in
-          Printf.printf "Row inserted with id %Ld\n" id
-        | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+let add_group_info group_name host_id = 
+  let sql =
+    Printf.sprintf "INSERT INTO GroupsInfo VALUES('%s', %d)"
+      group_name host_id in
+    match exec db sql with
+    | Rc.OK ->
+      let id = Sqlite3.last_insert_rowid db in
+      Printf.printf "Row inserted with id %Ld\n" id
+    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+
+let add_groups group_id member_id = 
+  let sql =
+    Printf.sprintf "INSERT INTO Groups VALUES(%d, %d)"
+      group_id member_id in
+    match exec db sql with
+    | Rc.OK ->
+      let id = Sqlite3.last_insert_rowid db in
+      Printf.printf "Row inserted with id %Ld\n" id
+    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)

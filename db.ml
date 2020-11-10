@@ -3,7 +3,7 @@ open Dbquery
 
 let db = db_open "test.db"
 
-let gracefully_exist error message =
+let error error message =
   let () = prerr_endline (Rc.to_string error) in
   let () = prerr_endline (errmsg db) in
   let () = prerr_endline message in
@@ -22,13 +22,14 @@ let create_users_table () =
   | Rc.OK -> ()
   | r ->
     let message = "Unable to create table users." in
-    gracefully_exist r message
+    error r message
 
 let create_friends_table () =
   let create_friends = {|
   CREATE TABLE IF NOT EXISTS Friends ( 
     friend_1 INTEGER NOT NULL, 
     friend_2 INTEGER NOT NULL, 
+    PRIMARY KEY(friend_1, friend_2),
     FOREIGN KEY(friend_1) REFERENCES Users(rowid)
     ON DELETE SET NULL, 
     FOREIGN KEY(friend_2) REFERENCES Users(rowid)
@@ -38,30 +39,47 @@ let create_friends_table () =
   | Rc.OK -> ()
   | r ->
     let message = "Unable to create table friends." in
-    gracefully_exist r message
+    error r message
  
 let create_restrictions_table () =
   let create_restrictions = {|
   CREATE TABLE IF NOT EXISTS Restrictions ( 
-    user_id INTEGER NOT NULL, 
-    restrictions TEXT NOT NULL, 
-    FOREIGN KEY(restriction_id) REFERENCES Users(rowid)
+    user_id INTEGER KEY NOT NULL, 
+    restriction TEXT NOT NULL, 
+    PRIMARY KEY(user_id, restriction),
+    FOREIGN KEY(user_id) REFERENCES Users(rowid)
     ON DELETE SET NULL);
     |}
   in match exec db create_restrictions with
   | Rc.OK -> ()
   | r ->
     let message = "Unable to create table restrictions." in
-    gracefully_exist r message
+    error r message
+
+let create_groups_info_table () =
+  let create_groups_info_table = {|
+  CREATE TABLE IF NOT EXISTS GroupsInfo ( 
+    group_name TEXT NOT NULL,
+    host_id INTEGER NOT NULL,
+    PRIMARY KEY(group_name, host_id),
+    FOREIGN KEY(host_id) REFERENCES Users(rowid)
+          ON DELETE SET NULL, 
+    FOREIGN KEY(host_id) REFERENCES Users(rowid)
+          ON DELETE SET NULL);
+  |}
+  in match exec db create_groups_info_table with
+  | Rc.OK -> ()
+  | r ->
+    let message = "Unable to create table groups_info." in
+    error r message
 
 let create_groups_table () =
   let create_groups_table = {|
   CREATE TABLE IF NOT EXISTS Groups ( 
-    group_id INTEGER PRIMARY KEY, 
-    host_id INTEGER NOT NULL, 
+    group_id INTEGER PRIMARY KEY,  
     friend_id INTEGER NOT NULL, 
-    FOREIGN KEY(host_id) REFERENCES Users(rowid)
-          ON DELETE SET NULL, 
+    FOREIGN KEY(group_id) REFERENCES GroupsInfo(rowid)
+          ON DELETE SET NULL
     FOREIGN KEY(friend_id) REFERENCES Users(rowid)
           ON DELETE SET NULL);
   |}
@@ -69,14 +87,15 @@ let create_groups_table () =
   | Rc.OK -> ()
   | r ->
     let message = "Unable to create table groups." in
-    gracefully_exist r message
+    error r message
 
 let create_tables () = 
   () 
-  |> create_friends_table
-  |> create_groups_table
-  |> create_restrictions_table
   |> create_users_table
+  |> create_friends_table
+  |> create_restrictions_table
+  |> create_groups_info_table
+  |> create_groups_table
 
 
   (* let create_visited_table () =
@@ -90,4 +109,4 @@ let create_tables () =
   | Rc.OK -> ()
   | r ->
     let message = "Unable to create table visited." in
-    gracefully_exist r message *)
+    error r message *)

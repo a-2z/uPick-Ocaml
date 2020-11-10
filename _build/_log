@@ -20,5 +20,5 @@ ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules dbq
 # Target: dbquery.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:dbquery.cmo, file:dbquery.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o dbquery.cmo dbquery.ml # cached
 # Target: main.byte, tags: { package(ounit2), package(sqlite3), package(yojson), byte, dont_link_with, extension:byte, file:main.byte, link, ocaml, program, quiet, traverse }
-ocamlfind ocamlc -linkpkg -package yojson -package ounit2 -package sqlite3 dbquery.cmo db.cmo main.cmo -o main.byte
+ocamlfind ocamlc -linkpkg -package yojson -package ounit2 -package sqlite3 dbquery.cmo db.cmo main.cmo -o main.byte # cached
 # Compilation successful.
