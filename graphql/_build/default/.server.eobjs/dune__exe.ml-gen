@@ -1,5 +1,0 @@
-(** @canonical Dune__exe.Graphqltest *)
-module Graphqltest = Dune__exe__Graphqltest
-
-(** @canonical Dune__exe.Server *)
-module Server = Dune__exe__Server
