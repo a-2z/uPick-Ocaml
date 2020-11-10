@@ -1,4 +1,5 @@
 open Sqlite3
+open Dbquery
 
 let db = db_open "test.db"
 
@@ -12,12 +13,11 @@ let gracefully_exist error message =
 
 (* creates user table with id, username, password, and name *)
 let create_users_table () =
-  let create_usertable = "CREATE TABLE IF NOT EXISTS Users ( \
-                          id INTEGER PRIMARY KEY, \
-                          username TEXT NOT NULL, \
-                          password TEXT NOT NULL, \
-                          name TEXT NOT NULL, \
-                          );"
+  let create_usertable =  {|CREATE TABLE IF NOT EXISTS Users ( 
+                          id INTEGER PRIMARY KEY, 
+                          username TEXT NOT NULL, 
+                          password TEXT NOT NULL, 
+                          name TEXT NOT NULL);|}
   in match exec db create_usertable with
   | Rc.OK -> ()
   | r ->
@@ -27,14 +27,16 @@ let create_users_table () =
 (* creates friends table by using two friend ids, and references user id for 
 foreign key*)
 let create_friends_table () =
-  let create_friends = " CREATE TABLE IF NOT EXISTS Friends ( \
-                                friend_1 INTEGER NOT NULL, \
-                                friend_2 INTEGER NOT NULL, \
-                                FOREIGN KEY(friend_1) REFERENCES Users(id)
-                                ON DELETE SET NULL, \
-                                FOREIGN KEY(friend_2) REFERENCES Users(id)
-                                ON DELETE SET NULL, \
-                                );"
+  let create_friends = {|
+  CREATE TABLE IF NOT EXISTS Friends ( 
+    friend_1 INTEGER NOT NULL, 
+    friend_2 INTEGER NOT NULL, 
+    FOREIGN KEY(friend_1) REFERENCES Users(id)
+    ON DELETE SET NULL, 
+    FOREIGN KEY(friend_2) REFERENCES Users(id)
+    ON DELETE SET NULL 
+    );
+    |}
   in match exec db create_friends with
   | Rc.OK -> ()
   | r ->
@@ -56,16 +58,16 @@ friends table *)
  
 (* creates restriction table with an id and restriction and links the id   *)
 let create_restrictions_table () =
-  let create_restrictions = " CREATE TABLE IF NOT EXISTS Restrictions ( \
-                                restriction_id INTEGER NOT NULL, \
-                                restrictions TEXT NOT NULL, \
+  let create_restrictions = {|CREATE TABLE IF NOT EXISTS Restrictions ( 
+                                restriction_id INTEGER NOT NULL, 
+                                restrictions TEXT NOT NULL, 
                                 FOREIGN KEY(restriction_id) REFERENCES Users(id)
-                                ON DELETE SET NULL, \
-                                );"
+                                ON DELETE SET NULL 
+                                );|}
   in match exec db create_restrictions with
   | Rc.OK -> ()
   | r ->
-    let message = "Unable to create table restrictinos." in
+    let message = "Unable to create table restrictions." in
     gracefully_exist r message
 
 (* makes the id of username of user table be a foreign key that is linked to 
@@ -81,7 +83,7 @@ restrictions table*)
     let message = "Unable to link tables." in
     gracefully_exist r message *)
 
-  let create_visited_table () =
+  (* let create_visited_table () =
     let create_visited = " CREATE TABLE IF NOT EXISTS Visited ( \
                                 visited_id INTEGER NOT NULL, \
                                 visited INTEGER NOT NULL, \
@@ -92,7 +94,7 @@ restrictions table*)
   | Rc.OK -> ()
   | r ->
     let message = "Unable to create table visited." in
-    gracefully_exist r message
+    gracefully_exist r message *)
 
 (* makes the id of the usertable a foreign key that is liked to the id's in the
 visited table *)
@@ -108,15 +110,15 @@ visited table *)
     gracefully_exist r message *)
 
 let create_groups_table () =
-  let create_groups_table = "CREATE TABLE IF NOT EXISTS Groups ( \
-                          group_id INTEGER PRIMARY KEY, \
-                          host_id INTEGER NOT NULL, \
-                          friend_id INTEGER NOT NULL, \
+  let create_groups_table = {|CREATE TABLE IF NOT EXISTS Groups ( 
+                          group_id INTEGER PRIMARY KEY, 
+                          host_id INTEGER NOT NULL, 
+                          friend_id INTEGER NOT NULL, 
                           FOREIGN KEY(host_id) REFERENCES Users(id)
-                                ON DELETE SET NULL, \
+                                ON DELETE SET NULL, 
                           FOREIGN KEY(friend_id) REFERENCES Users(id)
-                                ON DELETE SET NULL, \
-                          );"
+                                ON DELETE SET NULL
+                          );|}
   in match exec db create_groups_table with
   | Rc.OK -> ()
   | r ->
@@ -159,26 +161,9 @@ let ensure_table_users_exists () =
     gracefully_exist r message
 
 
-let user_data = [
-  {1; "reetuparikh"; "reetu123"; "Reetu"};
-  {2; "andrewosorio"; "andrew123"; "Andrew"};
-]
-
-let add_user_data user =
-  match user with
-    | {id; username; password; name} ->
-      let sql =
-        Printf.sprintf "INSERT INTO Users VALUES(%d,'%s','%s','%s')"
-          id username password name
-      in
-      let () = begin match exec db sql with
-        | Rc.OK ->
-          let id = Sqlite3.last_insert_rowid db in
-          Printf.printf "Row inserted with id %Ld\n" id
-        | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
-      end
-
-
-let () =
-  let () = ensure_table_users_exists () in 
-  add_data user_data
+let create_tables () = 
+  () 
+  |> create_friends_table
+  |> create_groups_table
+  |> create_restrictions_table
+  |> create_users_table

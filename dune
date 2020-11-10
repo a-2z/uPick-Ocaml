@@ -4,7 +4,7 @@
     (c_flags (:standard -Wall -pedantic -Wextra -Wunused)))
   (release (ocamlopt_flags (:standard -O3))))
   (executable
- (name main)
+ (name main))
 
   (alias
  (name DEFAULT)

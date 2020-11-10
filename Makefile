@@ -1,9 +1,9 @@
-MODULES=script user restaurant groups test app_state db main
+MODULES=script user restaurant groups test app_state db main dbquery
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
 TEST=test.byte
-SCRIPT=main.byte
+APP=main.byte
 OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build
@@ -18,8 +18,8 @@ clean:
 test:
 	$(OCAMLBUILD) -tag 'debug' $(TEST) && ./$(TEST) -runner sequential
 
-script:
-	$(OCAMLBUILD) $(SCRIPT) && ./$(SCRIPT)
+app:
+	$(OCAMLBUILD) $(APP) && ./$(APP)
 
 zip:
 	zip app_state.zip *.ml* *.json _tags Makefile

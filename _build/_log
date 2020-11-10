@@ -1,56 +1,70 @@
 ### Starting build.
-# Target: main.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:main.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules main.ml > main.ml.depends
+# Target: script.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:script.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules script.mli > script.mli.depends
+# Target: script.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:script.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o script.cmi script.mli
+# Target: script.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:script.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules script.ml > script.ml.depends
 # Target: app_state.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:app_state.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules app_state.mli > app_state.mli.depends # cached
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules app_state.mli > app_state.mli.depends
 # Target: app_state.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:app_state.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o app_state.cmi app_state.mli # cached
-# Target: db.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:db.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules db.mli > db.mli.depends # cached
-# Target: db.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:db.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o db.cmi db.mli # cached
-# Target: main.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o main.cmo main.ml
-# Target: app_state.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:app_state.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules app_state.ml > app_state.ml.depends # cached
-# Target: groups.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:groups.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules groups.mli > groups.mli.depends # cached
-# Target: groups.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:groups.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o groups.cmi groups.mli # cached
-# Target: json_helpers.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:json_helpers.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules json_helpers.mli > json_helpers.mli.depends # cached
-# Target: json_helpers.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:json_helpers.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o json_helpers.cmi json_helpers.mli # cached
-# Target: restaurant.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:restaurant.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules restaurant.mli > restaurant.mli.depends # cached
-# Target: restaurant.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:restaurant.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o restaurant.cmi restaurant.mli # cached
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o app_state.cmi app_state.mli
+# Target: script.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:script.cmo, file:script.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o script.cmo script.ml
 # Target: user.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:user.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules user.mli > user.mli.depends # cached
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules user.mli > user.mli.depends
 # Target: user.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:user.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o user.cmi user.mli # cached
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o user.cmi user.mli
+# Target: user.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:user.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules user.ml > user.ml.depends
+# Target: user.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o user.cmo user.ml
+# Target: restaurant.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:restaurant.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules restaurant.mli > restaurant.mli.depends
+# Target: restaurant.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:restaurant.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o restaurant.cmi restaurant.mli
+# Target: restaurant.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:restaurant.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules restaurant.ml > restaurant.ml.depends
+# Target: json_helpers.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:json_helpers.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules json_helpers.mli > json_helpers.mli.depends
+# Target: json_helpers.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:json_helpers.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o json_helpers.cmi json_helpers.mli
+# Target: restaurant.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:restaurant.cmo, file:restaurant.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o restaurant.cmo restaurant.ml
+# Target: groups.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:groups.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules groups.mli > groups.mli.depends
+# Target: groups.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:groups.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o groups.cmi groups.mli
+# Target: groups.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:groups.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules groups.ml > groups.ml.depends
+# Target: groups.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:groups.cmo, file:groups.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o groups.cmo groups.ml
+# Target: test.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:test.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules test.ml > test.ml.depends
+# Target: test.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:test.cmo, file:test.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o test.cmo test.ml
+# Target: app_state.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:app_state.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules app_state.ml > app_state.ml.depends
 # Target: app_state.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:app_state.cmo, file:app_state.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o app_state.cmo app_state.ml # cached
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o app_state.cmo app_state.ml
+# Target: db.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:db.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules db.mli > db.mli.depends
+# Target: db.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:db.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o db.cmi db.mli
 # Target: db.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:db.ml, ocaml, ocamldep, quiet, traverse }
 ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules db.ml > db.ml.depends
+# Target: dbquery.mli.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:mli, file:dbquery.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules dbquery.mli > dbquery.mli.depends
+# Target: dbquery.cmi, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:dbquery.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o dbquery.cmi dbquery.mli
 # Target: db.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:db.cmo, file:db.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o db.cmo db.ml
-# Target: groups.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:groups.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules groups.ml > groups.ml.depends # cached
-# Target: groups.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:groups.cmo, file:groups.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o groups.cmo groups.ml # cached
-# Target: json_helpers.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:json_helpers.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules json_helpers.ml > json_helpers.ml.depends # cached
-# Target: json_helpers.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:json_helpers.cmo, file:json_helpers.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o json_helpers.cmo json_helpers.ml # cached
-# Target: restaurant.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:restaurant.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules restaurant.ml > restaurant.ml.depends # cached
-# Target: restaurant.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:restaurant.cmo, file:restaurant.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o restaurant.cmo restaurant.ml # cached
-# Target: user.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:user.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules user.ml > user.ml.depends # cached
-# Target: user.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:user.cmo, file:user.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o user.cmo user.ml # cached
-# Target: main.byte, tags: { package(ounit2), package(sqlite3), package(yojson), byte, dont_link_with, extension:byte, file:main.byte, link, ocaml, program, quiet, traverse }
-ocamlfind ocamlc -linkpkg -package yojson -package ounit2 -package sqlite3 json_helpers.cmo groups.cmo restaurant.cmo user.cmo app_state.cmo db.cmo main.cmo -o main.byte
+# Target: main.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:main.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules main.ml > main.ml.depends
+# Target: main.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o main.cmo main.ml
+# Target: dbquery.ml.depends, tags: { package(ounit2), package(sqlite3), package(yojson), extension:ml, file:dbquery.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -modules dbquery.ml > dbquery.ml.depends
+# Target: dbquery.cmo, tags: { package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:dbquery.cmo, file:dbquery.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -o dbquery.cmo dbquery.ml
 # Compilation successful.

@@ -4,6 +4,7 @@
 #directory "_build";;
 #load "user.cmo";;
 #load "db.cmo";;
+#load "dbquery.cmo";;
 #load "restaurant.cmo";;
 #load "groups.cmo";;
 #load "app_state.cmo";;
