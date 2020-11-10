@@ -3,20 +3,14 @@ type friends
 type restrictions
 type groups
 
-val create_user : int -> string -> string -> string -> user
+val add_user : string -> string -> string -> unit
 
-val create_friends : int -> int -> friends
+val add_friends : friends -> unit
 
-val create_restrictions : int -> string -> restrictions
+val add_restrictions : int -> string -> unit
 
-val create_groups : int -> int -> groups
+val add_groups : groups -> unit
 
-val add_user_data : string -> string -> string -> unit
-
-val add_friends_data : friends -> unit
-
-val add_restrictions_data : restrictions -> unit
-
-val add_groups_data : groups -> unit
+(* create get and use serialize functions *)
 
  

@@ -13,11 +13,12 @@ let gracefully_exist error message =
 
 (* creates user table with id, username, password, and name *)
 let create_users_table () =
-  let create_usertable =  {|CREATE TABLE IF NOT EXISTS Users ( 
-                          id INTEGER PRIMARY KEY, 
-                          username TEXT NOT NULL, 
-                          password TEXT NOT NULL, 
-                          name TEXT NOT NULL);|}
+  let create_usertable =  {|
+  CREATE TABLE IF NOT EXISTS Users (  
+  username TEXT PRIMARY KEY NOT NULL, 
+  password TEXT NOT NULL, 
+  name TEXT NOT NULL);
+  |}
   in match exec db create_usertable with
   | Rc.OK -> ()
   | r ->
@@ -31,12 +32,11 @@ let create_friends_table () =
   CREATE TABLE IF NOT EXISTS Friends ( 
     friend_1 INTEGER NOT NULL, 
     friend_2 INTEGER NOT NULL, 
-    FOREIGN KEY(friend_1) REFERENCES Users(id)
+    FOREIGN KEY(friend_1) REFERENCES Users(rowid)
     ON DELETE SET NULL, 
-    FOREIGN KEY(friend_2) REFERENCES Users(id)
-    ON DELETE SET NULL 
-    );
-    |}
+    FOREIGN KEY(friend_2) REFERENCES Users(rowid)
+    ON DELETE SET NULL);
+  |}
   in match exec db create_friends with
   | Rc.OK -> ()
   | r ->
@@ -58,12 +58,13 @@ friends table *)
  
 (* creates restriction table with an id and restriction and links the id   *)
 let create_restrictions_table () =
-  let create_restrictions = {|CREATE TABLE IF NOT EXISTS Restrictions ( 
-                                restriction_id INTEGER NOT NULL, 
-                                restrictions TEXT NOT NULL, 
-                                FOREIGN KEY(restriction_id) REFERENCES Users(id)
-                                ON DELETE SET NULL 
-                                );|}
+  let create_restrictions = {|
+  CREATE TABLE IF NOT EXISTS Restrictions ( 
+    restriction_id INTEGER NOT NULL, 
+    restrictions TEXT NOT NULL, 
+    FOREIGN KEY(restriction_id) REFERENCES Users(rowid)
+    ON DELETE SET NULL);
+    |}
   in match exec db create_restrictions with
   | Rc.OK -> ()
   | r ->
@@ -110,15 +111,16 @@ visited table *)
     gracefully_exist r message *)
 
 let create_groups_table () =
-  let create_groups_table = {|CREATE TABLE IF NOT EXISTS Groups ( 
-                          group_id INTEGER PRIMARY KEY, 
-                          host_id INTEGER NOT NULL, 
-                          friend_id INTEGER NOT NULL, 
-                          FOREIGN KEY(host_id) REFERENCES Users(id)
-                                ON DELETE SET NULL, 
-                          FOREIGN KEY(friend_id) REFERENCES Users(id)
-                                ON DELETE SET NULL
-                          );|}
+  let create_groups_table = {|
+  CREATE TABLE IF NOT EXISTS Groups ( 
+    group_id INTEGER PRIMARY KEY, 
+    host_id INTEGER NOT NULL, 
+    friend_id INTEGER NOT NULL, 
+    FOREIGN KEY(host_id) REFERENCES Users(rowid)
+          ON DELETE SET NULL, 
+    FOREIGN KEY(friend_id) REFERENCES Users(rowid)
+          ON DELETE SET NULL);
+  |}
   in match exec db create_groups_table with
   | Rc.OK -> ()
   | r ->
