@@ -26,51 +26,51 @@ type groups = {
 }
 
 let serialize_user user_id username password name =
-{
-  id = user_id;
-  username = username;
-  password = password;
-  name = name;
-}
+  {
+    id = user_id;
+    username = username;
+    password = password;
+    name = name;
+  }
 
 let serialize_friends id_1 id_2 = 
-{
-  friend1 = id_1;
-  friend2 = id_2;
-}
+  {
+    friend1 = id_1;
+    friend2 = id_2;
+  }
 
 let serialize_restrictions id restrict = 
-{
+  {
     user_id = id;
     restriction = restrict;
-}
+  }
 
 let serialize_groups group_id host_id member_id = 
-{
-  id = group_id;
-  host_id = host_id;
-  member_id = member_id;
-}
+  {
+    id = group_id;
+    host_id = host_id;
+    member_id = member_id;
+  }
 
 let add_user username password name =
-      let sql =
-        Printf.sprintf "INSERT INTO Users VALUES('%s','%s','%s')"
-          username password name in
-      match exec db sql with 
-        | Rc.OK ->
-          let id = Sqlite3.last_insert_rowid db in
-          Printf.printf "Row inserted with id %Ld\n" id
-        | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
-      
+  let sql =
+    Printf.sprintf "INSERT INTO Users VALUES('%s','%s','%s')"
+      username password name in
+  match exec db sql with 
+  | Rc.OK ->
+    let id = Sqlite3.last_insert_rowid db in
+    Printf.printf "Row inserted with id %Ld\n" id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+
 let add_friends friend1 friend2 = 
-      let sql =
-        Printf.sprintf "INSERT INTO Friends VALUES(%d, %d)"
-          friend1 friend2 in
-      match exec db sql with
-        | Rc.OK ->
-          let id = Sqlite3.last_insert_rowid db in
-          Printf.printf "Row inserted with id %Ld\n" id
-        | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+  let sql =
+    Printf.sprintf "INSERT INTO Friends VALUES(%d, %d)"
+      friend1 friend2 in
+  match exec db sql with
+  | Rc.OK ->
+    let id = Sqlite3.last_insert_rowid db in
+    Printf.printf "Row inserted with id %Ld\n" id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
 
 let add_restrictions user_id restriction = 
@@ -78,28 +78,50 @@ let add_restrictions user_id restriction =
     Printf.sprintf "INSERT INTO Restrictions VALUES(%d,'%s')"
       user_id restriction in
   match exec db sql with
-    | Rc.OK ->
-      let id = Sqlite3.last_insert_rowid db in
-      Printf.printf "Row inserted with id %Ld\n" id
-    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+  | Rc.OK ->
+    let id = Sqlite3.last_insert_rowid db in
+    Printf.printf "Row inserted with id %Ld\n" id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
 
 let add_group_info group_name host_id = 
   let sql =
     Printf.sprintf "INSERT INTO GroupsInfo VALUES('%s', %d)"
       group_name host_id in
-    match exec db sql with
-    | Rc.OK ->
-      let id = Sqlite3.last_insert_rowid db in
-      Printf.printf "Row inserted with id %Ld\n" id
-    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+  match exec db sql with
+  | Rc.OK ->
+    let id = Sqlite3.last_insert_rowid db in
+    Printf.printf "Row inserted with id %Ld\n" id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
 let add_groups group_id member_id = 
   let sql =
     Printf.sprintf "INSERT INTO Groups VALUES(%d, %d)"
       group_id member_id in
-    match exec db sql with
-    | Rc.OK ->
-      let id = Sqlite3.last_insert_rowid db in
-      Printf.printf "Row inserted with id %Ld\n" id
-    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+  match exec db sql with
+  | Rc.OK ->
+    let id = Sqlite3.last_insert_rowid db in
+    Printf.printf "Row inserted with id %Ld\n" id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+
+let get_user_id user = user.id
+
+let get_user_username user = user.name
+
+let get_user_password user = user.password
+
+let get_user_name user = user.name
+
+let get_friends_id1 friends = friends.friend1
+
+let get_friends_id2 friends = friends.friend2
+
+let get_restrictions_userid restrictions = restrictions.user_id
+
+let get_restrictions_restriction restrictions = restrictions.restriction
+
+let get_groups_id groups = groups.id
+
+let get_groups_hostid groups = groups.host_id
+
+let get_groups_memberid groups = groups.member_id
