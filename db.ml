@@ -1,7 +1,6 @@
 open Sqlite3
-open Dbquery
 
-let db = db_open "test.db"
+let db = db_open "upick.db"
 
 let error error message =
   let () = prerr_endline (Rc.to_string error) in
@@ -13,7 +12,7 @@ let error error message =
 
 let create_users_table () =
   let create_usertable =  {|
-  CREATE TABLE IF NOT EXISTS Users (  
+  CREATE TABLE IF NOT EXISTS users (  
   username TEXT PRIMARY KEY NOT NULL, 
   password TEXT NOT NULL, 
   name TEXT NOT NULL);
@@ -26,7 +25,7 @@ let create_users_table () =
 
 let create_friends_table () =
   let create_friends = {|
-  CREATE TABLE IF NOT EXISTS Friends ( 
+  CREATE TABLE IF NOT EXISTS friends ( 
     friend_1 INTEGER NOT NULL, 
     friend_2 INTEGER NOT NULL, 
     PRIMARY KEY(friend_1, friend_2),
@@ -43,7 +42,7 @@ let create_friends_table () =
  
 let create_restrictions_table () =
   let create_restrictions = {|
-  CREATE TABLE IF NOT EXISTS Restrictions ( 
+  CREATE TABLE IF NOT EXISTS restrictions ( 
     user_id INTEGER KEY NOT NULL, 
     restriction TEXT NOT NULL, 
     PRIMARY KEY(user_id, restriction),
@@ -58,7 +57,7 @@ let create_restrictions_table () =
 
 let create_groups_info_table () =
   let create_groups_info_table = {|
-  CREATE TABLE IF NOT EXISTS GroupsInfo ( 
+  CREATE TABLE IF NOT EXISTS group_info ( 
     group_name TEXT NOT NULL,
     host_id INTEGER NOT NULL,
     PRIMARY KEY(group_name, host_id),
@@ -75,7 +74,7 @@ let create_groups_info_table () =
 
 let create_groups_table () =
   let create_groups_table = {|
-  CREATE TABLE IF NOT EXISTS Groups ( 
+  CREATE TABLE IF NOT EXISTS groups ( 
     group_id INTEGER PRIMARY KEY,  
     friend_id INTEGER NOT NULL, 
     FOREIGN KEY(group_id) REFERENCES GroupsInfo(rowid)

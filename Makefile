@@ -1,4 +1,4 @@
-MODULES=db main dbquery
+MODULES=db dbquery main
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)

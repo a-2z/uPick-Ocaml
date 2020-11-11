@@ -1,0 +1,11 @@
+(** @canonical Dune__exe.Authors *)
+module Authors = Dune__exe__Authors
+
+(** @canonical Dune__exe.Db *)
+module Db = Dune__exe__Db
+
+(** @canonical Dune__exe.Dbquery *)
+module Dbquery = Dune__exe__Dbquery
+
+(** @canonical Dune__exe.Main *)
+module Main = Dune__exe__Main

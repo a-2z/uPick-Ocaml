@@ -1,4 +1,13 @@
-type user
+type user = {
+  id : int;
+  username : string;
+  password : string;
+  name : string;
+  friends : int list; 
+  restrictions : int list; 
+  visited : int list; 
+  groups : int list 
+}
 type friends
 type restrictions
 type groups
@@ -13,6 +22,10 @@ val add_group_info : string -> int -> unit
 
 val add_groups : int -> int -> unit
 
-(* create get and use serialize functions *)
+val create_tables : unit -> unit
 
- 
+val get_user : int -> user
+
+(* val get_test : string -> unit *)
+
+(* create get and use serialize functions *)

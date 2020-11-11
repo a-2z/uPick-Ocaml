@@ -1,12 +1,16 @@
 open Sqlite3
 
-let db = db_open "test.db"
+let db = db_open "upick.db"
 
 type user = {
   id : int;
   username : string;
   password : string;
   name : string;
+  friends : int list; 
+  restrictions : int list; 
+  visited : int list; 
+  groups : int list
 }
 
 type friends = {
@@ -25,14 +29,20 @@ type groups = {
   member_id : int;
 }
 
-let serialize_user user_id username password name =
+(*
+let serialize_user 
+user_id username password name friends restrictions visited groups =
   {
     id = user_id;
     username = username;
     password = password;
     name = name;
+    friends = friends;
+    restrictions = restrictions;
+    visited = visited;
+    groups = groups;
   }
-
+ 
 let serialize_friends id_1 id_2 = 
   {
     friend1 = id_1;
@@ -50,11 +60,11 @@ let serialize_groups group_id host_id member_id =
     id = group_id;
     host_id = host_id;
     member_id = member_id;
-  }
+  } *)
 
 let add_user username password name =
   let sql =
-    Printf.sprintf "INSERT INTO Users VALUES('%s','%s','%s')"
+    Printf.sprintf "INSERT INTO users VALUES('%s','%s','%s')"
       username password name in
   match exec db sql with 
   | Rc.OK ->
@@ -64,7 +74,7 @@ let add_user username password name =
 
 let add_friends friend1 friend2 = 
   let sql =
-    Printf.sprintf "INSERT INTO Friends VALUES(%d, %d)"
+    Printf.sprintf "INSERT INTO friends VALUES(%d, %d)"
       friend1 friend2 in
   match exec db sql with
   | Rc.OK ->
@@ -72,10 +82,9 @@ let add_friends friend1 friend2 =
     Printf.printf "Row inserted with id %Ld\n" id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
-
 let add_restrictions user_id restriction = 
   let sql =
-    Printf.sprintf "INSERT INTO Restrictions VALUES(%d,'%s')"
+    Printf.sprintf "INSERT INTO restrictions VALUES(%d,'%s')"
       user_id restriction in
   match exec db sql with
   | Rc.OK ->
@@ -83,10 +92,9 @@ let add_restrictions user_id restriction =
     Printf.printf "Row inserted with id %Ld\n" id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
-
 let add_group_info group_name host_id = 
   let sql =
-    Printf.sprintf "INSERT INTO GroupsInfo VALUES('%s', %d)"
+    Printf.sprintf "INSERT INTO groupsInfo VALUES('%s', %d)"
       group_name host_id in
   match exec db sql with
   | Rc.OK ->
@@ -96,7 +104,7 @@ let add_group_info group_name host_id =
 
 let add_groups group_id member_id = 
   let sql =
-    Printf.sprintf "INSERT INTO Groups VALUES(%d, %d)"
+    Printf.sprintf "INSERT INTO groups VALUES(%d, %d)"
       group_id member_id in
   match exec db sql with
   | Rc.OK ->
@@ -104,9 +112,20 @@ let add_groups group_id member_id =
     Printf.printf "Row inserted with id %Ld\n" id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
-let get_user_id user = user.id
+let get_user user_id = 
+(*query for user with user_id, returns type user *)
+{
+    id = user_id;
+    username = "asdas";
+    password = "password";
+    name = "name";
+    friends = [1];
+    restrictions = [];
+    visited = [];
+    groups = [];
+  }
 
-let get_user_username user = user.name
+(* let get_user_username user = user.name
 
 let get_user_password user = user.password
 
@@ -124,4 +143,19 @@ let get_groups_id groups = groups.id
 
 let get_groups_hostid groups = groups.host_id
 
-let get_groups_memberid groups = groups.member_id
+let get_groups_memberid groups = groups.member_id*)
+
+let create_tables () = Db.create_tables ()
+
+(* let get_test field = 
+  let sql = Printf.sprintf "SELECT ('%s') FROM users" field in
+  match exec db sql with
+  | Rc.OK -> ()
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)  *)
+(* match row.() with 
+| Some a ->
+if x = ele then begin
+let () = print_endline "Creating the table with new elements" in 
+create_tables()
+| None -> () 
+end *)

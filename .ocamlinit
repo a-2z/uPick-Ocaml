@@ -1,6 +1,7 @@
 #require "ounit2";;
 #require "yojson";;
 #require "sqlite3";;
+#require "opium";;
 #directory "_build";;
 #load "user.cmo";;
 #load "db.cmo";;
