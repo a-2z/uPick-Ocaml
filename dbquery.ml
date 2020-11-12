@@ -151,6 +151,7 @@ let get_test field =
   let sql = Printf.sprintf "SELECT ('%s') FROM users" field in
   match exec db sql with
   | Rc.OK -> ()
+<<<<<<< HEAD
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db) 
 
 (* match row.() with 
@@ -160,3 +161,45 @@ let get_test field =
    create_tables()
    | None -> () 
    end *)
+=======
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+
+
+
+(* callback to display information *)
+(* let cb row header = match row.(0) with
+   | Some a -> print_endline a
+   | None -> () *)
+
+(* creating query *)
+(* let sql = "SELECT user FROM sqlite_master WHERE type = 'table'; "
+    (* execute query *)
+    match exec db ~cb show_default_tables with
+    | Rc.OK -> ()
+    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db) *)
+
+(* display result of query *)
+let cb row headers =
+  let n = Array.length row - 1 in
+  let () = for i = 0 to n do
+      let value = match row.(i) with | Some s -> s | None -> "Null" in
+      Printf.printf "| %s: %s |" headers.(i) value
+    done
+  in print_endline ""
+
+(* defining the query to use *)
+(* let sql = "SELECT username, password, name FROM users"
+    (* executing query *)
+    exec db ~cb sql
+        | Username: Reetu || Password: Reetu123 || Name: Reetu |
+        Rc.t = Sqlite3.Rc.OK *)
+
+(* another way to select *)
+let get_user_query = "SELECT username FROM users"
+let get_user_query = "SELECT password FROM users"
+let get_user_query = "SELECT name FROM users"
+
+
+(* https://github.com/cedlemo/ocaml-sqlite3-notes/blob/master/README_sqlite3_tutorial.md#sqlite-simple-query *)
+
+>>>>>>> 14eabd98b1562a20079800f1a2401d08d90110fa
