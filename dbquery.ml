@@ -13,7 +13,7 @@ type user = {
   groups : int list
 }
 
-type friends = {
+type friendship = {
   friend1 : int;
   friend2 : int;
 }
@@ -23,7 +23,7 @@ type restrictions  = {
   restriction : string;
 }
 
-type groups = {
+type group = {
   id : int;
   host_id : int;
   member_id : int;
@@ -42,7 +42,7 @@ user_id username password name friends restrictions visited groups =
     visited = visited;
     groups = groups;
   }
- 
+
 let serialize_friends id_1 id_2 = 
   {
     friend1 = id_1;
@@ -113,8 +113,8 @@ let add_groups group_id member_id =
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
 let get_user user_id = 
-(*query for user with user_id, returns type user *)
-{
+  (*query for user with user_id, returns type user *)
+  {
     id = user_id;
     username = "asdas";
     password = "password";
@@ -127,23 +127,23 @@ let get_user user_id =
 
 (* let get_user_username user = user.name
 
-let get_user_password user = user.password
+   let get_user_password user = user.password
 
-let get_user_name user = user.name
+   let get_user_name user = user.name
 
-let get_friends_id1 friends = friends.friend1
+   let get_friends_id1 friends = friends.friend1
 
-let get_friends_id2 friends = friends.friend2
+   let get_friends_id2 friends = friends.friend2
 
-let get_restrictions_userid restrictions = restrictions.user_id
+   let get_restrictions_userid restrictions = restrictions.user_id
 
-let get_restrictions_restriction restrictions = restrictions.restriction
+   let get_restrictions_restriction restrictions = restrictions.restriction
 
-let get_groups_id groups = groups.id
+   let get_groups_id groups = groups.id
 
-let get_groups_hostid groups = groups.host_id
+   let get_groups_hostid groups = groups.host_id
 
-let get_groups_memberid groups = groups.member_id*)
+   let get_groups_memberid groups = groups.member_id*)
 
 let create_tables () = Db.create_tables ()
 
@@ -152,11 +152,11 @@ let get_test field =
   match exec db sql with
   | Rc.OK -> ()
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db) 
-  
+
 (* match row.() with 
-| Some a ->
-if x = ele then begin
-let () = print_endline "Creating the table with new elements" in 
-create_tables()
-| None -> () 
-end *)
+   | Some a ->
+   if x = ele then begin
+   let () = print_endline "Creating the table with new elements" in 
+   create_tables()
+   | None -> () 
+   end *)
