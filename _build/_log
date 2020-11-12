@@ -1,7 +1,31 @@
 ### Starting build.
 # Target: db.mli.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:mli, file:db.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules db.mli > db.mli.depends
-+ ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules db.mli > db.mli.depends
-ocamlfind: Package `sqlite3' not found
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules db.mli > db.mli.depends # cached
+# Target: db.cmi, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:db.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o db.cmi db.mli # cached
+# Target: db.ml.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:ml, file:db.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules db.ml > db.ml.depends # cached
+# Target: db.cmo, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:db.cmo, file:db.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o db.cmo db.ml # cached
+# Target: dbquery.mli.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:mli, file:dbquery.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules dbquery.mli > dbquery.mli.depends # cached
+# Target: dbquery.cmi, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:mli, file:dbquery.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o dbquery.cmi dbquery.mli # cached
+# Target: dbquery.ml.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:ml, file:dbquery.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules dbquery.ml > dbquery.ml.depends # cached
+# Target: dbquery.cmo, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:dbquery.cmo, file:dbquery.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o dbquery.cmo dbquery.ml # cached
+# Target: main.ml.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:ml, file:main.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules main.ml > main.ml.depends # cached
+# Target: main.cmo, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o main.cmo main.ml # cached
+# Target: script.ml.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:ml, file:script.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules script.ml > script.ml.depends # cached
+# Target: script.cmo, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:script.cmo, file:script.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o script.cmo script.ml
++ ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o script.cmo script.ml
+ocamlfind: [WARNING] Package `threads': Linking problems may arise because of the missing -thread or -vmthread switch
+File "script.ml", line 1:
+Error: Could not find the .cmi file for interface script.mli.
 Command exited with code 2.
 # Compilation unsuccessful.

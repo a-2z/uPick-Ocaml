@@ -1,5 +1,5 @@
 open Dbquery
-(* open Opium.Std
+open Opium.Std
 
 let default =
   not_found (fun _req ->
@@ -37,10 +37,6 @@ print_endline "Server running on port http://localhost:3000";
   App.empty 
 	|> default 
 	|> get_user 
-  |> App.run_command *)
+  |> App.run_command
 
   
-let _ = create_tables (); add_user "reetuparikh" "reetu123" "Reetu";
-add_user "andrewzeng" "andrew123" "Andrew";
-add_restrictions 1 "egg"; add_restrictions 1 "meat"; add_restrictions 1 "meat";
-add_friends 1 2; add_group_info "party" 1; add_groups 1 3

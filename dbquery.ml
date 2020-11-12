@@ -13,7 +13,7 @@ type user = {
   groups : int list
 }
 
-type friendship = {
+type friends = {
   friend1 : int;
   friend2 : int;
 }
@@ -23,7 +23,7 @@ type restrictions  = {
   restriction : string;
 }
 
-type group = {
+type groups = {
   id : int;
   host_id : int;
   member_id : int;
@@ -151,7 +151,6 @@ let get_test field =
   let sql = Printf.sprintf "SELECT ('%s') FROM users" field in
   match exec db sql with
   | Rc.OK -> ()
-<<<<<<< HEAD
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db) 
 
 (* match row.() with 
@@ -161,8 +160,7 @@ let get_test field =
    create_tables()
    | None -> () 
    end *)
-=======
-  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+  (* | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db) *)
 
 
 
@@ -202,4 +200,3 @@ let get_user_query = "SELECT name FROM users"
 
 (* https://github.com/cedlemo/ocaml-sqlite3-notes/blob/master/README_sqlite3_tutorial.md#sqlite-simple-query *)
 
->>>>>>> 14eabd98b1562a20079800f1a2401d08d90110fa

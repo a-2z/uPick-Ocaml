@@ -39,6 +39,6 @@ val create_tables : unit -> unit
 
 val get_user : int -> user
 
-(* val get_test : string -> unit *)
+val get_test : string -> unit
 
 (* create get and use serialize functions *)
