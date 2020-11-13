@@ -1,10 +1,10 @@
-# dune exec ./script.exe
+# dune exec ./main.exe
 # OCAMLPARAM: unset
 # Workspace root: /Users/reetuparikh/Desktop/sqlite
-$ /usr/bin/getconf _NPROCESSORS_ONLN > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune953484.output 2> /dev/null
+$ /usr/bin/getconf _NPROCESSORS_ONLN > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune6dbf7a.output 2> /dev/null
 # Auto-detected concurrency: 8
 # disable binary cache
-$ /Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune42729b.output
+$ /Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune71fb36.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -110,3 +110,4 @@ $ /Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /var/folders/4
 #      ; windows_unicode = false
 #      }
 #  }
+# Workspace root: /Users/reetuparikh/Desktop/sqlite

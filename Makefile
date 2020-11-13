@@ -22,7 +22,7 @@ test:
 app:
 	$(OCAMLBUILD) $(APP) && ./$(APP)
 
-app:
+script:
 	$(OCAMLBUILD) $(SCRIPT) && ./$(SCRIPT)
 
 zip:

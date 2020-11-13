@@ -14,18 +14,13 @@ ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package op
 # Target: dbquery.ml.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:ml, file:dbquery.ml, ocaml, ocamldep, quiet, traverse }
 ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules dbquery.ml > dbquery.ml.depends # cached
 # Target: dbquery.cmo, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:dbquery.cmo, file:dbquery.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o dbquery.cmo dbquery.ml # cached
-# Target: main.ml.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:ml, file:main.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules main.ml > main.ml.depends # cached
-# Target: main.cmo, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o main.cmo main.ml # cached
-# Target: script.ml.depends, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), extension:ml, file:script.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -modules script.ml > script.ml.depends # cached
-# Target: script.cmo, tags: { package(opium), package(ounit2), package(sqlite3), package(yojson), byte, compile, extension:cmo, extension:ml, file:script.cmo, file:script.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o script.cmo script.ml
-+ ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o script.cmo script.ml
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o dbquery.cmo dbquery.ml
++ ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -o dbquery.cmo dbquery.ml
 ocamlfind: [WARNING] Package `threads': Linking problems may arise because of the missing -thread or -vmthread switch
-File "script.ml", line 1:
-Error: Could not find the .cmi file for interface script.mli.
+File "dbquery.ml", line 1:
+Error: The implementation dbquery.ml
+       does not match the interface dbquery.cmi:
+       The value `add_restriction_index' is required but not provided
+       File "dbquery.mli", line 33, characters 0-50: Expected declaration
 Command exited with code 2.
 # Compilation unsuccessful.

@@ -9,7 +9,6 @@ type user = {
   name : string;
   friends : int list; 
   restrictions : int list; 
-  visited : int list; 
   groups : int list
 }
 
@@ -42,7 +41,7 @@ user_id username password name friends restrictions visited groups =
     visited = visited;
     groups = groups;
   }
- 
+
 let serialize_friends id_1 id_2 = 
   {
     friend1 = id_1;
@@ -69,8 +68,8 @@ let add_user username password name =
   match exec db sql with 
   | Rc.OK ->
     let id = Sqlite3.last_insert_rowid db in
-    Printf.printf "Row inserted with id %Ld\n" id
-  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+    Printf.printf "Row inserted with id %Ld\n" id; Some id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
 let add_friends friend1 friend2 = 
   let sql =
@@ -79,18 +78,28 @@ let add_friends friend1 friend2 =
   match exec db sql with
   | Rc.OK ->
     let id = Sqlite3.last_insert_rowid db in
-    Printf.printf "Row inserted with id %Ld\n" id
-  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+    Printf.printf "Row inserted with id %Ld\n" id; Some id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
 let add_restrictions user_id restriction = 
   let sql =
-    Printf.sprintf "INSERT INTO restrictions VALUES(%d,'%s')"
+    Printf.sprintf "INSERT INTO restrictions VALUES(%d, %d)"
       user_id restriction in
   match exec db sql with
   | Rc.OK ->
     let id = Sqlite3.last_insert_rowid db in
-    Printf.printf "Row inserted with id %Ld\n" id
-  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
+    Printf.printf "Row inserted with id %Ld\n" id; Some id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
+
+let add_restrictions_index restriction = 
+  let sql =
+    Printf.sprintf "INSERT INTO restriction_index VALUES('%s')"
+      restriction in
+  match exec db sql with
+  | Rc.OK ->
+    let id = Sqlite3.last_insert_rowid db in
+    Printf.printf "Row inserted with id %Ld\n" id; Some id
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
 let add_group_info group_name host_id = 
   let sql =
@@ -112,50 +121,93 @@ let add_groups group_id member_id =
     Printf.printf "Row inserted with id %Ld\n" id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)
 
-let get_user user_id = 
-(*query for user with user_id, returns type user *)
-{
-    id = user_id;
-    username = "asdas";
-    password = "password";
-    name = "name";
-    friends = [1];
-    restrictions = [];
-    visited = [];
-    groups = [];
-  }
-
-(* let get_user_username user = user.name
-
-let get_user_password user = user.password
-
-let get_user_name user = user.name
-
-let get_friends_id1 friends = friends.friend1
-
-let get_friends_id2 friends = friends.friend2
-
-let get_restrictions_userid restrictions = restrictions.user_id
-
-let get_restrictions_restriction restrictions = restrictions.restriction
-
-let get_groups_id groups = groups.id
-
-let get_groups_hostid groups = groups.host_id
-
-let get_groups_memberid groups = groups.member_id*)
-
 let create_tables () = Db.create_tables ()
 
-(* let get_test field = 
-  let sql = Printf.sprintf "SELECT ('%s') FROM users" field in
-  match exec db sql with
-  | Rc.OK -> ()
-  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db)  *)
-(* match row.() with 
-| Some a ->
-if x = ele then begin
-let () = print_endline "Creating the table with new elements" in 
-create_tables()
-| None -> () 
-end *)
+let make_stmt sql = prepare db sql 
+(*
+ {
+    id = Sqlite3.column stmnt 0 |> to_int_exn
+  }
+ *)
+
+(**[get_int_lst selection table cond] is an int list of values
+from the column indicated by selection that satisfy predicate [cond] in 
+[table]
+
+Requires: selection contains only one column*)
+let get_int_lst selection table cond = 
+let arr = ref [||] in
+  let stmnt = 
+  make_stmt (Printf.sprintf {|
+  SELECT %s
+  FROM %s
+  WHERE %s;
+  |} selection table cond) in 
+  while (step stmnt) = ROW do 
+   let f1 = (row_data stmnt).(0)
+   |> Data.to_string_coerce 
+   |> int_of_string in
+   arr := Array.append !arr [|f1|]
+  done;
+  List.sort_uniq compare (Array.to_list !arr)
+
+let get_user userid = 
+  let sql = Printf.sprintf "SELECT * FROM users WHERE rowid = %d" userid in
+  let stmnt = make_stmt sql in 
+  ignore (step stmnt); 
+  let partial = {
+    id = userid;
+    username = Data.to_string_coerce (row_data stmnt).(0);
+    password = Data.to_string_coerce (row_data stmnt).(1);
+    name = Data.to_string_coerce (row_data stmnt).(2); 
+    friends = [];
+    restrictions = [];
+    groups = [];
+  } in
+  let friend_arr = ref [||] in
+  let friendstmt = 
+  make_stmt (Printf.sprintf {|
+    SELECT friend_1, friend_2 
+    FROM friends 
+    WHERE friend_1 = %d OR friend_2 = %d;
+  |} userid userid) in 
+  while (step friendstmt) = ROW do 
+    let f1 = 
+    (row_data friendstmt).(0) |> Data.to_string_coerce |> int_of_string in
+    let f2 = 
+    (row_data friendstmt).(1) |> Data.to_string_coerce |> int_of_string in
+    match f1 with
+      | x -> if x = userid then friend_arr := Array.append !friend_arr [|f2|] 
+      else friend_arr := Array.append !friend_arr [|f1|]
+  done; 
+  let restrictions = get_int_lst "restriction" "restrictions" 
+  ("user_id = " ^ string_of_int userid) in
+  let groups = get_int_lst "group_id" "groups" 
+  ("member_id = " ^ string_of_int userid) in
+  {
+    partial with 
+  friends = List.sort_uniq compare (Array.to_list !friend_arr);
+  restrictions = restrictions;
+  groups = groups
+  }
+      
+(* creating query *)
+(* let sql = "SELECT user FROM sqlite_master WHERE type = 'table'; "
+    (* execute query *)
+    match exec db ~cb show_default_tables with
+    | Rc.OK -> ()
+    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db) *)
+
+(* display result of query *)
+(* let cb row headers =
+  let n = Array.length row - 1 in
+  let () = for i = 0 to n do
+      let value = match row.(i) with | Some s -> s | None -> "Null" in
+      Printf.printf "| %s: %s |" headers.(i) value
+    done
+  in print_endline "" *)
+  
+(* let get_user_query = "SELECT username FROM users" *)
+
+
+(* https://github.com/cedlemo/ocaml-sqlite3-notes/blob/master/README_sqlite3_tutorial.md#sqlite-simple-query *)

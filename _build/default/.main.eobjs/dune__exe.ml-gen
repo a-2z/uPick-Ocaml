@@ -9,3 +9,6 @@ module Dbquery = Dune__exe__Dbquery
 
 (** @canonical Dune__exe.Main *)
 module Main = Dune__exe__Main
+
+(** @canonical Dune__exe.Script *)
+module Script = Dune__exe__Script

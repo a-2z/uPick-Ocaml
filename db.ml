@@ -29,9 +29,9 @@ let create_friends_table () =
     friend_1 INTEGER NOT NULL, 
     friend_2 INTEGER NOT NULL, 
     PRIMARY KEY(friend_1, friend_2),
-    FOREIGN KEY(friend_1) REFERENCES Users(rowid)
+    FOREIGN KEY(friend_1) REFERENCES users(rowid)
     ON DELETE SET NULL, 
-    FOREIGN KEY(friend_2) REFERENCES Users(rowid)
+    FOREIGN KEY(friend_2) REFERENCES users(rowid)
     ON DELETE SET NULL);
   |}
   in match exec db create_friends with
@@ -43,11 +43,22 @@ let create_friends_table () =
 let create_restrictions_table () =
   let create_restrictions = {|
   CREATE TABLE IF NOT EXISTS restrictions ( 
-    user_id INTEGER KEY NOT NULL, 
-    restriction TEXT NOT NULL, 
-    PRIMARY KEY(user_id, restriction),
-    FOREIGN KEY(user_id) REFERENCES Users(rowid)
+    user_id INT NOT NULL, 
+    restriction INT NOT NULL, 
+    FOREIGN KEY(restriction) REFERENCES restriction_index(rowid)
+    FOREIGN KEY(user_id) REFERENCES users(rowid)
     ON DELETE SET NULL);
+    |}
+  in match exec db create_restrictions with
+  | Rc.OK -> ()
+  | r ->
+    let message = "Unable to create table restrictions." in
+    error r message
+
+let create_restriction_index () =
+  let create_restrictions = {|
+  CREATE TABLE IF NOT EXISTS restriction_index ( 
+    restriction TEXT UNIQUE NOT NULL); 
     |}
   in match exec db create_restrictions with
   | Rc.OK -> ()
@@ -61,9 +72,9 @@ let create_groups_info_table () =
     group_name TEXT NOT NULL,
     host_id INTEGER NOT NULL,
     PRIMARY KEY(group_name, host_id),
-    FOREIGN KEY(host_id) REFERENCES Users(rowid)
+    FOREIGN KEY(host_id) REFERENCES users(rowid)
           ON DELETE SET NULL, 
-    FOREIGN KEY(host_id) REFERENCES Users(rowid)
+    FOREIGN KEY(host_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
   |}
   in match exec db create_groups_info_table with
@@ -76,10 +87,10 @@ let create_groups_table () =
   let create_groups_table = {|
   CREATE TABLE IF NOT EXISTS groups ( 
     group_id INTEGER PRIMARY KEY,  
-    friend_id INTEGER NOT NULL, 
-    FOREIGN KEY(group_id) REFERENCES GroupsInfo(rowid)
+    member_id INTEGER NOT NULL, 
+    FOREIGN KEY(group_id) REFERENCES groupsinfo(rowid)
           ON DELETE SET NULL
-    FOREIGN KEY(friend_id) REFERENCES Users(rowid)
+    FOREIGN KEY(member_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
   |}
   in match exec db create_groups_table with
@@ -88,24 +99,27 @@ let create_groups_table () =
     let message = "Unable to create table groups." in
     error r message
 
+(* let create_visited_table () =
+  let create_visited = {| CREATE TABLE IF NOT EXISTS visited ( 
+                              user_id INTEGER NOT NULL, 
+                              restaurant_id INTEGER NOT NULL, 
+                              PRIMARY KEY(user_id, restaurant_id),
+                              FOREIGN KEY(user_id) REFERENCES Users(rowid)
+                              ON DELETE SET NULL); 
+                              ); |}
+in match exec db create_visited with
+| Rc.OK -> ()
+| r ->
+  let message = "Unable to create table visited." in
+  error r message *)
+
 let create_tables () = 
   () 
   |> create_users_table
   |> create_friends_table
   |> create_restrictions_table
+  |> create_restriction_index
   |> create_groups_info_table
   |> create_groups_table
+  (* |> create_visited_table *)
 
-
-  (* let create_visited_table () =
-    let create_visited = " CREATE TABLE IF NOT EXISTS Visited ( \
-                                visited_id INTEGER NOT NULL, \
-                                visited INTEGER NOT NULL, \
-                                FOREIGN KEY(visited_id) REFERENCES Users(id)
-                                ON DELETE SET NULL, \
-                                );"
-  in match exec db create_visited with
-  | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table visited." in
-    error r message *)
