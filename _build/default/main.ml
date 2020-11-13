@@ -29,7 +29,7 @@ let rest_inserter json ins_func =
 
 let rest_indx_inserter json ins_func = 
   ins_func
-    ((member "friend1" json) |> to_string) 
+    ((member "restriction" json) |> to_string) 
 
 let group_info_inserter json ins_func = 
   ins_func

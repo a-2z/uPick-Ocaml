@@ -7,6 +7,9 @@ APP=main.byte
 SCRIPT=script.byte
 OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
+deps:
+	opam install . --deps-only --locked --working-dir
+
 default: build
 	utop
 

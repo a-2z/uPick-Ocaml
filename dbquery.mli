@@ -24,17 +24,22 @@ type groups = {
   member_id : int;
 }
 
-val add_user : string -> string -> string -> int64 option
+(*Insertion functions *)
+(**Register the user with a [username], hashed [password], and [name].
 
-val add_friends : int -> int -> int64 option
+  Returns: Some [last_inserted_id] or None if the insertion failed. 
+  Raises: *)
+val add_user : username:string -> password:string -> name:string -> int64 option
 
-val add_restrictions : int -> int -> int64 option
+val add_friends : user2_id:int -> user1_id:int -> int64 option
 
-val add_restrictions_index : string -> int64 option
+val add_restrictions : user_id:int -> restriction_id:int -> int64 option
 
-val add_group_info : string -> int -> unit
+val add_restrictions_index : rest_name:string -> int64 option
 
-val add_groups : int -> int -> unit
+val add_group_info : group_name:string -> host:int -> int64 option
+
+val add_groups : group_id:int -> member_id:int -> int64 option
 
 val create_tables : unit -> unit
 
