@@ -1,6 +1,6 @@
 (executable
  (name main)
- (libraries yojson ounit2 sqlite3 opium safepass))
+ (libraries yojson ounit2 sqlite3 opium))
 (alias
  (name DEFAULT)
  (deps main.exe))

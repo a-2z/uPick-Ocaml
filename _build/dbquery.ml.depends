@@ -1,1 +1,1 @@
-dbquery.ml: Array Data Db List Printf Rc Sqlite3
+dbquery.ml: Db Printf Rc Sqlite3

@@ -1,6 +1,25 @@
-open Dbquery
+open App_state
 
-let _ = create_tables (); ignore(add_user "reetuparikh" "reetu123" "Reetu");
-ignore(add_user "andrewzeng" "andrew123" "Andrew");
-ignore(add_restrictions 1 3); ignore(add_restrictions 1 1); ignore(add_restrictions 1 1);
-ignore(add_friends 1 2); add_group_info "party" 1; add_groups 1 3
+let script () =
+  let instance = load "state.json" in
+  add_restaurant instance 
+    "taco bell" 30.12 44.15 "fast food" 4.67 ["eggs"; "dairy"] 15 30;
+  add_restaurant instance 
+    "mcDonalds" 33.12 92.15 "fast food" 4.27 ["dairy"] 5 20;
+  add_restaurant instance  
+    "pizza hut" 98.12 94.15 "fast food" 4.17 ["eggs"; "dairy"] 3 10;
+  add_restaurant instance 
+    "outback steakhouse" 31.12 49.15 "fast food" 4.7 ["eggs"; "dairy"] 6 2;
+  add_user instance "andrew123" "xxandrew1234xx" "Andrew";
+  add_user instance "andrew12" "xxandrew1234xx" "Andrew";
+  add_user instance "reetu123" "xxreetu1234xx" "Reetu";
+  add_user instance "zach123" "xxzach1234xx" "Zach";
+  add_group instance "birthday party" "andrew123";
+  add_group instance "pizza party" "andrew12";
+  add_group instance "party" "reetu123";
+  add_group instance "christmas party" "zach123";
+
+  (*Save the file*)
+  save instance
+
+let () = script ()
