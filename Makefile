@@ -26,7 +26,7 @@ script:
 	$(OCAMLBUILD) $(SCRIPT) && ./$(SCRIPT)
 
 zip:
-	zip app_state.zip *.ml* *.json _tags Makefile
+	zip project.zip *.ml* *.json _tags Makefile
 
 
 
