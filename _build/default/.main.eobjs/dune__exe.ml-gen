@@ -1,6 +1,9 @@
 (** @canonical Dune__exe.Authors *)
 module Authors = Dune__exe__Authors
 
+(** @canonical Dune__exe.Constants *)
+module Constants = Dune__exe__Constants
+
 (** @canonical Dune__exe.Db *)
 module Db = Dune__exe__Db
 

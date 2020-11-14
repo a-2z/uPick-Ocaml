@@ -1,4 +1,4 @@
-open Dbquery
+ open Dbquery
 open Lwt.Infix
 open Opium.Std
 open Yojson.Basic
@@ -10,38 +10,38 @@ open Yojson.Basic.Util
 the database*)
 let user_inserter json ins_func = 
   ins_func
-    ((member "username" json) |> to_string) 
-    ((member "password" json) 
+    (member "username" json |> to_string)
+    (member "password" json
      |> to_string 
      |> Bcrypt.hash 
      |> Bcrypt.string_of_hash) 
-    ((member "name" json) |> to_string)
+    (member "name" json |> to_string)
 
 let friend_inserter json ins_func = 
   ins_func
-    ((member "friend1" json) |> to_int) 
-    ((member "friend2" json) |> to_int)
+    (member "friend1" json |> to_int)
+    (member "friend2" json |> to_int)
 
 let rest_inserter json ins_func = 
   ins_func
-    ((member "user_id" json) |> to_int) 
-    ((member "restriction_id" json) |> to_int)
+    (member "user_id" json |> to_int)
+    (member "restriction_id" json |> to_int)
 
 let rest_indx_inserter json ins_func = 
   ins_func
-    ((member "friend1" json) |> to_string) 
+    (member "restriction" json |> to_string)
 
 let group_info_inserter json ins_func = 
   ins_func
-    ((member "group_name" json) |> to_int) 
-    ((member "host_id" json) |> to_int)
+    (member "group_name" json |> to_string)
+    (member "host_id" json |> to_int)
 
 let group_inserter json ins_func = 
   ins_func
-    ((member "group_id" json) |> to_int) 
-    ((member "member_id" json) |> to_int)
+    (member "group_id" json |> to_int)
+    (member "member_id" json |> to_int)
     
-(**[load_json req ins_func insrter] inserts the contents of load_jso
+(**[load_json req ins_func insrter] inserts the contents of load_json
   into the database*)
 let load_json req ins_func inserter =
   req.Request.body
@@ -136,21 +136,31 @@ let make_response = function
 
 let insert_user = 
   post "/users" (fun req -> 
-      load_json req (add_user) user_inserter >>= fun a -> make_response a)
+      load_json req add_user user_inserter >>= fun a -> make_response a)
 
 let insert_friends = 
   post "/friends" (fun req -> 
-      load_json req (add_friends) friend_inserter >>= fun a ->
+      load_json req add_friends friend_inserter >>= fun a ->
       make_response a)
 
 let insert_restriction = 
   post "/restrictions" (fun req -> 
-      load_json req (add_restrictions) rest_inserter >>= 
+      load_json req add_restrictions rest_inserter >>= 
       fun a -> make_response a)
       
 let insert_restrictions_index = 
   post "/restrictions/add" (fun req -> 
-      load_json req (add_restrictions_index) rest_indx_inserter >>= 
+      load_json req add_restrictions_index rest_indx_inserter >>= 
+      fun a -> make_response a)
+
+let insert_group = 
+post "/groups" (fun req -> 
+      load_json req add_groups group_inserter >>= 
+      fun a -> make_response a)
+
+let insert_group_info = 
+post "/groups/add" (fun req -> 
+      load_json req add_group_info group_info_inserter >>= 
       fun a -> make_response a)
 
 let _ = 
@@ -168,6 +178,8 @@ print_endline "Server running on port http://localhost:3000";
   |> insert_restriction
   |> insert_restrictions_index
   |> insert_friends
+  |> insert_group
+  |> insert_group_info
   |> App.run_command
 
   

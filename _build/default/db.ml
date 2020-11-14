@@ -80,15 +80,16 @@ let create_groups_info_table () =
   in match exec db create_groups_info_table with
   | Rc.OK -> ()
   | r ->
-    let message = "Unable to create table groups_info." in
+    let message = "Unable to create table group_info." in
     error r message
 
 let create_groups_table () =
   let create_groups_table = {|
   CREATE TABLE IF NOT EXISTS groups ( 
-    group_id INTEGER PRIMARY KEY,  
+    group_id INTEGER,  
     member_id INTEGER NOT NULL, 
-    FOREIGN KEY(group_id) REFERENCES groupsinfo(rowid)
+    PRIMARY KEY(group_id, member_id),
+    FOREIGN KEY(group_id) REFERENCES group_info(rowid)
           ON DELETE SET NULL
     FOREIGN KEY(member_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
@@ -99,21 +100,7 @@ let create_groups_table () =
     let message = "Unable to create table groups." in
     error r message
 
-(* let create_visited_table () =
-  let create_visited = {| CREATE TABLE IF NOT EXISTS visited ( 
-                              user_id INTEGER NOT NULL, 
-                              restaurant_id INTEGER NOT NULL, 
-                              PRIMARY KEY(user_id, restaurant_id),
-                              FOREIGN KEY(user_id) REFERENCES Users(rowid)
-                              ON DELETE SET NULL); 
-                              ); |}
-in match exec db create_visited with
-| Rc.OK -> ()
-| r ->
-  let message = "Unable to create table visited." in
-  error r message *)
-
-let create_tables () = 
+let create_tables _ = 
   () 
   |> create_users_table
   |> create_friends_table
@@ -121,5 +108,3 @@ let create_tables () =
   |> create_restriction_index
   |> create_groups_info_table
   |> create_groups_table
-  (* |> create_visited_table *)
-

@@ -88,7 +88,7 @@ let create_groups_table () =
   CREATE TABLE IF NOT EXISTS groups ( 
     group_id INTEGER PRIMARY KEY,  
     member_id INTEGER NOT NULL, 
-    FOREIGN KEY(group_id) REFERENCES groupsinfo(rowid)
+    FOREIGN KEY(group_id) REFERENCES group_info(rowid)
           ON DELETE SET NULL
     FOREIGN KEY(member_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
