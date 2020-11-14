@@ -1,13 +1,40 @@
- open Dbquery
+open Dbquery
 open Lwt.Infix
 open Opium.Std
 open Yojson.Basic
 open Yojson.Basic.Util
 
-(*Helper functions*)
+(**************************JSON builders and parsers***************************)
+(**[load_json req ins_func insrter] inserts the contents of load_json
+   into the database*)
+let load_json req ins_func inserter =
+  req.Request.body
+  |> Body.to_string
+  >>= fun a -> 
+  Lwt.return (inserter (from_string a) ins_func)
 
+let json_of_user {id; username; password; name; friends; restrictions; 
+                  groups} =
+  let open Ezjsonm in
+  dict [("id", int id); ("username", string username); 
+        ("password", string password);
+        ("name", string name); ("friends", list int friends);
+        ("restrictions", list int restrictions);
+        ("groups", list int groups);]
+
+let json_of_group {id; name; host_id; members} = 
+  let open Ezjsonm in 
+  dict [("id", int id); ("name", string name); ("host_id", int host_id); 
+        ("members", list int members)]
+
+(* grabs by user id *)
+let json_of_restriction_id restriction = 
+  let open Ezjsonm in 
+  dict [("restriction", string restriction)]
+
+(*****************************database inserters*******************************)
 (**[user_inserter json ins_func] inserts the data representing a user into
-the database*)
+   the database*)
 let user_inserter json ins_func = 
   ins_func
     (member "username" json |> to_string)
@@ -40,146 +67,122 @@ let group_inserter json ins_func =
   ins_func
     (member "group_id" json |> to_int)
     (member "member_id" json |> to_int)
-    
-(**[load_json req ins_func insrter] inserts the contents of load_json
-  into the database*)
-let load_json req ins_func inserter =
-  req.Request.body
-  |> Body.to_string
-  >>= fun a -> 
-  Lwt.return (inserter (from_string a) ins_func)
 
+let make_response = function
+  | Some id -> respond' 
+                 (`Json (Ezjsonm.from_string 
+                           ({|{"success": true, "id": |} ^ 
+                            Int64.to_string id ^ "}")))
+  | None -> respond' (`Json (Ezjsonm.from_string {|{"success": false|}))  
+
+(*******************************route list*************************************)
+
+(* Route not found *)     
 let default =
   not_found (fun _req ->
       `Json Ezjsonm.(dict [("message", string "Route not found")]) |> respond')
 
-let json_of_user {id; username; password; name; friends; restrictions; 
-	groups} =
-  let open Ezjsonm in
-  dict [("id", int id); ("username", string username); 
-	("password", string password);
-        ("name", string name); ("friends", list int friends);
-        ("restrictions", list int restrictions);
-        ("groups", list int groups);]
+(* grabs a list of all restrictions that exist *)
+(*Added a function for restrictions even though it was not in interface *)
 
-let get_user =
-  get "/user/:id" (fun req -> 
-			let user = Dbquery.get_user (int_of_string (param req "id")) in
-      `Json (user |> json_of_user) |> respond')
-
-(* let get_user_groups = 
-  get "/invites/:id" (fun req -> 
+let get_list = [
+  (* user *)
+  get "/users/:id" (fun req -> 
       let user = Dbquery.get_user (int_of_string (param req "id")) in
-      `Json (user.groups |> Ezjsonm.list Ezjsonm.int) |> respond') *)
+      `Json (user |> json_of_user) |> respond'); 
 
-(* let json_of_group {id; host_id; member_id} = 
-  let open Ezjsonm in 
-  dict [("id", int id); ("host_id", int host_id); ("member_id", int member_id)]
-
-let get_group = 
-  get "groups/:id" (fun req ->
+  (* groups *)  
+  get "/groups/:id" (fun req ->
       let group = Dbquery.get_group (int_of_string (param req "id")) in
-      `Json (group |> json_of_group) |> respond')
+      `Json (group |> json_of_group) |> respond');
 
-let json_of_restaurant {id; name; price; image; rating; description; wait_time;
-                        phone; location_x; location_y} = 
-  let open Ezjsonm in 
-  dict [("id", int id); ("name", string name); ("price", int price); 
-        ("image", string image); ("rating", int rating); 
-        ("description", string description); ("wait_time", int wait_time); 
-        ("phone", string phone); ("location_x", float location_x); 
-        ("location_y", float location_y)]
-
-let get_restaurant = 
-  get "restaurants/:id" (fun req ->
+  (* restaurants *)   
+  (* get "restaurants/:id" (fun req ->
       let group = Dbquery.get_restaurant (int_of_string (param req "id")) in
-      `Json (group |> json_of_group) |> respond')
+      `Json (group |> json_of_group) |> respond') *)
 
-let json_of_friends {friend1; friend2} = 
-  let open Ezjsonm in 
-  dict [("friend1", int friend1), ("friend2", int friend2)]
+  (* get restriction by id *)
+  get "/restrictions/:id" (fun req ->
+      try 
+        let restriction = Dbquery.get_restriction_by_id 
+            (int_of_string (param req "id")) in 
+        (`Json 
+           (Ezjsonm.from_string 
+              (Printf.sprintf {|{"success": true, "data": "%s"}|} restriction)))
+        |> respond'
+      with e -> ignore (e); 
+        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
 
-let get_friends = 
-  get "pending/:id" (fun req ->
-      let friends = Dbquery.get_friends (int_of_string (param req "id")) in 
-      `Json (friends |> json_of_friends) |> respond')
+  (* get all restrictions *)
+  get "/restrictions" 
+    (fun _ -> let restriction = Dbquery.get_restrictions () in 
+      `Json (Ezjsonm.list Ezjsonm.string restriction) |>  
+      respond');
+]
 
-let json_of_restriction {user_id; restriction} = 
-  let open Ezjsonm in 
-  dict [("user_id", int user_id), ("restriction", string restriction)]
-
-(**Added a function for restrictions even though it was not in interface *)
-let get_restriction = 
-  get "restriction/:id" (fun req ->
-      let restriction = Dbquery.get_restriction 
-          (int_of_string (param req "id")) in 
-      `Json (restriction |> json_of_restriction) |> respond') *)
-
-(* let get_group =
-  get "/groups/:id" (fun req -> 
-			let grp = Dbquery.get_group (param req "id") in
-      `Json (grp |> json_of_gr) |> respond') *)
-
-(* let print_json (req : Request.t) =
-   req.body |> Request. |>
-
-              let post_user =
-                post "/user" print_json *)
-                (*POST Methods *)
-                
-let make_response = function
-      | Some id -> respond' 
-                     (`Json (Ezjsonm.from_string 
-                               ({|{"success": true, "id": |} ^ 
-                                Int64.to_string id ^ "}")))
-      | None -> respond' (`Json (Ezjsonm.from_string {|{"success": false|}))          
-
-let insert_user = 
+let post_list = [
+  (* let insert_user =  *)
   post "/users" (fun req -> 
-      load_json req add_user user_inserter >>= fun a -> make_response a)
+      load_json req add_user user_inserter >>= fun a -> make_response a);
 
-let insert_friends = 
+  (* let insert_friends =  *)
   post "/friends" (fun req -> 
       load_json req add_friends friend_inserter >>= fun a ->
-      make_response a)
+      make_response a);
 
-let insert_restriction = 
+  (* let insert_restriction =  *)
   post "/restrictions" (fun req -> 
       load_json req add_restrictions rest_inserter >>= 
-      fun a -> make_response a)
-      
-let insert_restrictions_index = 
+      fun a -> make_response a);
+
+  (* let insert_restrictions_index =  *)
   post "/restrictions/add" (fun req -> 
       load_json req add_restrictions_index rest_indx_inserter >>= 
-      fun a -> make_response a)
+      fun a -> make_response a);
 
-let insert_group = 
-post "/groups" (fun req -> 
+  (* let insert_group =  *)
+  post "/groups" (fun req -> 
       load_json req add_groups group_inserter >>= 
-      fun a -> make_response a)
+      fun a -> make_response a);
 
-let insert_group_info = 
-post "/groups/add" (fun req -> 
+  post "/groups/add" (fun req -> 
       load_json req add_group_info group_info_inserter >>= 
-      fun a -> make_response a)
+      fun a -> make_response a);
+
+  post "/login" (fun req -> 
+      req.Request.body
+      |> Body.to_string
+      >>= fun a -> 
+      let usrname = a 
+                    |> from_string 
+                    |> member "username"
+                    |> to_string in 
+      let pw = a
+               |> from_string 
+               |> member "password"
+               |> to_string in 
+      match (Dbquery.login usrname) with
+      | None -> print_endline "wtfwork"; respond' (`Json (Ezjsonm.from_string {|{"success": false|}))  
+      | Some password -> begin 
+          match Bcrypt.verify pw (Bcrypt.hash_of_string password) with 
+          | false -> respond' 
+                       (`Json (Ezjsonm.from_string {|{"success": false|}))
+          | true -> respond' 
+                      (`Json (Ezjsonm.from_string {|{"success": true|})) 
+        end);
+]
+
+let rec app_builder lst app = 
+  match lst with 
+  | [] -> app
+  | h :: t -> app_builder t (app |> h)
 
 let _ = 
-create_tables (); 
-print_endline "Server running on port http://localhost:3000";
+  create_tables (); 
+  print_endline "Server running on port http://localhost:3000";
   App.empty 
-	|> default 
-	|> get_user 
-  (* |> get_user_groups
-  |> get_group
-  |> get_restaurant
-  |> get_friends
-  |> get_restriction *)
-  |> insert_user
-  |> insert_restriction
-  |> insert_restrictions_index
-  |> insert_friends
-  |> insert_group
-  |> insert_group_info
+  |> default 
+  |> app_builder get_list
+  |> app_builder post_list
   |> App.run_command
 
-  

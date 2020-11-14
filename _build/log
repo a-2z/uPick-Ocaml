@@ -1,10 +1,10 @@
 # dune exec ./main.exe
 # OCAMLPARAM: unset
-# Workspace root: /Users/reetuparikh/Desktop/sqlite
-$ /usr/bin/getconf _NPROCESSORS_ONLN > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune7a0951.output 2> /dev/null
+# Workspace root: /mnt/c/Users/drewm/desktop/upick
+$ /usr/bin/nproc > /tmp/duneedc35b.output 2> /dev/null
 # Auto-detected concurrency: 8
 # disable binary cache
-$ /Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune20168c.output
+$ /home/andrew/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /tmp/dunef87f63.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -14,71 +14,68 @@ $ /Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /var/folders/4
 #  ; fdo_target_exe = None
 #  ; build_dir = "default"
 #  ; toplevel_path =
-#      Some External "/Users/reetuparikh/.opam/cs3110-2020fa/lib/toplevel"
-#  ; ocaml_bin = External "/Users/reetuparikh/.opam/cs3110-2020fa/bin"
-#  ; ocaml = Ok External "/Users/reetuparikh/.opam/cs3110-2020fa/bin/ocaml"
-#  ; ocamlc = External "/Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt"
-#  ; ocamlopt =
-#      Ok External "/Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlopt.opt"
-#  ; ocamldep =
-#      Ok External "/Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamldep.opt"
+#      Some External "/home/andrew/.opam/cs3110-2020fa/lib/toplevel"
+#  ; ocaml_bin = External "/home/andrew/.opam/cs3110-2020fa/bin"
+#  ; ocaml = Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocaml"
+#  ; ocamlc = External "/home/andrew/.opam/cs3110-2020fa/bin/ocamlc.opt"
+#  ; ocamlopt = Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocamlopt.opt"
+#  ; ocamldep = Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocamldep.opt"
 #  ; ocamlmklib =
-#      Ok External "/Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlmklib.opt"
+#      Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocamlmklib.opt"
 #  ; env =
 #      map
-#        { "INSIDE_DUNE" : "/Users/reetuparikh/Desktop/sqlite/_build/default"
-#        ; "MANPATH" :
-#            "/Users/reetuparikh/Desktop/sqlite/_build/install/default/bin"
+#        { "INSIDE_DUNE" : "/mnt/c/Users/drewm/desktop/upick/_build/default"
 #        ; "OCAMLFIND_IGNORE_DUPS_IN" :
-#            "/Users/reetuparikh/Desktop/sqlite/_build/install/default/lib"
+#            "/mnt/c/Users/drewm/desktop/upick/_build/install/default/lib"
 #        ; "OCAMLPATH" :
-#            "/Users/reetuparikh/Desktop/sqlite/_build/install/default/lib"
+#            "/mnt/c/Users/drewm/desktop/upick/_build/install/default/lib"
 #        ; "OCAMLTOP_INCLUDE_PATH" :
-#            "/Users/reetuparikh/Desktop/sqlite/_build/install/default/lib/toplevel"
+#            "/mnt/c/Users/drewm/desktop/upick/_build/install/default/lib/toplevel"
 #        ; "OCAML_COLOR" : "always"
 #        ; "OPAMCOLOR" : "always"
 #        }
-#  ; findlib_path = [ External "/Users/reetuparikh/.opam/cs3110-2020fa/lib" ]
+#  ; findlib_path = [ External "/home/andrew/.opam/cs3110-2020fa/lib" ]
 #  ; arch_sixtyfour = true
 #  ; natdynlink_supported = true
 #  ; supports_shared_libraries = true
 #  ; ocaml_config =
 #      { version = "4.10.0"
 #      ; standard_library_default =
-#          "/Users/reetuparikh/.opam/cs3110-2020fa/lib/ocaml"
-#      ; standard_library = "/Users/reetuparikh/.opam/cs3110-2020fa/lib/ocaml"
+#          "/home/andrew/.opam/cs3110-2020fa/lib/ocaml"
+#      ; standard_library = "/home/andrew/.opam/cs3110-2020fa/lib/ocaml"
 #      ; standard_runtime = "the_standard_runtime_variable_was_deleted"
 #      ; ccomp_type = "cc"
-#      ; c_compiler = "cc"
-#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
+#      ; c_compiler = "gcc"
+#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
 #      ; ocamlc_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
 #      ; ocamlopt_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
 #      ; ocamlopt_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
 #      ; bytecomp_c_compiler =
-#          [ "cc"
+#          [ "gcc"
 #          ; "-O2"
 #          ; "-fno-strict-aliasing"
 #          ; "-fwrapv"
+#          ; "-fPIC"
 #          ; "-D_FILE_OFFSET_BITS=64"
 #          ; "-D_REENTRANT"
 #          ]
-#      ; bytecomp_c_libraries = [ "-lm"; "-lpthread" ]
+#      ; bytecomp_c_libraries = [ "-lm"; "-ldl"; "-lpthread" ]
 #      ; native_c_compiler =
-#          [ "cc"
+#          [ "gcc"
 #          ; "-O2"
 #          ; "-fno-strict-aliasing"
 #          ; "-fwrapv"
 #          ; "-D_FILE_OFFSET_BITS=64"
 #          ; "-D_REENTRANT"
 #          ]
-#      ; native_c_libraries = [ "-lm" ]
+#      ; native_c_libraries = [ "-lm"; "-ldl" ]
 #      ; cc_profile = []
 #      ; architecture = "amd64"
 #      ; model = "default"
 #      ; int_size = 63
 #      ; word_size = 64
-#      ; system = "macosx"
-#      ; asm = [ "clang"; "-arch"; "x86_64"; "-Wno-trigraphs"; "-c" ]
+#      ; system = "linux"
+#      ; asm = [ "as" ]
 #      ; asm_cfi_supported = true
 #      ; with_frame_pointers = false
 #      ; ext_exe = ""
@@ -89,8 +86,8 @@ $ /Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /var/folders/4
 #      ; os_type = "Unix"
 #      ; default_executable_name = "a.out"
 #      ; systhread_supported = true
-#      ; host = "x86_64-apple-darwin19.2.0"
-#      ; target = "x86_64-apple-darwin19.2.0"
+#      ; host = "x86_64-pc-linux-gnu"
+#      ; target = "x86_64-pc-linux-gnu"
 #      ; profiling = false
 #      ; flambda = false
 #      ; spacetime = false
@@ -110,4 +107,4 @@ $ /Users/reetuparikh/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /var/folders/4
 #      ; windows_unicode = false
 #      }
 #  }
-# Workspace root: /Users/reetuparikh/Desktop/sqlite
+# Workspace root: /mnt/c/Users/drewm/desktop/upick

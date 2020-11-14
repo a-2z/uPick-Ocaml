@@ -1,9 +1,11 @@
-Upon installation this should include an interface and implementation for a 
-group, user, restaurant. Other scripts are either helpers or include json
-files to test the functionality of our scripts (not all json files have
-been used for testing as of 10-24-20).
+Upon installation this should include an a folder of demo_code, primarily used 
+as a model from MS1 and database files. These create tables and allow you to 
+get and post information to the database tables. 
 
-In order to use current version make sure to first run "make build" in terminal 
-(in the 3110Project folder) to compile all necessary files. After run 
-"make script" to test any functionality that would involve changing
-information from a json and adding it to a group. 
+In order to use current version make sure to first run "dune build main.exe" in 
+terminal (in the 3110Project folder) to compile all necessary files. After that 
+run "dune exec ./main.exe" to run a server on localhost to use any functionality 
+that would involve creating/getting users, groups, restrictions, and friends. 
+We use the app Postman to model these changes (making get/post requests to 
+various routes) and DB Browser for SQLite to browse the database we have 
+created. 

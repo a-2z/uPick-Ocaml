@@ -45,6 +45,7 @@ let create_restrictions_table () =
   CREATE TABLE IF NOT EXISTS restrictions ( 
     user_id INT NOT NULL, 
     restriction INT NOT NULL, 
+    PRIMARY KEY(user_id, restriction),
     FOREIGN KEY(restriction) REFERENCES restriction_index(rowid)
     FOREIGN KEY(user_id) REFERENCES users(rowid)
     ON DELETE SET NULL);
@@ -63,7 +64,7 @@ let create_restriction_index () =
   in match exec db create_restrictions with
   | Rc.OK -> ()
   | r ->
-    let message = "Unable to create table restrictions." in
+    let message = "Unable to create table restriction." in
     error r message
 
 let create_groups_info_table () =
