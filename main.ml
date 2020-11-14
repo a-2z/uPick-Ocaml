@@ -162,7 +162,8 @@ let post_list = [
                |> member "password"
                |> to_string in 
       match (Dbquery.login usrname) with
-      | None -> print_endline "wtfwork"; respond' (`Json (Ezjsonm.from_string {|{"success": false|}))  
+      | None -> print_endline "wtfwork"; respond' 
+          (`Json (Ezjsonm.from_string {|{"success": false|}))  
       | Some password -> begin 
           match Bcrypt.verify pw (Bcrypt.hash_of_string password) with 
           | false -> respond' 
