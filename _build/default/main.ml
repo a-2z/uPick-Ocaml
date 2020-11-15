@@ -175,8 +175,9 @@ let rec app_builder lst app =
 
 let _ = 
   create_tables (); 
-  print_endline "Server running on port http://localhost:3000";
-  App.empty 
+  print_endline "Server running on port http://localhost:5000";
+  App.empty
+  |> App.port 5000
   |> default 
   |> app_builder get_list
   |> app_builder post_list
