@@ -1,8 +1,0 @@
-.git 
-.vscode 
-_build 
-demo_code 
-.DS_Store 
-**/*.out 
-**/*.zip 
-upick.db

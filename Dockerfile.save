@@ -1,3 +1,0 @@
-FROM ocaml/opam:alpine
-
-RUN opam install sqlite3
