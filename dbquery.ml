@@ -96,7 +96,6 @@ let single_row_query
   FROM %s
   WHERE %s;
   |} sql_select sql_tbl sql_where in
-  print_endline sql;
   let stmnt = 
     make_stmt sql in 
   ignore (step stmnt);
