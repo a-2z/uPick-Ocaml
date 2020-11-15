@@ -96,11 +96,6 @@ let get_list = [
       let group = Dbquery.get_group (int_of_string (param req "id")) in
       `Json (group |> json_of_group) |> respond');
 
-  (* restaurants *)   
-  (* get "restaurants/:id" (fun req ->
-      let group = Dbquery.get_restaurant (int_of_string (param req "id")) in
-      `Json (group |> json_of_group) |> respond') *)
-
   (* get restriction by id *)
   get "/restrictions/:id" (fun req ->
       try 
@@ -162,14 +157,14 @@ let post_list = [
                |> member "password"
                |> to_string in 
       match (Dbquery.login usrname) with
-      | None -> print_endline "wtfwork"; respond' 
-          (`Json (Ezjsonm.from_string {|{"success": false|}))  
+      | None -> respond' 
+                  (`Json (Ezjsonm.from_string {|{"success": false}|}))  
       | Some password -> begin 
-          match Bcrypt.verify pw (Bcrypt.hash_of_string password) with 
-          | false -> respond' 
-                       (`Json (Ezjsonm.from_string {|{"success": false|}))
-          | true -> respond' 
-                      (`Json (Ezjsonm.from_string {|{"success": true|})) 
+          if Bcrypt.verify pw (Bcrypt.hash_of_string password) then
+            respond' 
+              (`Json (Ezjsonm.from_string {|{"success": true}|}))
+          else respond' 
+              (`Json (Ezjsonm.from_string {|{"success": false}|})) 
         end);
 ]
 

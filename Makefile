@@ -26,7 +26,7 @@ script:
 	$(OCAMLBUILD) $(SCRIPT) && ./$(SCRIPT)
 
 zip:
-	zip project.zip *.ml* *.json _tags Makefile
+	zip project.zip *.ml* .ocamlinit .merlin *.mli* dune dune-project *.txt* *.md* *.json _tags Makefile
 
 
 

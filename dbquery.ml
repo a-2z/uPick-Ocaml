@@ -96,6 +96,7 @@ let single_row_query
   FROM %s
   WHERE %s;
   |} sql_select sql_tbl sql_where in
+  print_endline sql;
   let stmnt = 
     make_stmt sql in 
   ignore (step stmnt);
@@ -129,11 +130,11 @@ let lst_from_col
   done;
   List.sort_uniq compare (Array.to_list !arr)
 
-(* let login username = 
+let login username = 
   try
     Some (single_row_query "password" "users" 
             ("username = '" ^ username ^ "'")).(0)
-  with e -> ignore(e); None *)
+  with e -> ignore(e); None
 
 (** [get_user userid] returns a representation of a single user from the 
     database in type user.  
