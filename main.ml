@@ -173,7 +173,7 @@ let rec app_builder lst app =
   | [] -> app
   | h :: t -> app_builder t (app |> h)
 
-let port = 5000
+let port = 22
 
 let _ = 
   create_tables (); 
@@ -184,5 +184,5 @@ let _ =
   |> default 
   |> app_builder get_list
   |> app_builder post_list
-  |> App.run_command
+  |> App.start
 
