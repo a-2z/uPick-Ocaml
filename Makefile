@@ -1,11 +1,10 @@
-MODULES=db dbquery main script
+MODULES=db dbquery main 
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
-TEST=test.byte
-APP=main.byte
-SCRIPT=script.byte
-OCAMLBUILD=ocamlbuild -use-ocamlfind 
+TEST= ./src/test.byte 
+APP= ./src/main.byte
+OCAMLBUILD=ocamlbuild -use-ocamlfind
 
 default: build
 	utop
@@ -17,13 +16,10 @@ clean:
 	ocamlbuild -clean
 
 test:
-	$(OCAMLBUILD) -tag 'debug' $(TEST) && ./$(TEST) -runner sequential
+	$(OCAMLBUILD) $(TEST) && ./$(TEST) 
 
 app:
 	$(OCAMLBUILD) $(APP) && ./$(APP)
-
-script:
-	$(OCAMLBUILD) $(SCRIPT) && ./$(SCRIPT)
 
 zip:
 	zip project.zip *.ml* .ocamlinit .merlin *.mli* dune dune-project *.txt* *.md* *.json _tags Makefile

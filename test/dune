@@ -1,0 +1,6 @@
+(test (name unit_test)
+	(modules ../src/main ))
+ 
+ (env
+  (dev
+    (flags (:standard -w -66))))
