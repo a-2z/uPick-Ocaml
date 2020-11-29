@@ -1,1 +1,3 @@
-(executable (name main) (libraries src)) 
+(executable
+  (name main)
+  (libraries lib))

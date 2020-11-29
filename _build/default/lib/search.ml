@@ -23,8 +23,8 @@ type t = result list
 let user_key = "0b2c1f4d2cea4f954b70b3d12683036c"
 
 let string_of_t t = 
-  List.map (fun hd -> Printf.sprintf 
-               {|
+  List.map (fun hd -> let str = Printf.sprintf 
+                          {|
 {
 	"name": "%s",
 	"address": "%s",
@@ -39,8 +39,8 @@ let string_of_t t =
 	"takeout": %b
 }
 |} hd.name hd.address hd.cuisines hd.price 
-               (String.concat "\", \"" hd.highlights) hd.rating hd.photo 
-               hd.timing hd.phone hd.reservation hd.takeout) t
+                          (String.concat "\", \"" hd.highlights) hd.rating hd.photo 
+                          hd.timing hd.phone hd.reservation hd.takeout in print_endline str; str) t
   |> String.concat ",\n"
   |> (fun l -> "{\"restaurants\": [\n" ^ l ^ "\n]}")
 
@@ -49,7 +49,7 @@ let split_str_lst l =
   | [] -> ""
   | h :: t -> String.trim h
 
-  (**[splice n lst] returns the first [n] elements of [lst]
+(**[splice n lst] returns the first [n] elements of [lst]
 
    Requires: [lst] has at least [n] elements.*)
 let splice n lst =
@@ -73,7 +73,7 @@ let to_rest json =
              |> member "user_rating" 
              |> member "aggregate_rating" 
              |> to_string
-             |> float_of_string;
+             |> (fun x -> 3.0);
     photo = json |> member "photos_url" |> to_string;
     timing = json |> member "timings" |> to_string;
     phone = json |> member "phone_numbers" |> to_string |> split_str_lst;
@@ -101,8 +101,8 @@ let set_bound price = begin
   match float_of_int price with 
   | p when p <= 70. -> p *. (1.4 -. (p -. 10.) *. 0.005)
   | p -> p 
-  end
-  |> int_of_float
+end
+                      |> int_of_float
 
 let filter_results price l = 
   let filtered = List.filter (fun x -> (x.price <= price)) l in 
@@ -116,7 +116,6 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
   let url = Printf.sprintf 
       {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
       n loc_x loc_y range (String.concat "%2c" c) in
-  print_endline url;
   Cohttp_lwt_unix.Client.get ~headers:hdr (Uri.of_string url)
   >>= fun a -> snd a 
                |> Cohttp_lwt__.Body.to_string 

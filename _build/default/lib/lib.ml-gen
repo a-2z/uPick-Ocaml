@@ -1,0 +1,14 @@
+(** @canonical Lib.Authors *)
+module Authors = Lib__Authors
+
+(** @canonical Lib.Db *)
+module Db = Lib__Db
+
+(** @canonical Lib.Dbquery *)
+module Dbquery = Lib__Dbquery
+
+(** @canonical Lib.Main *)
+module Main = Lib__Main
+
+(** @canonical Lib.Search *)
+module Search = Lib__Search
