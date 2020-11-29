@@ -1,5 +1,8 @@
 (*TEST SUITE *)
+open Main
 open OUnit2
+open Db
+open Dbquery 
 
 let test_equal name exptd expr = 
   name >:: (fun _ -> assert_equal exptd expr) 

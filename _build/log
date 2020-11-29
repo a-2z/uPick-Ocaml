@@ -1,0 +1,5 @@
+# dune ocaml-merlin --no-print-directory
+# OCAMLPARAM: unset
+# Workspace root: /mnt/c/Users/drewm/desktop/upick
+$ /usr/bin/nproc > /tmp/dune80ba00.output 2> /dev/null
+# Auto-detected concurrency: 8

@@ -1,0 +1,3 @@
+(library 
+  (name main)
+  (libraries yojson opium safepass sqlite3))

@@ -24,7 +24,7 @@ let user_key = "0b2c1f4d2cea4f954b70b3d12683036c"
 
 let string_of_t t = 
   List.map (fun hd -> let str = Printf.sprintf 
-{|
+                          {|
 {
 	"name": "%s",
 	"address": "%s",
@@ -39,8 +39,8 @@ let string_of_t t =
 	"takeout": %b
 }
 |} hd.name hd.address hd.cuisines hd.price 
-               (String.concat "\", \"" hd.highlights) hd.rating hd.photo 
-               hd.timing hd.phone hd.reservation hd.takeout in print_endline str; str) t
+                          (String.concat "\", \"" hd.highlights) hd.rating hd.photo 
+                          hd.timing hd.phone hd.reservation hd.takeout in print_endline str; str) t
   |> String.concat ",\n"
   |> (fun l -> "{\"restaurants\": [\n" ^ l ^ "\n]}")
 
@@ -49,7 +49,7 @@ let split_str_lst l =
   | [] -> ""
   | h :: t -> String.trim h
 
-  (**[splice n lst] returns the first [n] elements of [lst]
+(**[splice n lst] returns the first [n] elements of [lst]
 
    Requires: [lst] has at least [n] elements.*)
 let splice n lst =
@@ -101,8 +101,8 @@ let set_bound price = begin
   match float_of_int price with 
   | p when p <= 70. -> p *. (1.4 -. (p -. 10.) *. 0.005)
   | p -> p 
-  end
-  |> int_of_float
+end
+                      |> int_of_float
 
 let filter_results price l = 
   let filtered = List.filter (fun x -> (x.price <= price)) l in 

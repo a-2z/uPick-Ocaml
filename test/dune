@@ -1,6 +1,1 @@
-(test (name unit_test)
-	(modules ../src/main ))
- 
- (env
-  (dev
-    (flags (:standard -w -66))))
+(test (name unit_test) (libraries lib oUnit2))
