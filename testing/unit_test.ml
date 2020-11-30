@@ -1,6 +1,6 @@
 (*TEST SUITE *)
 open OUnit2
-open Main
+open Lib.Server
 
 let test_equal name exptd expr = 
   name >:: (fun _ -> assert_equal exptd expr) 

@@ -1,16 +1,15 @@
-open Lib.Dbquery
+open Dbquery
 open Lwt.Infix
 open Opium.Std
 open Yojson.Basic
 open Yojson.Basic.Util
-(* open Lib *)
 
 (**************************JSON builders and parsers***************************)
 exception Login_failure of string
 
 let login json =
   let pw = (member "password" json |> to_string) in 
-  let stor_pw = (member "username" json |> to_string |> Lib.Dbquery.login) in 
+  let stor_pw = (member "username" json |> to_string |> Dbquery.login) in 
   match stor_pw with 
   | None -> raise (Login_failure ", Invalid username or password")
   | Some p -> if Bcrypt.verify pw (Bcrypt.hash_of_string p) then ()
@@ -111,18 +110,18 @@ let default =
 let get_list = [
   (* user *)
   get "/users/:id" (fun req -> 
-      let user = Lib.Dbquery.get_user (int_of_string (param req "id")) in
+      let user = Dbquery.get_user (int_of_string (param req "id")) in
       `Json (user |> json_of_user) |> respond'); 
 
   (* groups *)  
   get "/groups/:id" (fun req ->
-      let group = Lib.Dbquery.get_group (int_of_string (param req "id")) in
+      let group = Dbquery.get_group (int_of_string (param req "id")) in
       `Json (group |> json_of_group) |> respond');
 
   (* get restriction by id *)
   get "/restrictions/:id" (fun req ->
       try 
-        let restriction = Lib.Dbquery.get_restriction_by_id 
+        let restriction = Dbquery.get_restriction_by_id 
             (int_of_string (param req "id")) in 
         (`Json 
            (Ezjsonm.from_string 
@@ -133,7 +132,7 @@ let get_list = [
 
   (* get all restrictions *)
   get "/restrictions" 
-    (fun _ -> let restriction = Lib.Dbquery.get_restrictions () in 
+    (fun _ -> let restriction = Dbquery.get_restrictions () in 
       `Json (Ezjsonm.list Ezjsonm.string restriction) |>  
       respond');
 ]
@@ -176,7 +175,7 @@ let post_list = [
                |> from_string 
                |> member "password"
                |> to_string in 
-      match (Lib.Dbquery.login usrname) with
+      match (Dbquery.login usrname) with
       | None -> respond' 
                   (`Json (Ezjsonm.from_string {|{"success": false}|}))  
       | Some password -> begin 
@@ -195,7 +194,7 @@ let rec app_builder lst app =
 
 let port = 3000
 
-let _ = 
+let start () = 
   create_tables (); 
   print_endline 
     ("Server running on port http://localhost:" ^ string_of_int port);

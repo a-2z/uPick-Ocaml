@@ -1,27 +1,39 @@
-MODULES=lib/db lib/dbquery lib/main lib/search test/unit_test
+MODULES=lib/db lib/dbquery main lib/search test/unit_test
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
-TEST=test/unit_test.byte 
-APP=lib/main.byte
+TEST=test/unit_test.byte
+APP=main.byte
 OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build
 	utop
 
 build:
-	$(OCAMLBUILD) $(OBJECTS)
+	@dune build main.exe
+
+test: 
+	@dune runtest
 
 clean:
-	ocamlbuild -clean
+	@dune clean
+	rm -rf doc.public project.zip
 
-test:
-	$(OCAMLBUILD) $(TEST) && ./$(TEST) 
+docs: 
+	mkdir -p doc.public
 
-# docs:
+doc.public: build
+	@dune build @doc
+
+# docs: docs-public docs-private
+	
+# docs-public: build
+# 	mkdir -p doc.public
+# 	ocamlfind ocamldoc -I _build -package yojson,ANSITerminal \
+# 		-html -stars -d doc.public $(MLIS)
 	
 app:
-	$(OCAMLBUILD) $(APP) && ./$(APP)
+	@dune exec ./main.exe
 
 zip:
 	zip project.zip *.ml* .ocamlinit .merlin *.mli* dune dune-project *.txt* *.md* *.json _tags Makefile
