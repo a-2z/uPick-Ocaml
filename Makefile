@@ -1,10 +1,7 @@
-MODULES=lib/db lib/dbquery main lib/search test/unit_test
+MODULES=lib/db lib/dbquery main lib/search testing/unit_test
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
-TEST=test/unit_test.byte
-APP=main.byte
-OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build
 	utop
