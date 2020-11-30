@@ -1,1 +1,3 @@
-(test (name unit_test) (libraries lib oUnit2))
+(test 
+  (name unit_test) 
+    (libraries lib oUnit2))

@@ -3,6 +3,7 @@ open Lwt.Infix
 open Opium.Std
 open Yojson.Basic
 open Yojson.Basic.Util
+(* open Lib *)
 
 (**************************JSON builders and parsers***************************)
 exception Login_failure of string
