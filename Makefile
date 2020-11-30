@@ -1,10 +1,10 @@
-MODULES=db dbquery main 
+MODULES=lib/db lib/dbquery lib/main lib/search test/unit_test
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
-TEST= ./src/test.byte 
-APP= ./src/main.byte
-OCAMLBUILD=ocamlbuild -use-ocamlfind
+TEST= test/unit_test.byte 
+APP= lib/main.byte
+OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build
 	utop
@@ -17,6 +17,9 @@ clean:
 
 test:
 	$(OCAMLBUILD) $(TEST) && ./$(TEST) 
+
+docs:
+	
 
 app:
 	$(OCAMLBUILD) $(APP) && ./$(APP)

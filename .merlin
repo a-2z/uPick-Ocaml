@@ -1,0 +1,7 @@
+B _build
+PKG opium
+PKG yojson
+PKG safepass
+PKG sqlite3
+PKG ounit2
+PKG threads

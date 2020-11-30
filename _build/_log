@@ -1,0 +1,45 @@
+### Starting build.
+# Target: lib/db.mli.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:mli, file:lib/db.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/db.mli > lib/db.mli.depends # cached
+# Target: lib/db.cmi, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:mli, file:lib/db.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/db.cmi lib/db.mli # cached
+# Target: lib/db.ml.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:ml, file:lib/db.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/db.ml > lib/db.ml.depends # cached
+# Target: lib/db.cmo, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:cmo, extension:ml, file:lib/db.cmo, file:lib/db.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/db.cmo lib/db.ml # cached
+# Target: lib/dbquery.mli.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:mli, file:lib/dbquery.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/dbquery.mli > lib/dbquery.mli.depends # cached
+# Target: lib/dbquery.cmi, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:mli, file:lib/dbquery.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/dbquery.cmi lib/dbquery.mli # cached
+# Target: lib/dbquery.ml.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:ml, file:lib/dbquery.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/dbquery.ml > lib/dbquery.ml.depends # cached
+# Target: lib/dbquery.cmo, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:cmo, extension:ml, file:lib/dbquery.cmo, file:lib/dbquery.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/dbquery.cmo lib/dbquery.ml # cached
+# Target: lib/main.mli.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:mli, file:lib/main.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/main.mli > lib/main.mli.depends # cached
+# Target: lib/main.cmi, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:mli, file:lib/main.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/main.cmi lib/main.mli # cached
+# Target: lib/main.ml.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:ml, file:lib/main.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/main.ml > lib/main.ml.depends # cached
+# Target: lib/main.cmo, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:cmo, extension:ml, file:lib/main.cmo, file:lib/main.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/main.cmo lib/main.ml # cached
+# Target: lib/search.mli.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:mli, file:lib/search.mli, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/search.mli > lib/search.mli.depends # cached
+# Target: lib/search.cmi, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:mli, file:lib/search.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/search.cmi lib/search.mli # cached
+# Target: lib/search.ml.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:ml, file:lib/search.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules lib/search.ml > lib/search.ml.depends # cached
+# Target: lib/search.cmo, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:cmo, extension:ml, file:lib/search.cmo, file:lib/search.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I lib -o lib/search.cmo lib/search.ml # cached
+# Target: test/unit_test.ml.depends, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), extension:ml, file:test/unit_test.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -modules test/unit_test.ml > test/unit_test.ml.depends # cached
+# Target: test/unit_test.cmo, tags: { package(opium), package(ounit2), package(safepass), package(sqlite3), package(threads), package(yojson), byte, compile, extension:cmo, extension:ml, file:test/unit_test.cmo, file:test/unit_test.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I test -o test/unit_test.cmo test/unit_test.ml
++ ocamlfind ocamlc -c -package yojson -package ounit2 -package sqlite3 -package opium -package safepass -package threads -I test -o test/unit_test.cmo test/unit_test.ml
+ocamlfind: [WARNING] Package `threads': Linking problems may arise because of the missing -thread or -vmthread switch
+File "test/unit_test.ml", line 3, characters 5-9:
+3 | open Main
+         ^^^^
+Error: Unbound module Main
+Command exited with code 2.
+# Compilation unsuccessful.

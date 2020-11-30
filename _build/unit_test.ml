@@ -7,7 +7,7 @@ let test_equal name exptd expr =
 
 let number_tests = [
   test_equal "two is two" 2 2;
-  test_equal "port is 3000" port 3000;
+  (* test_equal "port is 3000" port 3000; *)
 ]
 
 let tests = "test suite for uPick" >::: List.flatten [
