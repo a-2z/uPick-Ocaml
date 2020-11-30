@@ -2,8 +2,8 @@ MODULES=lib/db lib/dbquery lib/main lib/search test/unit_test
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
-TEST= test/unit_test.byte 
-APP= lib/main.byte
+TEST=test/unit_test.byte 
+APP=lib/main.byte
 OCAMLBUILD=ocamlbuild -use-ocamlfind 
 
 default: build
@@ -18,9 +18,8 @@ clean:
 test:
 	$(OCAMLBUILD) $(TEST) && ./$(TEST) 
 
-docs:
+# docs:
 	
-
 app:
 	$(OCAMLBUILD) $(APP) && ./$(APP)
 

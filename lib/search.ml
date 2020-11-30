@@ -1,4 +1,4 @@
-open Cohttp.Header
+(* open Cohttp.Header
 open Lwt.Infix
 open Yojson.Basic
 open Yojson.Basic.Util
@@ -123,4 +123,4 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
                           |> from_body 
                           |> filter_results price
                           |> string_of_t) in 
-  Lwt.return (from_string fmt)
+  Lwt.return (from_string fmt) *)

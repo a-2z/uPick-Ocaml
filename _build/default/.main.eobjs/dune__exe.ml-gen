@@ -1,0 +1,5 @@
+(** @canonical Dune__exe.Main *)
+module Main = Dune__exe__Main
+
+(** @canonical Dune__exe.Paste_here *)
+module Paste_here = Dune__exe__Paste_here

@@ -1,0 +1,5 @@
+(** @canonical Dune__exe.Jsons *)
+module Jsons = Dune__exe__Jsons
+
+(** @canonical Dune__exe.Unit_test *)
+module Unit_test = Dune__exe__Unit_test
