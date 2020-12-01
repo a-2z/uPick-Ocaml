@@ -68,20 +68,25 @@ let add_restrictions_index restriction =
 
 let add_groups group_id member_id = 
   let sql =
-    Printf.sprintf "INSERT INTO groups VALUES(%d, %d)"
-      group_id member_id in
+    Printf.sprintf "INSERT INTO groups VALUES(%d, %d, %f, %f, %d, '%s')"
+      group_id member_id 0.0 0.0 0 "" in
   make_response (exec db sql)
 
 let add_group_info group_name host_id = 
   let sql =
-    Printf.sprintf "INSERT INTO group_info VALUES('%s', %d)"
-      group_name host_id in
+    Printf.sprintf "INSERT INTO group_info VALUES('%s', %d, %d)"
+      group_name host_id 1 in
   match exec db sql with
   | Rc.OK ->
     let id = Sqlite3.last_insert_rowid db in
     Printf.printf "Row inserted with id %Ld\n" id;
     ignore (add_groups (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
+
+
+
+(* INSERT VOTING INFO FROM BALLOT INTO GROUPS TABLE *)
+
 
 let make_stmt sql = prepare db sql 
 

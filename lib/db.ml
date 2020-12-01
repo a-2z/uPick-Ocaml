@@ -72,6 +72,7 @@ let create_groups_info_table () =
   CREATE TABLE IF NOT EXISTS group_info ( 
     group_name TEXT NOT NULL,
     host_id INTEGER NOT NULL,
+    num_members INTEGER NOT NULL,
     PRIMARY KEY(group_name, host_id),
     FOREIGN KEY(host_id) REFERENCES users(rowid)
           ON DELETE SET NULL, 
@@ -89,6 +90,10 @@ let create_groups_table () =
   CREATE TABLE IF NOT EXISTS groups ( 
     group_id INTEGER,  
     member_id INTEGER NOT NULL, 
+    loc_x FLOAT NOT NULL,
+    loc_y FLOAT NOT NULL,
+    target_price INT NOT NULL,
+    cuisines TEXT,
     PRIMARY KEY(group_id, member_id),
     FOREIGN KEY(group_id) REFERENCES group_info(rowid)
           ON DELETE SET NULL

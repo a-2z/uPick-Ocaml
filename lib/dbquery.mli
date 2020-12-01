@@ -1,3 +1,4 @@
+(** type user defines a type for each user *)
 type user = {
   id : int;
   username : string;
@@ -8,6 +9,7 @@ type user = {
   groups : int list 
 }
 
+(* type group contains all relevant information for a group *)
 type group = {
   id : int;
   name : string;
@@ -15,6 +17,8 @@ type group = {
   members : int list;
 }
 
+(* type restriction defines an association between a user and their 
+  restriction *)
 type restriction = {
   id : int;
   name : string;
@@ -25,27 +29,31 @@ type restriction = {
 (**[add_user username password_hash name] registers a user in the database.*)
 val add_user : string -> string -> string -> int64 option
 
-(**[add_friends friend1 friend2 inserts a pairing of two friends]
+(** [add_friends friend1 friend2] inserts a pairing of two friends into the 
+  database
    Requires: friend1 is not friend2
-   Raises: Invalid_arg*)
+   Raises: Invalid_arg *)
 val add_friends : int -> int -> int64 option
 
-(**[add_restrictions user_id restriction_id] performs a restriction insertion
-   Requires: restriction_id and user_id are both valid*)
+(** [add_restrictions user_id restriction_id] performs a restriction insertion 
+  into a table
+   Requires: restriction_id and user_id are both valid integers *)
 val add_restrictions : int -> int -> int64 option
 
-(**[add_restrictions_index restriction_name]*)
+(** [add_restrictions_index restriction_name] inserts a restriction into a 
+  table and associates it with an id *)
 val add_restrictions_index : string -> int64 option
 
-(**[add_group_info group_name host_id] *)
+(** [add_group_info group_name host_id] inserts information about a group into
+  a table *)
 val add_group_info : string -> int -> int64 option
 
-(**[add_groups user_id group_id] *)
+(** [add_groups user_id group_id] *)
 val add_groups : int -> int -> int64 option
 
 val login : string -> string option
 
-(*Get functions for the database*)
+(* get from database *)
 
 (**[get_user user_id] returns a user given [user_id*)
 val get_user : int -> user
