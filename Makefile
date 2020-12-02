@@ -9,6 +9,9 @@ default: build
 build:
 	@dune build main.exe
 
+script:
+	@dune exec ./script.exe
+
 test: 
 	@dune runtest
 

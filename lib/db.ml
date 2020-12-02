@@ -73,6 +73,8 @@ let create_groups_info_table () =
     group_name TEXT NOT NULL,
     host_id INTEGER NOT NULL,
     num_members INTEGER NOT NULL,
+    top_5 TEXT, --JSON
+    top_pick TEXT, --JSON
     PRIMARY KEY(group_name, host_id),
     FOREIGN KEY(host_id) REFERENCES users(rowid)
           ON DELETE SET NULL, 
@@ -90,10 +92,13 @@ let create_groups_table () =
   CREATE TABLE IF NOT EXISTS groups ( 
     group_id INTEGER,  
     member_id INTEGER NOT NULL, 
-    loc_x FLOAT NOT NULL,
-    loc_y FLOAT NOT NULL,
-    target_price INT NOT NULL,
+    loc_x FLOAT,
+    loc_y FLOAT,
+    target_price INT,
     cuisines TEXT,
+    range INT,
+    surveyed INTEGER DEFAULT 0,
+    voted INTEGER DEFAULT 0,
     PRIMARY KEY(group_id, member_id),
     FOREIGN KEY(group_id) REFERENCES group_info(rowid)
           ON DELETE SET NULL

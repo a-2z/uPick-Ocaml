@@ -1,5 +1,0 @@
-# dune ocaml-merlin --no-print-directory
-# OCAMLPARAM: unset
-# Workspace root: /Users/reetuparikh/Desktop/sqlite
-$ /usr/bin/getconf _NPROCESSORS_ONLN > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune3fb101.output 2> /dev/null
-# Auto-detected concurrency: 8

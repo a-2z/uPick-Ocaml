@@ -24,6 +24,14 @@ type restriction = {
   name : string;
 }
 
+(* type ballot = {
+  loc_x : float;
+  loc_y : float;
+  cuisine : string;
+  price : int;
+  range : float;
+} *)
+
 (**[make_response] returns [Some last_id] if an insertion operation succeeded
    and [None] otherwise.*)
 let make_response = function 
@@ -67,9 +75,14 @@ let add_restrictions_index restriction =
   make_response (exec db sql)
 
 let add_groups group_id member_id = 
+  let sql = {|
+  UPDATE group_info 
+    SET num_members = num_members + 1 
+  WHERE group_id = |} ^ string_of_int group_id in
+  ignore (exec db sql); (*Ignore return code of the update operation *)
   let sql =
-    Printf.sprintf "INSERT INTO groups VALUES(%d, %d, %f, %f, %d, '%s')"
-      group_id member_id 0.0 0.0 0 "" in
+    Printf.sprintf "INSERT INTO groups (group_id, member_id) VALUES(%d, %d)"
+      group_id member_id in
   make_response (exec db sql)
 
 let add_group_info group_name host_id = 
@@ -84,9 +97,15 @@ let add_group_info group_name host_id =
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
 
-
 (* INSERT VOTING INFO FROM BALLOT INTO GROUPS TABLE *)
-
+(* let user_vote user_id group_id loc_x loc_y cuisine price range = 
+  let sql = Printf.sprintf {|
+  UPDATE groups 
+  SET loc_x = %f, loc_y = %f, 
+  target_price = %d, cuisine = %s, range = %d, surveyed = 1 
+  WHERE member_id = %d AND group_id = %d|} 
+  loc_x loc_y cuisine price range user_id group_id in
+  exec db sql *)
 
 let make_stmt sql = prepare db sql 
 
