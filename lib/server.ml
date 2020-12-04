@@ -63,11 +63,40 @@ let json_of_restriction_id restriction =
 
 (**Checks to see if [u_id] is in [g_id*)
 let is_member g_id u_id =
-  List. mem g_id (get_user u_id).groups 
+  List.mem g_id (get_user u_id).groups 
 
 (**Checks to see if two users are friends, with [f1] being the sender*)
 let is_friend f1 f2 = 
-  List. mem f2 (get_user f1).friends
+  List.mem f2 (get_user f1).friends
+
+let is_host g_id u_id = 
+  (get_group g_id).host_id = u_id
+
+(* let allow_vote req ins_func inserter = 
+  req.Request.body
+  |> Body.to_string
+  >>= fun a -> 
+  let json = from_string a in
+  let group_id = member "group_id" json |> to_int in 
+  let group_info = Dbquery.get_group group_id in
+  let user_id = member "user_id" json |> to_int in 
+  if List.mem user_id group_info.members 
+  then load_json_login req ins_func inserter else 
+    respond' (`Json (Ezjsonm.from_string 
+                       (Printf.sprintf {|{"success": false %s|} a)))
+
+let start_vote req ins_func inserter = 
+  req.Request.body
+  |> Body.to_string
+  >>= fun a -> 
+  let json = from_string a in
+  let group_id = member "group_id" json |> to_int in 
+  let group_info = Dbquery.get_group group_id in
+  let user_id = member "user_id" json |> to_int in 
+  if user_id = group_info.host_id
+  then load_json_login req ins_func inserter else 
+    respond' (`Json (Ezjsonm.from_string 
+                       (Printf.sprintf {|{"success": false %s|} a))) *)
 
 (*****************************database inserters*******************************)
 (**[user_inserter json ins_func] inserts the data representing a user into
@@ -119,6 +148,20 @@ let survey_inserter json ins_func =
         (member "range" json |> to_int)
     end
   else None 
+
+let vote_inserter json ins_func = 
+  ins_func
+    (member "user_id" json |> to_int)
+    (member "group_id" json |> to_int)
+    (member "locx" json |> to_float)
+    (member "locy" json |> to_float)
+    (member "price" json |> to_int)
+    (member "cuisine" json |> to_string)
+    (member "range" json |> to_int)
+
+let vote_start_inserter json ins_func = 
+  ins_func 
+    (member "group_id" json |> to_int)
 
 (*******************************route list*************************************)
 
@@ -211,7 +254,11 @@ let post_list = [
 
   (*Voting Routes*)
   post "/survey" (fun req ->
-      load_json_login req ans_survey survey_inserter)
+      load_json_login req ans_survey survey_inserter);
+  (* post "/vote" (fun req ->
+      allow_vote req ans_survey vote_inserter);
+  post "/ready" (fun req -> 
+      start_vote req user_vote vote_start_inserter); *)
 ]
 
 let rec app_builder lst app = 

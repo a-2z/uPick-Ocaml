@@ -57,7 +57,6 @@ val ans_survey : int -> int -> float -> float -> string -> int -> int
   -> int64 option
 
 (* get from database *)
-
 (**[get_user user_id] returns a user given [user_id*)
 val get_user : int -> user
 

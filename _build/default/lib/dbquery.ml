@@ -96,7 +96,6 @@ let add_group_info group_name host_id =
     ignore (add_groups (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
-
 (* INSERT VOTING INFO FROM BALLOT INTO GROUPS TABLE *)
 let ans_survey user_id group_id loc_x loc_y cuisine price range = 
   let sql = Printf.sprintf {|

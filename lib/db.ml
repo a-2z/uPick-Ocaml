@@ -72,7 +72,7 @@ let create_groups_info_table () =
   CREATE TABLE IF NOT EXISTS group_info ( 
     group_name TEXT NOT NULL,
     host_id INTEGER NOT NULL,
-    num_members INTEGER NOT NULL,
+    num_members INTEGER DEFAULT 1,
     top_5 TEXT, --JSON
     top_pick TEXT, --JSON
     PRIMARY KEY(group_name, host_id),
