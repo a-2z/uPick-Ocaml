@@ -1,0 +1,3 @@
+(test 
+  (name unit_test) 
+    (libraries lib ounit2))

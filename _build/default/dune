@@ -1,0 +1,9 @@
+(executable
+  (name main)
+    (modules main)
+    (libraries lib))
+
+(executable
+  (name script)
+  (modules script)
+    (libraries lib))

@@ -1,0 +1,53 @@
+{
+    "User": {
+        "id": "1",
+        "username": "Zach123",
+        "password": "FindingFood934",
+        "name": "Zach",
+        "friends": [
+            2,
+            3,
+            4
+        ],
+        "preferences": {
+            "time": "15",
+            "dist": "10",
+            "price": "moderate",
+            "openness": "true",
+            "restrictions": "Dairy"
+        },
+        "Visited Restaurants": [
+            123
+        ]
+    },
+    "Restaurant": {
+        "id": 123,
+        "name": "Wings Over Ithaca",
+        "location": "121 Dryden Rd. Ithaca, NY 14850",
+        "food_type": "Mexican",
+        "rating": 4.3,
+        "allergies": [
+            "egg",
+            "peanut"
+        ],
+        "avg_price": "moderate"
+    },
+    "Groups": {
+        "id": "23",
+        "users": [
+            "Zach123",
+            "Andrew1",
+            "Andrew2",
+            "Reetu123"
+        ],
+        "restaurants": [
+            "Mango Mango",
+            "Wings Over Ithaca",
+            "Luna"
+        ],
+        "voting_progress": "true",
+        "user_voted": "true",
+        "group_voted": "true"
+    },
+    "SessionID": 4839102
+}
