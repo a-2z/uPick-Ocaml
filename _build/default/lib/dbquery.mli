@@ -18,7 +18,7 @@ type group = {
 }
 
 (* type restriction defines an association between a user and their 
-  restriction *)
+   restriction *)
 type restriction = {
   id : int;
   name : string;
@@ -30,28 +30,31 @@ type restriction = {
 val add_user : string -> string -> string -> int64 option
 
 (** [add_friends friend1 friend2] inserts a pairing of two friends into the 
-  database
-   Requires: friend1 is not friend2
-   Raises: Invalid_arg *)
+    database
+    Requires: friend1 is not friend2
+    Raises: Invalid_arg *)
 val add_friends : int -> int -> int64 option
 
 (** [add_restrictions user_id restriction_id] performs a restriction insertion 
-  into a table
-   Requires: restriction_id and user_id are both valid integers *)
+    into a table
+    Requires: restriction_id and user_id are both valid integers *)
 val add_restrictions : int -> int -> int64 option
 
 (** [add_restrictions_index restriction_name] inserts a restriction into a 
-  table and associates it with an id *)
+    table and associates it with an id *)
 val add_restrictions_index : string -> int64 option
 
 (** [add_group_info group_name host_id] inserts information about a group into
-  a table *)
+    a table *)
 val add_group_info : string -> int -> int64 option
 
 (** [add_groups user_id group_id] *)
 val add_groups : int -> int -> int64 option
 
 val login : string -> string option
+
+val ans_survey : int -> int -> float -> float -> string -> int -> int
+  -> int64 option
 
 (* get from database *)
 

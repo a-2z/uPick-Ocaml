@@ -25,12 +25,12 @@ type restriction = {
 }
 
 (* type ballot = {
-  loc_x : float;
-  loc_y : float;
-  cuisine : string;
-  price : int;
-  range : float;
-} *)
+   loc_x : float;
+   loc_y : float;
+   cuisine : string;
+   price : int;
+   range : float;
+   } *)
 
 (**[make_response] returns [Some last_id] if an insertion operation succeeded
    and [None] otherwise.*)
@@ -98,14 +98,14 @@ let add_group_info group_name host_id =
 
 
 (* INSERT VOTING INFO FROM BALLOT INTO GROUPS TABLE *)
-(* let user_vote user_id group_id loc_x loc_y cuisine price range = 
+let ans_survey user_id group_id loc_x loc_y cuisine price range = 
   let sql = Printf.sprintf {|
   UPDATE groups 
   SET loc_x = %f, loc_y = %f, 
-  target_price = %d, cuisine = %s, range = %d, surveyed = 1 
+  target_price = %d, cuisines = %s, range = %d, surveyed = 1 
   WHERE member_id = %d AND group_id = %d|} 
-  loc_x loc_y cuisine price range user_id group_id in
-  exec db sql *)
+      loc_x loc_y price cuisine range user_id group_id in
+  make_response (exec db sql) 
 
 let make_stmt sql = prepare db sql 
 

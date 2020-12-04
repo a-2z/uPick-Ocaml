@@ -15,13 +15,13 @@ let login json =
   | Some p -> if Bcrypt.verify pw (Bcrypt.hash_of_string p) then ()
     else raise (Login_failure ", Invalid username or password")
 
-let make_response ?err:(e = "") = function
+let make_response = function
   | Some id -> respond' 
                  (`Json (Ezjsonm.from_string 
                            ({|{"success": true, "id": |} ^
                             Int64.to_string id ^ "}")))
   | None -> respond' (`Json (Ezjsonm.from_string 
-                               (Printf.sprintf {|{"success": false %s|} e)))  
+                               {|{"success": false }|}))  
 
 let load_json req ins_func inserter =
   req.Request.body
@@ -40,13 +40,13 @@ let load_json_login req ins_func inserter =
     login json;
     Lwt.return (inserter (from_string a) ins_func) >>= fun a -> make_response a
   with 
-  | Login_failure e -> Lwt.return None >>= fun a -> make_response ~err:e a
+  | Login_failure _ -> Lwt.return None >>= fun a -> make_response a
 
 let json_of_user {id; username; password; name; friends; restrictions; 
                   groups} =
+  ignore (password); (*Do not return the user's password on a get request*)
   let open Ezjsonm in
   dict [("id", int id); ("username", string username); 
-        ("password", string password);
         ("name", string name); ("friends", list int friends);
         ("restrictions", list int restrictions);
         ("groups", list int groups);]
@@ -60,6 +60,14 @@ let json_of_group {id; name; host_id; members} =
 let json_of_restriction_id restriction = 
   let open Ezjsonm in 
   dict [("restriction", string restriction)]
+
+(**Checks to see if [u_id] is in [g_id*)
+let is_member g_id u_id =
+  List. mem g_id (get_user u_id).groups 
+
+(**Checks to see if two users are friends, with [f1] being the sender*)
+let is_friend f1 f2 = 
+  List. mem f2 (get_user f1).friends
 
 (*****************************database inserters*******************************)
 (**[user_inserter json ins_func] inserts the data representing a user into
@@ -95,7 +103,22 @@ let group_info_inserter json ins_func =
 let group_inserter json ins_func = 
   ins_func
     (member "group_id" json |> to_int)
-    (member "member_id" json |> to_int)
+    (member "user_id" json |> to_int)
+
+let survey_inserter json ins_func = 
+  if is_member 
+      (member "group_id" json |> to_int) (member "user_id" json |> to_int) then 
+    begin print_endline "hi";
+      ins_func 
+        (member "user_id" json |> to_int)
+        (member "group_id" json |> to_int)
+        (member "loc_x" json |> to_float)
+        (member "loc_y" json |> to_float)
+        (member "cuisine" json |> to_string)
+        (member "price" json |> to_int)
+        (member "range" json |> to_int)
+    end
+  else None 
 
 (*******************************route list*************************************)
 
@@ -178,13 +201,17 @@ let post_list = [
       match (Dbquery.login usrname) with
       | None -> respond' 
                   (`Json (Ezjsonm.from_string {|{"success": false}|}))  
-      | Some password -> begin 
-          if Bcrypt.verify pw (Bcrypt.hash_of_string password) then
-            respond' 
-              (`Json (Ezjsonm.from_string {|{"success": true}|}))
-          else respond' 
-              (`Json (Ezjsonm.from_string {|{"success": false}|})) 
-        end);
+      | Some password -> 
+        print_endline password;
+        if Bcrypt.verify pw (Bcrypt.hash_of_string password) then
+          respond' 
+            (`Json (Ezjsonm.from_string {|{"success": true}|}))
+        else respond' 
+            (`Json (Ezjsonm.from_string {|{"success": false}|})));
+
+  (*Voting Routes*)
+  post "/survey" (fun req ->
+      load_json_login req ans_survey survey_inserter)
 ]
 
 let rec app_builder lst app = 
