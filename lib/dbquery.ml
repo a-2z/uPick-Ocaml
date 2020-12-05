@@ -24,13 +24,55 @@ type restriction = {
   name : string;
 }
 
-(* type ballot = {
-   loc_x : float;
-   loc_y : float;
-   cuisine : string;
-   price : int;
-   range : float;
-   } *)
+let make_stmt sql = prepare db sql 
+
+(**[single_row_query sql_col sql_tbl sql_where] is an array of strings 
+   representing the columns [sql_select] in a single row matching [sql_where]*)
+let single_row_query
+    (sql_select : string) 
+    (sql_tbl : string) 
+    (sql_where : string) = 
+  let sql = Printf.sprintf {|
+  SELECT %s
+  FROM %s
+  WHERE %s;
+  |} sql_select sql_tbl sql_where in
+  let stmnt = 
+    make_stmt sql in 
+  ignore (step stmnt);
+  Array.map Data.to_string_coerce (row_data stmnt)
+
+(**[lst_from_col sql_col sql_tbl sql_where f] is a list of lists containing 
+   the values of [sql_col] in [sql_tbl] satisfying [sql_where], converted into 
+   their primitive types from a string representation with [f]
+   Returns: a list of lists of values for a query
+   Requires: [sql_col] contains only one column
+   [sql_col], [sql_tbl], abd [sql_where] are defined in the schema.*)
+let lst_from_col 
+    (sql_col : string) 
+    (sql_tbl : string) 
+    (sql_where : string) 
+    (f : string -> 'a) = 
+  let arr = ref [||] in
+  let stmnt = 
+    make_stmt (Printf.sprintf {|
+  SELECT %s
+  FROM %s
+  WHERE %s;
+  |} sql_col sql_tbl sql_where) in 
+  while (step stmnt) = ROW do 
+    let value = (row_data stmnt).(0)
+                |> Data.to_string_coerce 
+                |> f in
+    arr := Array.append !arr [|value|]
+  done;
+  List.sort_uniq compare (Array.to_list !arr)
+
+(**Returns the number of occurrences of rows satisfying [sql_where] in
+   [sql_tbl*)
+let count sql_tbl sql_where = 
+  single_row_query "COUNT *" sql_tbl sql_where 
+  |> fun arr -> int_of_string (arr.(0))
 
 (**[make_response] returns [Some last_id] if an insertion operation succeeded
    and [None] otherwise.*)
@@ -78,7 +120,7 @@ let add_groups group_id member_id =
   let sql = {|
   UPDATE group_info 
     SET num_members = num_members + 1 
-  WHERE group_id = |} ^ string_of_int group_id in
+  WHERE rowid = |} ^ string_of_int group_id in
   ignore (exec db sql); (*Ignore return code of the update operation *)
   let sql =
     Printf.sprintf "INSERT INTO groups (group_id, member_id) VALUES(%d, %d)"
@@ -87,8 +129,9 @@ let add_groups group_id member_id =
 
 let add_group_info group_name host_id = 
   let sql =
-    Printf.sprintf "INSERT INTO group_info VALUES('%s', %d, %d)"
-      group_name host_id 1 in
+    Printf.sprintf 
+      "INSERT INTO group_info (group_name, host_id) VALUES('%s', %d)"
+      group_name host_id in
   match exec db sql with
   | Rc.OK ->
     let id = Sqlite3.last_insert_rowid db in
@@ -96,67 +139,16 @@ let add_group_info group_name host_id =
     ignore (add_groups (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
-(* INSERT VOTING INFO FROM BALLOT INTO GROUPS TABLE *)
-let ans_survey user_id group_id loc_x loc_y cuisine price range = 
-  let sql = Printf.sprintf {|
-  UPDATE groups 
-  SET loc_x = %f, loc_y = %f, 
-  target_price = %d, cuisines = %s, range = %d, surveyed = 1 
-  WHERE member_id = %d AND group_id = %d|} 
-      loc_x loc_y price cuisine range user_id group_id in
-  make_response (exec db sql) 
-
-let make_stmt sql = prepare db sql 
-
-(**[single_row_query sql_col sql_tbl sql_where] is an array of strings 
-   representing the columns [sql_select] in a single row matching [sql_where]*)
-let single_row_query
-    (sql_select : string) 
-    (sql_tbl : string) 
-    (sql_where : string) = 
-  let sql = Printf.sprintf {|
-  SELECT %s
-  FROM %s
-  WHERE %s;
-  |} sql_select sql_tbl sql_where in
-  let stmnt = 
-    make_stmt sql in 
-  ignore (step stmnt);
-  Array.map Data.to_string_coerce (row_data stmnt)
-
-(**[lst_from_col sql_col sql_tbl sql_where f] is a list of lists containing 
-   the values of [sql_col] in [sql_tbl] satisfying [sql_where], converted into 
-   their primitive types from a string representation with [f]
-
-   Returns: a list of lists of values for a query
-   Requires: [sql_col] contains only one column
-   [sql_col], [sql_tbl], abd [sql_where] are defined in the schema.
-*)
-let lst_from_col 
-    (sql_col : string) 
-    (sql_tbl : string) 
-    (sql_where : string) 
-    (f : string -> 'a) = 
-  let arr = ref [||] in
-  let stmnt = 
-    make_stmt (Printf.sprintf {|
-  SELECT %s
-  FROM %s
-  WHERE %s;
-  |} sql_col sql_tbl sql_where) in 
-  while (step stmnt) = ROW do 
-    let value = (row_data stmnt).(0)
-                |> Data.to_string_coerce 
-                |> f in
-    arr := Array.append !arr [|value|]
-  done;
-  List.sort_uniq compare (Array.to_list !arr)
-
 let login username = 
   try
     Some (single_row_query "password" "users" 
             ("username = '" ^ username ^ "'")).(0)
   with e -> ignore(e); None
+
+(**[id_by_usr usr] is the id of the user with unique username [usr]*)
+let id_by_usr usr =
+  (single_row_query "rowid" "users" ("username = " ^ usr)).(0)
+  |> int_of_string
 
 (** [get_user userid] returns a representation of a single user from the 
     database in type user.  
@@ -207,5 +199,57 @@ let get_restriction_by_id rest_id =
       "restriction" "restriction_index" 
       ("rowid = " ^ string_of_int rest_id) in
   rest.(0)
+
+(* INSERT VOTING INFO FROM BALLOT INTO GROUPS TABLE *)
+let ans_survey user_id group_id loc_x loc_y cuisine price range = 
+  let sql = Printf.sprintf {|
+  UPDATE groups 
+  SET loc_x = %f, loc_y = %f, 
+  target_price = %d, cuisines = %s, range = %d, surveyed = 1 
+  WHERE member_id = %d AND group_id = %d|} 
+      loc_x loc_y price cuisine range user_id group_id in
+  make_response (exec db sql) 
+
+let avg_flt col n g_id =
+  let n = float_of_int n in
+  let g = string_of_int g_id in 
+  lst_from_col col "groups" ("WHERE group_id = " ^ g) float_of_string
+  |> List.fold_left ( +. ) 0.
+  |> fun x -> x /. n
+
+let avg_int col n g_id = 
+  let g = string_of_int g_id in 
+  lst_from_col col "groups" ("WHERE group_id = " ^ g) int_of_string 
+  |> List.fold_left ( + ) 0
+  |> fun x -> x / n
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in 
+  if begin
+    (count "group_info" ("host_id = " ^ str_hid) > 0 && 
+     count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
+  end then 
+    let to_drop = {|
+  DELETE * FROM groups
+  WHERE surveyed = 0 AND group_id = |} ^ str_gid in
+    ignore (make_response (exec db to_drop));
+    let num_votes = count "groups" ("WHERE group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = 
+      lst_from_col "cuisines" "groups" ("WHERE group_id = " ^ str_gid )
+        (fun x -> x)
+      |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+                  |> String.split_on_char ','
+                  |> List.filter (fun s -> s <> "") in
+    let sql = Printf.sprintf 
+        "UPDATE group_info SET top5 = '%s' WHERE row_id = %d" 
+        (Search.get_rests ~cuisine:cuisines x y range price) g_id in 
+    make_response (exec db sql)
+  else 
+    None
 
 let create_tables () = Db.create_tables ()

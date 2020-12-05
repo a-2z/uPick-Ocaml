@@ -56,8 +56,12 @@ val login : string -> string option
 val ans_survey : int -> int -> float -> float -> string -> int -> int
   -> int64 option
 
+val process_survey : int -> int -> int64 option
+
 (* get from database *)
 (**[get_user user_id] returns a user given [user_id*)
+val id_by_usr : string -> int
+
 val get_user : int -> user
 
 val get_group : int -> group

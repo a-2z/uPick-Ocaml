@@ -31,38 +31,40 @@ let restriction_index_list = [
 ]
 
 let rec add_users' = function 
-| [] -> ();
-| (un, pw, n) :: t -> ignore(add_user un pw n); add_users' t
+  | [] -> ();
+  | (un, pw, n) :: t -> 
+    let hash = pw |> Bcrypt.hash |> Bcrypt.string_of_hash in 
+    ignore(add_user un hash n); add_users' t
 
 let rec add_friends' = function 
-| [] -> ();
-| (f1, f2) :: t -> ignore(add_friends f1 f2); add_friends' t
+  | [] -> ();
+  | (f1, f2) :: t -> ignore(add_friends f1 f2); add_friends' t
 
 let rec add_group_info' = function 
-| [] -> ();
-| (gn, hid) :: t -> ignore(add_group_info gn hid); add_group_info' t
+  | [] -> ();
+  | (gn, hid) :: t -> ignore(add_group_info gn hid); add_group_info' t
 
 let rec add_groups' = function 
-| [] -> ();
-| (gid, mid) :: t -> ignore(add_groups gid mid); add_groups' t
+  | [] -> ();
+  | (gid, mid) :: t -> ignore(add_groups gid mid); add_groups' t
 
 let rec add_restrictions' = function 
-| [] -> ();
-| (uid, rid) :: t -> ignore(add_restrictions uid rid); add_restrictions' t
+  | [] -> ();
+  | (uid, rid) :: t -> ignore(add_restrictions uid rid); add_restrictions' t
 
 let rec add_rest_idx' = function 
-| [] -> ();
-| rest_name :: t -> ignore(add_restrictions_index rest_name); add_rest_idx' t
+  | [] -> ();
+  | rest_name :: t -> ignore(add_restrictions_index rest_name); add_rest_idx' t
 
 (**Insert Information*)
 let _ = 
-create_tables ();
-add_users' user_list;
-add_friends' friends_list;
-add_group_info' group_info_list;
-add_groups' group_list;
-add_restrictions' restriction_list;
-add_rest_idx' restriction_index_list;
+  create_tables ();
+  add_users' user_list;
+  add_friends' friends_list;
+  add_group_info' group_info_list;
+  add_groups' group_list;
+  add_restrictions' restriction_list;
+  add_rest_idx' restriction_index_list;
 
 
 

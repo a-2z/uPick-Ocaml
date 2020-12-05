@@ -1,2 +1,2 @@
-(* val search_nearby : ?num:int -> float -> float -> float -> string 
-  -> Yojson.Basic.t *)
+val get_rests : ?num : int -> ?cuisine : string list -> float -> float -> int -> 
+  int -> string
