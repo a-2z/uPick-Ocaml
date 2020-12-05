@@ -1,5 +1,114 @@
-# dune ocaml-merlin --no-print-directory
+# dune exec ./main.exe
 # OCAMLPARAM: unset
-# Workspace root: /Users/reetuparikh/Desktop/sqlite
-$ /usr/bin/getconf _NPROCESSORS_ONLN > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune3e9e08.output 2> /dev/null
+# Workspace root: /mnt/c/Users/drewm/desktop/upick
+$ /usr/bin/nproc > /tmp/dune4676c2.output 2> /dev/null
 # Auto-detected concurrency: 8
+# disable binary cache
+$ /home/andrew/.opam/cs3110-2020fa/bin/ocamlc.opt -config > /tmp/duned75749.output
+# Dune context:
+#  { name = "default"
+#  ; kind = "default"
+#  ; profile = Dyn
+#  ; merlin = true
+#  ; for_host = None
+#  ; fdo_target_exe = None
+#  ; build_dir = "default"
+#  ; toplevel_path =
+#      Some External "/home/andrew/.opam/cs3110-2020fa/lib/toplevel"
+#  ; ocaml_bin = External "/home/andrew/.opam/cs3110-2020fa/bin"
+#  ; ocaml = Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocaml"
+#  ; ocamlc = External "/home/andrew/.opam/cs3110-2020fa/bin/ocamlc.opt"
+#  ; ocamlopt = Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocamlopt.opt"
+#  ; ocamldep = Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocamldep.opt"
+#  ; ocamlmklib =
+#      Ok External "/home/andrew/.opam/cs3110-2020fa/bin/ocamlmklib.opt"
+#  ; env =
+#      map
+#        { "INSIDE_DUNE" : "/mnt/c/Users/drewm/desktop/upick/_build/default"
+#        ; "OCAMLFIND_IGNORE_DUPS_IN" :
+#            "/mnt/c/Users/drewm/desktop/upick/_build/install/default/lib"
+#        ; "OCAMLPATH" :
+#            "/mnt/c/Users/drewm/desktop/upick/_build/install/default/lib"
+#        ; "OCAMLTOP_INCLUDE_PATH" :
+#            "/mnt/c/Users/drewm/desktop/upick/_build/install/default/lib/toplevel"
+#        ; "OCAML_COLOR" : "always"
+#        ; "OPAMCOLOR" : "always"
+#        }
+#  ; findlib_path = [ External "/home/andrew/.opam/cs3110-2020fa/lib" ]
+#  ; arch_sixtyfour = true
+#  ; natdynlink_supported = true
+#  ; supports_shared_libraries = true
+#  ; ocaml_config =
+#      { version = "4.10.0"
+#      ; standard_library_default =
+#          "/home/andrew/.opam/cs3110-2020fa/lib/ocaml"
+#      ; standard_library = "/home/andrew/.opam/cs3110-2020fa/lib/ocaml"
+#      ; standard_runtime = "the_standard_runtime_variable_was_deleted"
+#      ; ccomp_type = "cc"
+#      ; c_compiler = "gcc"
+#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
+#      ; ocamlc_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
+#      ; ocamlopt_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
+#      ; ocamlopt_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
+#      ; bytecomp_c_compiler =
+#          [ "gcc"
+#          ; "-O2"
+#          ; "-fno-strict-aliasing"
+#          ; "-fwrapv"
+#          ; "-fPIC"
+#          ; "-D_FILE_OFFSET_BITS=64"
+#          ; "-D_REENTRANT"
+#          ]
+#      ; bytecomp_c_libraries = [ "-lm"; "-ldl"; "-lpthread" ]
+#      ; native_c_compiler =
+#          [ "gcc"
+#          ; "-O2"
+#          ; "-fno-strict-aliasing"
+#          ; "-fwrapv"
+#          ; "-D_FILE_OFFSET_BITS=64"
+#          ; "-D_REENTRANT"
+#          ]
+#      ; native_c_libraries = [ "-lm"; "-ldl" ]
+#      ; cc_profile = []
+#      ; architecture = "amd64"
+#      ; model = "default"
+#      ; int_size = 63
+#      ; word_size = 64
+#      ; system = "linux"
+#      ; asm = [ "as" ]
+#      ; asm_cfi_supported = true
+#      ; with_frame_pointers = false
+#      ; ext_exe = ""
+#      ; ext_obj = ".o"
+#      ; ext_asm = ".s"
+#      ; ext_lib = ".a"
+#      ; ext_dll = ".so"
+#      ; os_type = "Unix"
+#      ; default_executable_name = "a.out"
+#      ; systhread_supported = true
+#      ; host = "x86_64-pc-linux-gnu"
+#      ; target = "x86_64-pc-linux-gnu"
+#      ; profiling = false
+#      ; flambda = false
+#      ; spacetime = false
+#      ; safe_string = true
+#      ; exec_magic_number = "Caml1999X027"
+#      ; cmi_magic_number = "Caml1999I027"
+#      ; cmo_magic_number = "Caml1999O027"
+#      ; cma_magic_number = "Caml1999A027"
+#      ; cmx_magic_number = "Caml1999Y027"
+#      ; cmxa_magic_number = "Caml1999Z027"
+#      ; ast_impl_magic_number = "Caml1999M027"
+#      ; ast_intf_magic_number = "Caml1999N027"
+#      ; cmxs_magic_number = "Caml1999D027"
+#      ; cmt_magic_number = "Caml1999T027"
+#      ; natdynlink_supported = true
+#      ; supports_shared_libraries = true
+#      ; windows_unicode = false
+#      }
+#  }
+# Workspace root: /mnt/c/Users/drewm/desktop/upick
+$ (cd _build/default && /home/andrew/.opam/cs3110-2020fa/bin/ocamldep.opt -modules -impl lib/search.ml) > _build/default/lib/.lib.objs/search.ml.d
+$ (cd _build/default && /home/andrew/.opam/cs3110-2020fa/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.lib.objs/byte -I lib/.lib.objs/native -I /home/andrew/.opam/cs3110-2020fa/lib/asn1-combinators -I /home/andrew/.opam/cs3110-2020fa/lib/astring -I /home/andrew/.opam/cs3110-2020fa/lib/base -I /home/andrew/.opam/cs3110-2020fa/lib/base/base_internalhash_types -I /home/andrew/.opam/cs3110-2020fa/lib/base/caml -I /home/andrew/.opam/cs3110-2020fa/lib/base/shadow_stdlib -I /home/andrew/.opam/cs3110-2020fa/lib/base64 -I /home/andrew/.opam/cs3110-2020fa/lib/bigarray-compat -I /home/andrew/.opam/cs3110-2020fa/lib/biniou -I /home/andrew/.opam/cs3110-2020fa/lib/bytes -I /home/andrew/.opam/cs3110-2020fa/lib/cmdliner -I /home/andrew/.opam/cs3110-2020fa/lib/cohttp -I /home/andrew/.opam/cs3110-2020fa/lib/cohttp-lwt -I /home/andrew/.opam/cs3110-2020fa/lib/cohttp-lwt-unix -I /home/andrew/.opam/cs3110-2020fa/lib/conduit -I /home/andrew/.opam/cs3110-2020fa/lib/conduit-lwt -I /home/andrew/.opam/cs3110-2020fa/lib/conduit-lwt-unix -I /home/andrew/.opam/cs3110-2020fa/lib/cstruct -I /home/andrew/.opam/cs3110-2020fa/lib/cstruct-sexp -I /home/andrew/.opam/cs3110-2020fa/lib/domain-name -I /home/andrew/.opam/cs3110-2020fa/lib/duration -I /home/andrew/.opam/cs3110-2020fa/lib/easy-format -I /home/andrew/.opam/cs3110-2020fa/lib/eqaf -I /home/andrew/.opam/cs3110-2020fa/lib/eqaf/bigstring -I /home/andrew/.opam/cs3110-2020fa/lib/eqaf/cstruct -I /home/andrew/.opam/cs3110-2020fa/lib/ezjsonm -I /home/andrew/.opam/cs3110-2020fa/lib/fiat-p256 -I /home/andrew/.opam/cs3110-2020fa/lib/fieldslib -I /home/andrew/.opam/cs3110-2020fa/lib/fmt -I /home/andrew/.opam/cs3110-2020fa/lib/gmap -I /home/andrew/.opam/cs3110-2020fa/lib/hacl_x25519 -I /home/andrew/.opam/cs3110-2020fa/lib/hex -I /home/andrew/.opam/cs3110-2020fa/lib/hkdf -I /home/andrew/.opam/cs3110-2020fa/lib/hmap -I /home/andrew/.opam/cs3110-2020fa/lib/ipaddr -I /home/andrew/.opam/cs3110-2020fa/lib/ipaddr-sexp -I /home/andrew/.opam/cs3110-2020fa/lib/ipaddr/unix -I /home/andrew/.opam/cs3110-2020fa/lib/jsonm -I /home/andrew/.opam/cs3110-2020fa/lib/logs -I /home/andrew/.opam/cs3110-2020fa/lib/lwt -I /home/andrew/.opam/cs3110-2020fa/lib/lwt/unix -I /home/andrew/.opam/cs3110-2020fa/lib/macaddr -I /home/andrew/.opam/cs3110-2020fa/lib/magic-mime -I /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto -I /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-pk -I /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-rng -I /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-rng/lwt -I /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-rng/unix -I /home/andrew/.opam/cs3110-2020fa/lib/mmap -I /home/andrew/.opam/cs3110-2020fa/lib/mtime -I /home/andrew/.opam/cs3110-2020fa/lib/mtime/os -I /home/andrew/.opam/cs3110-2020fa/lib/ocaml/threads -I /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian -I /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian/bigstring -I /home/andrew/.opam/cs3110-2020fa/lib/opium -I /home/andrew/.opam/cs3110-2020fa/lib/opium_kernel -I /home/andrew/.opam/cs3110-2020fa/lib/parsexp -I /home/andrew/.opam/cs3110-2020fa/lib/ppx_sexp_conv/runtime-lib -I /home/andrew/.opam/cs3110-2020fa/lib/ptime -I /home/andrew/.opam/cs3110-2020fa/lib/ptime/os -I /home/andrew/.opam/cs3110-2020fa/lib/re -I /home/andrew/.opam/cs3110-2020fa/lib/re/posix -I /home/andrew/.opam/cs3110-2020fa/lib/result -I /home/andrew/.opam/cs3110-2020fa/lib/rresult -I /home/andrew/.opam/cs3110-2020fa/lib/safepass -I /home/andrew/.opam/cs3110-2020fa/lib/seq -I /home/andrew/.opam/cs3110-2020fa/lib/sexplib -I /home/andrew/.opam/cs3110-2020fa/lib/sexplib0 -I /home/andrew/.opam/cs3110-2020fa/lib/sqlite3 -I /home/andrew/.opam/cs3110-2020fa/lib/stdlib-shims -I /home/andrew/.opam/cs3110-2020fa/lib/stringext -I /home/andrew/.opam/cs3110-2020fa/lib/tls -I /home/andrew/.opam/cs3110-2020fa/lib/tls/lwt -I /home/andrew/.opam/cs3110-2020fa/lib/uchar -I /home/andrew/.opam/cs3110-2020fa/lib/uri -I /home/andrew/.opam/cs3110-2020fa/lib/uri-sexp -I /home/andrew/.opam/cs3110-2020fa/lib/uri/services -I /home/andrew/.opam/cs3110-2020fa/lib/uutf -I /home/andrew/.opam/cs3110-2020fa/lib/x509 -I /home/andrew/.opam/cs3110-2020fa/lib/yojson -I /home/andrew/.opam/cs3110-2020fa/lib/zarith -intf-suffix .ml -no-alias-deps -opaque -open Lib -o lib/.lib.objs/native/lib__Search.cmx -c -impl lib/search.ml)
+$ (cd _build/default && /home/andrew/.opam/cs3110-2020fa/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/lib.cmxa lib/.lib.objs/native/lib.cmx lib/.lib.objs/native/lib__Db.cmx lib/.lib.objs/native/lib__Search.cmx lib/.lib.objs/native/lib__Dbquery.cmx lib/.lib.objs/native/lib__Server.cmx lib/.lib.objs/native/lib__Authors.cmx)
+$ (cd _build/default && /home/andrew/.opam/cs3110-2020fa/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o main.exe /home/andrew/.opam/cs3110-2020fa/lib/easy-format/easy_format.cmxa /home/andrew/.opam/cs3110-2020fa/lib/biniou/biniou.cmxa /home/andrew/.opam/cs3110-2020fa/lib/yojson/yojson.cmxa /home/andrew/.opam/cs3110-2020fa/lib/hmap/hmap.cmxa /home/andrew/.opam/cs3110-2020fa/lib/result/result.cmxa /home/andrew/.opam/cs3110-2020fa/lib/lwt/lwt.cmxa /home/andrew/.opam/cs3110-2020fa/lib/re/re.cmxa /home/andrew/.opam/cs3110-2020fa/lib/re/posix/re_posix.cmxa /home/andrew/.opam/cs3110-2020fa/lib/stringext/stringext.cmxa /home/andrew/.opam/cs3110-2020fa/lib/uri/uri.cmxa /home/andrew/.opam/cs3110-2020fa/lib/sexplib0/sexplib0.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ppx_sexp_conv/runtime-lib/ppx_sexp_conv_lib.cmxa /home/andrew/.opam/cs3110-2020fa/lib/uri-sexp/uri_sexp.cmxa /home/andrew/.opam/cs3110-2020fa/lib/base/base_internalhash_types/base_internalhash_types.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/base/base_internalhash_types /home/andrew/.opam/cs3110-2020fa/lib/base/caml/caml.cmxa /home/andrew/.opam/cs3110-2020fa/lib/base/shadow_stdlib/shadow_stdlib.cmxa /home/andrew/.opam/cs3110-2020fa/lib/base/base.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/base /home/andrew/.opam/cs3110-2020fa/lib/fieldslib/fieldslib.cmxa /home/andrew/.opam/cs3110-2020fa/lib/base64/base64.cmxa /home/andrew/.opam/cs3110-2020fa/lib/stdlib-shims/stdlib_shims.cmxa /home/andrew/.opam/cs3110-2020fa/lib/cohttp/cohttp.cmxa /home/andrew/.opam/cs3110-2020fa/lib/logs/logs.cmxa /home/andrew/.opam/cs3110-2020fa/lib/logs/logs_lwt.cmxa /home/andrew/.opam/cs3110-2020fa/lib/cohttp-lwt/cohttp_lwt.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ocaml/unix.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/ocaml /home/andrew/.opam/cs3110-2020fa/lib/ocaml/bigarray.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/ocaml /home/andrew/.opam/cs3110-2020fa/lib/parsexp/parsexp.cmxa /home/andrew/.opam/cs3110-2020fa/lib/sexplib/sexplib.cmxa /home/andrew/.opam/cs3110-2020fa/lib/opium_kernel/opium_kernel.cmxa /home/andrew/.opam/cs3110-2020fa/lib/cmdliner/cmdliner.cmxa /home/andrew/.opam/cs3110-2020fa/lib/fmt/fmt.cmxa /home/andrew/.opam/cs3110-2020fa/lib/macaddr/macaddr.cmxa /home/andrew/.opam/cs3110-2020fa/lib/astring/astring.cmxa /home/andrew/.opam/cs3110-2020fa/lib/domain-name/domain_name.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ipaddr/ipaddr.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ipaddr-sexp/ipaddr_sexp.cmxa /home/andrew/.opam/cs3110-2020fa/lib/conduit/conduit.cmxa /home/andrew/.opam/cs3110-2020fa/lib/conduit-lwt/conduit_lwt.cmxa /home/andrew/.opam/cs3110-2020fa/lib/mmap/mmap.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian/ocplib_endian.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian/bigstring/ocplib_endian_bigstring.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ocaml/threads/threads.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/ocaml /home/andrew/.opam/cs3110-2020fa/lib/lwt/unix/lwt_unix.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/lwt/unix /home/andrew/.opam/cs3110-2020fa/lib/uri/services/uri_services.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ipaddr/unix/ipaddr_unix.cmxa /home/andrew/.opam/cs3110-2020fa/lib/bigarray-compat/bigarray_compat.cmxa /home/andrew/.opam/cs3110-2020fa/lib/cstruct/cstruct.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/cstruct /home/andrew/.opam/cs3110-2020fa/lib/cstruct-sexp/cstruct_sexp.cmxa /home/andrew/.opam/cs3110-2020fa/lib/eqaf/eqaf.cmxa /home/andrew/.opam/cs3110-2020fa/lib/eqaf/bigstring/eqaf_bigstring.cmxa /home/andrew/.opam/cs3110-2020fa/lib/eqaf/cstruct/eqaf_cstruct.cmxa /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto/mirage_crypto.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto /home/andrew/.opam/cs3110-2020fa/lib/hkdf/hkdf.cmxa /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-rng/mirage_crypto_rng.cmxa /home/andrew/.opam/cs3110-2020fa/lib/zarith/zarith.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/zarith /home/andrew/.opam/cs3110-2020fa/lib/rresult/rresult.cmxa /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-pk/mirage_crypto_pk.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ptime/ptime.cmxa /home/andrew/.opam/cs3110-2020fa/lib/asn1-combinators/asn1_combinators.cmxa /home/andrew/.opam/cs3110-2020fa/lib/gmap/gmap.cmxa /home/andrew/.opam/cs3110-2020fa/lib/x509/x509.cmxa /home/andrew/.opam/cs3110-2020fa/lib/hacl_x25519/hacl_x25519.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/hacl_x25519 /home/andrew/.opam/cs3110-2020fa/lib/hex/hex.cmxa /home/andrew/.opam/cs3110-2020fa/lib/fiat-p256/fiat_p256.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/fiat-p256 /home/andrew/.opam/cs3110-2020fa/lib/tls/tls.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ptime/os/ptime_clock.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/ptime/os /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-rng/unix/mirage_crypto_rng_unix.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-rng/unix /home/andrew/.opam/cs3110-2020fa/lib/duration/duration.cmxa /home/andrew/.opam/cs3110-2020fa/lib/mtime/mtime.cmxa /home/andrew/.opam/cs3110-2020fa/lib/mtime/os/mtime_clock.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/mtime/os /home/andrew/.opam/cs3110-2020fa/lib/mirage-crypto-rng/lwt/mirage_crypto_rng_lwt.cmxa /home/andrew/.opam/cs3110-2020fa/lib/tls/lwt/tls_lwt.cmxa /home/andrew/.opam/cs3110-2020fa/lib/conduit-lwt-unix/conduit_lwt_unix.cmxa /home/andrew/.opam/cs3110-2020fa/lib/magic-mime/magic_mime_library.cmxa /home/andrew/.opam/cs3110-2020fa/lib/cohttp-lwt-unix/cohttp_lwt_unix.cmxa /home/andrew/.opam/cs3110-2020fa/lib/uutf/uutf.cmxa /home/andrew/.opam/cs3110-2020fa/lib/jsonm/jsonm.cmxa /home/andrew/.opam/cs3110-2020fa/lib/ezjsonm/ezjsonm.cmxa /home/andrew/.opam/cs3110-2020fa/lib/opium/opium.cmxa /home/andrew/.opam/cs3110-2020fa/lib/safepass/safepass.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/safepass /home/andrew/.opam/cs3110-2020fa/lib/sqlite3/sqlite3.cmxa -I /home/andrew/.opam/cs3110-2020fa/lib/sqlite3 lib/lib.cmxa .main.eobjs/native/dune__exe__Main.cmx)

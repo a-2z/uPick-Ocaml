@@ -208,7 +208,6 @@ let post_list = [
       | None -> respond' 
                   (`Json (Ezjsonm.from_string {|{"success": false}|}))  
       | Some password -> 
-        print_endline password;
         if Bcrypt.verify pw (Bcrypt.hash_of_string password) then
           respond' 
             (`Json (Ezjsonm.from_string {|{"success": true}|}))
