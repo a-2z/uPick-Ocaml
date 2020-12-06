@@ -12,3 +12,6 @@ module Search = Lib__Search
 
 (** @canonical Lib.Server *)
 module Server = Lib__Server
+
+(** @canonical Lib.Voting *)
+module Voting = Lib__Voting

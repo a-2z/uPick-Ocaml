@@ -49,29 +49,31 @@ let single_row_query
    Requires: [sql_col] contains only one column
    [sql_col], [sql_tbl], abd [sql_where] are defined in the schema.*)
 let lst_from_col 
+    ?unique:(u = true)
     (sql_col : string) 
     (sql_tbl : string) 
     (sql_where : string) 
     (f : string -> 'a) = 
   let arr = ref [||] in
-  let stmnt = 
-    make_stmt (Printf.sprintf {|
+  let sql = (Printf.sprintf {|
   SELECT %s
   FROM %s
   WHERE %s;
   |} sql_col sql_tbl sql_where) in 
+  let stmnt = make_stmt sql in 
   while (step stmnt) = ROW do 
     let value = (row_data stmnt).(0)
                 |> Data.to_string_coerce 
                 |> f in
     arr := Array.append !arr [|value|]
   done;
-  List.sort_uniq compare (Array.to_list !arr)
+  if u then List.sort_uniq compare (Array.to_list !arr)
+  else List.sort compare (Array.to_list !arr)
 
 (**Returns the number of occurrences of rows satisfying [sql_where] in
    [sql_tbl*)
 let count sql_tbl sql_where = 
-  single_row_query "COUNT *" sql_tbl sql_where 
+  single_row_query "COUNT (*)" sql_tbl sql_where 
   |> fun arr -> int_of_string (arr.(0))
 
 (**[make_response] returns [Some last_id] if an insertion operation succeeded
@@ -139,6 +141,9 @@ let add_group_info group_name host_id =
     ignore (add_groups (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
+
+(*  *)
+
 let login username = 
   try
     Some (single_row_query "password" "users" 
@@ -147,7 +152,7 @@ let login username =
 
 (**[id_by_usr usr] is the id of the user with unique username [usr]*)
 let id_by_usr usr =
-  (single_row_query "rowid" "users" ("username = " ^ usr)).(0)
+  (single_row_query "rowid" "users" ("username = '" ^ usr ^ "'")).(0)
   |> int_of_string
 
 (** [get_user userid] returns a representation of a single user from the 
@@ -213,43 +218,42 @@ let ans_survey user_id group_id loc_x loc_y cuisine price range =
 let avg_flt col n g_id =
   let n = float_of_int n in
   let g = string_of_int g_id in 
-  lst_from_col col "groups" ("WHERE group_id = " ^ g) float_of_string
+  lst_from_col ~unique:false col "groups" ("group_id = " ^ g) float_of_string
   |> List.fold_left ( +. ) 0.
   |> fun x -> x /. n
 
 let avg_int col n g_id = 
   let g = string_of_int g_id in 
-  lst_from_col col "groups" ("WHERE group_id = " ^ g) int_of_string 
+  lst_from_col ~unique:false col "groups" ("group_id = " ^ g) int_of_string 
   |> List.fold_left ( + ) 0
   |> fun x -> x / n
 
 let process_survey g_id h_id = 
   let str_gid = string_of_int g_id in 
-  let str_hid = string_of_int h_id in 
+  let str_hid = string_of_int h_id in
   if begin
     (count "group_info" ("host_id = " ^ str_hid) > 0 && 
      count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
-  end then 
+  end then begin
     let to_drop = {|
-  DELETE * FROM groups
+  DELETE FROM groups
   WHERE surveyed = 0 AND group_id = |} ^ str_gid in
     ignore (make_response (exec db to_drop));
-    let num_votes = count "groups" ("WHERE group_id = " ^ str_gid) in 
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
     let x = avg_flt "loc_x" num_votes g_id in 
     let y = avg_flt "loc_y" num_votes g_id in 
     let price = avg_int "target_price" num_votes g_id in 
     let range = avg_int "range" num_votes g_id in 
     let cuisines = 
-      lst_from_col "cuisines" "groups" ("WHERE group_id = " ^ str_gid )
+      lst_from_col "cuisines" "groups" ("group_id = " ^ str_gid )
         (fun x -> x)
       |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
                   |> String.split_on_char ','
                   |> List.filter (fun s -> s <> "") in
     let sql = Printf.sprintf 
-        "UPDATE group_info SET top5 = '%s' WHERE row_id = %d" 
+        "UPDATE group_info SET top_5 = '%s' WHERE rowid = %d" 
         (Search.get_rests ~cuisine:cuisines x y range price) g_id in 
-    make_response (exec db sql)
-  else 
-    None
+    make_response (exec db sql) 
+  end else None
 
 let create_tables () = Db.create_tables ()

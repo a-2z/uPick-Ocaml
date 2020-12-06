@@ -126,6 +126,8 @@ let ready_inserter json ins_func =
     (member "group_id" json |> to_int)
     h_id
 
+(* let vote json ins_func *)
+
 (*******************************route list*************************************)
 
 (* Route not found *)     
@@ -208,7 +210,6 @@ let post_list = [
       | None -> respond' 
                   (`Json (Ezjsonm.from_string {|{"success": false}|}))  
       | Some password -> 
-        print_endline password;
         if Bcrypt.verify pw (Bcrypt.hash_of_string password) then
           respond' 
             (`Json (Ezjsonm.from_string {|{"success": true}|}))
@@ -221,6 +222,7 @@ let post_list = [
 
   post "/ready" (fun req -> 
       load_json_login req process_survey ready_inserter);
+
   (* post "/vote" (fun req ->
       allow_vote req ans_survey vote_inserter);*)
 ]
