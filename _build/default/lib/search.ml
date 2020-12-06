@@ -106,7 +106,7 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
   let return = ref "" in
   let price = set_bound price in
   let hdr = add_list (init ())  
-            [("Accept", "application/json"); ("user-key", user_key)] in 
+      [("Accept", "application/json"); ("user-key", user_key)] in 
   let url = Printf.sprintf 
       {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
       n loc_x loc_y (float_of_int range) (String.concat "%2c" c) in 
@@ -115,8 +115,8 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
                        |> Cohttp_lwt__.Body.to_string 
           >>= fun b -> let fmt = (from_string b 
                                   |> from_body 
-                                  |> fun x -> print_endline "hi"; filter_results price x
-                                                                  |> string_of_t) in 
+                                  |> filter_results price
+                                  |> string_of_t) in 
           return := fmt;
           Lwt.return (from_string fmt));
   print_endline !return;

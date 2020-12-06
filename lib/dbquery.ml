@@ -141,6 +141,9 @@ let add_group_info group_name host_id =
     ignore (add_groups (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
+
+(*  *)
+
 let login username = 
   try
     Some (single_row_query "password" "users" 

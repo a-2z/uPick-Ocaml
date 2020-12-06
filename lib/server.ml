@@ -126,6 +126,8 @@ let ready_inserter json ins_func =
     (member "group_id" json |> to_int)
     h_id
 
+(* let vote json ins_func *)
+
 (*******************************route list*************************************)
 
 (* Route not found *)     
