@@ -73,6 +73,7 @@ let create_groups_info_table () =
     group_name TEXT NOT NULL,
     host_id INTEGER NOT NULL,
     num_members INTEGER DEFAULT 0,
+    voting_allowed INTEGER DEFAULT 0,
     top_5 TEXT, --JSON
     top_pick TEXT, --JSON
     PRIMARY KEY(group_name, host_id),
@@ -111,6 +112,24 @@ let create_groups_table () =
     let message = "Unable to create table groups." in
     error r message
 
+let create_votes_table () = 
+  let create_vote_table = {|
+    CREATE TABLE IF NOT EXISTS votes ( 
+    group_id INTEGER NOT NULL,  
+    user_id INTEGER NOT NULL, 
+    ranking INTEGER NOT NULL,
+    restaurant_id INTEGER NOT NULL,
+    FOREIGN KEY(group_id) REFERENCES group_info(rowid)
+          ON DELETE SET NULL
+    FOREIGN KEY(user_id) REFERENCES groups(member_id)
+          ON DELETE SET NULL);
+    |}
+  in match exec db create_vote_table with
+  | Rc.OK -> ()
+  | r ->
+    let message = "Unable to create table votes." in
+    error r message
+
 let create_tables _ = 
   () 
   |> create_users_table
@@ -119,3 +138,4 @@ let create_tables _ =
   |> create_restriction_index
   |> create_groups_info_table
   |> create_groups_table
+  |> create_votes_table 

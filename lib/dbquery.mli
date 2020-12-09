@@ -51,6 +51,11 @@ val add_group_info : string -> int -> int64 option
 (** [add_groups user_id group_id] *)
 val add_groups : int -> int -> int64 option
 
+val add_votes : int -> int -> int list -> int64 option
+
+val lst_from_col : ?unique:bool -> string -> string -> string -> (
+    string -> 'a) -> 'a list
+
 val login : string -> string option
 
 val ans_survey : int -> int -> float -> float -> string -> int -> int

@@ -30,6 +30,12 @@ let restriction_index_list = [
   "eggs"; "dairy"; "gluten"; "vegan"; "peanuts"
 ]
 
+let sample_survey = [
+  (4, 3, 42.0, -76.3, "22", 30, 5000);
+  (5, 3, 42.0, -76.3, "25", 30, 5000);
+  (3, 3, 42.0, -76.3, "25", 30, 5000);
+]
+
 let rec add_users' = function 
   | [] -> ();
   | (un, pw, n) :: t -> 
@@ -56,6 +62,12 @@ let rec add_rest_idx' = function
   | [] -> ();
   | rest_name :: t -> ignore(add_restrictions_index rest_name); add_rest_idx' t
 
+let rec add_survey' = function 
+  | [] -> ();
+  | (user_id, group_id, loc_x, loc_y, cuisine, price, range) :: t -> 
+    ignore(ans_survey user_id group_id loc_x loc_y cuisine price range); 
+    add_survey' t
+
 (**Insert Information*)
 let _ = 
   create_tables ();
@@ -65,6 +77,7 @@ let _ =
   add_groups' group_list;
   add_restrictions' restriction_list;
   add_rest_idx' restriction_index_list;
+  add_survey' sample_survey;
 
 
 

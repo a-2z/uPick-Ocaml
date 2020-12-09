@@ -37,6 +37,7 @@ let single_row_query
   FROM %s
   WHERE %s;
   |} sql_select sql_tbl sql_where in
+  print_endline sql;
   let stmnt = 
     make_stmt sql in 
   ignore (step stmnt);
@@ -118,16 +119,17 @@ let add_restrictions_index restriction =
       restriction in
   make_response (exec db sql)
 
+(* FIX INCREMENTING NUM_MEMBERS BC IT INCREMENTS BEFORE THE UNIQUE CONSTRAINT ERROR *)
 let add_groups group_id member_id = 
-  let sql = {|
-  UPDATE group_info 
-    SET num_members = num_members + 1 
-  WHERE rowid = |} ^ string_of_int group_id in
-  ignore (exec db sql); (*Ignore return code of the update operation *)
   let sql =
     Printf.sprintf "INSERT INTO groups (group_id, member_id) VALUES(%d, %d)"
       group_id member_id in
-  make_response (exec db sql)
+  let resp = make_response (exec db sql) in 
+    let sql = {|
+  UPDATE group_info 
+    SET num_members = num_members + 1 
+  WHERE rowid = |} ^ string_of_int group_id in
+  ignore (exec db sql); resp (*Ignore return code of the update operation *)
 
 let add_group_info group_name host_id = 
   let sql =
@@ -141,6 +143,26 @@ let add_group_info group_name host_id =
     ignore (add_groups (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
+(* ACCOUNT FOR NO VOTES IN ACC *)
+let add_votes group_id user_id restaurant_id_lst = 
+  let str_gr = string_of_int group_id in
+  print_endline str_gr;
+  let check = 
+    print_endline ("count val: " ^ string_of_int ((count "group_info" 
+    ("voting_allowed = 1 AND rowid = " ^ str_gr))));
+    (count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr)) = 1 in 
+  if check 
+  then 
+    let rec add_user_votes group_id user_id count acc lst = begin 
+      match lst with
+      | [] -> make_response (exec db acc)
+      | hd :: tl ->
+        let sql = Printf.sprintf 
+            "INSERT INTO votes VALUES(%d, %d, %d, %d); "
+            group_id user_id count hd in
+          add_user_votes group_id user_id (count+1) (acc ^ sql) tl end in
+        add_user_votes group_id user_id 1 "" restaurant_id_lst
+  else (fun x -> print_endline "/ready was not true?"; x) None
 
 (* delete user *)
 
@@ -228,12 +250,13 @@ let avg_int col n g_id =
   |> List.fold_left ( + ) 0
   |> fun x -> x / n
 
+(*  ^ "AND group_id = " ^ str_gid) *)
 let process_survey g_id h_id = 
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
   if begin
-    (count "group_info" ("host_id = " ^ str_hid) > 0 && 
-     count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
+    (count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) 
+    > 0 && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
   end then begin
     let to_drop = {|
   DELETE FROM groups
@@ -245,15 +268,16 @@ let process_survey g_id h_id =
     let price = avg_int "target_price" num_votes g_id in 
     let range = avg_int "range" num_votes g_id in 
     let cuisines = 
-      lst_from_col "cuisines" "groups" ("group_id = " ^ str_gid )
+      lst_from_col "cuisines" "groups" ("group_id = " ^ str_gid)
         (fun x -> x)
       |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
                   |> String.split_on_char ','
                   |> List.filter (fun s -> s <> "") in
     let sql = Printf.sprintf 
-        "UPDATE group_info SET top_5 = '%s' WHERE rowid = %d" 
-        (Search.get_rests ~cuisine:cuisines x y range price) g_id in 
-    make_response (exec db sql) 
+        "UPDATE group_info SET top_5 = '%s' WHERE rowid = %d;
+        UPDATE group_info SET voting_allowed = 1 WHERE rowid = %d" 
+        (Search.get_rests ~cuisine:cuisines x y range price) g_id g_id in 
+    make_response (exec db sql)
   end else None
 
 let create_tables () = Db.create_tables ()

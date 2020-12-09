@@ -40,7 +40,8 @@ let load_json_login req ins_func inserter =
     login json;
     Lwt.return (inserter (from_string a) ins_func) >>= fun a -> make_response a
   with 
-  | Login_failure _ -> Lwt.return None >>= fun a -> make_response a
+  | Login_failure _ -> (fun x -> print_endline "login credentials did not match"; x)
+  Lwt.return None >>= fun a -> make_response a
 
 let json_of_user {id; username; password; name; friends; restrictions; 
                   groups} =
@@ -126,7 +127,16 @@ let ready_inserter json ins_func =
     (member "group_id" json |> to_int)
     h_id
 
-(* let vote json ins_func *)
+let vote_inserter json ins_func = 
+  let u_id = id_by_usr (member "username" json |> to_string) in
+  if is_member (member "group_id" json |> to_int) u_id then
+    begin 
+      ins_func 
+        (member "group_id" json |> to_int)
+        (member "username" json |> to_string |> id_by_usr)
+        (member "votes" json |> to_list |> List.map to_int)
+    end 
+  else (fun x -> print_endline "was not in group"; x) None 
 
 (*******************************route list*************************************)
 
@@ -223,8 +233,8 @@ let post_list = [
   post "/ready" (fun req -> 
       load_json_login req process_survey ready_inserter);
 
-  (* post "/vote" (fun req ->
-      allow_vote req ans_survey vote_inserter);*)
+  post "/vote" (fun req ->
+      load_json_login req add_votes vote_inserter);
 ]
 
 let rec app_builder lst app = 
