@@ -113,14 +113,14 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
   let url = Printf.sprintf 
       {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
       n loc_x loc_y (float_of_int range) (String.concat "%2c" c) in 
-  Cohttp_lwt_unix.Client.get ~headers:hdr (Uri.of_string url)
+  ignore ( Cohttp_lwt_unix.Client.get ~headers:hdr (Uri.of_string url)
           >>= fun a -> snd a 
                        |> Cohttp_lwt__.Body.to_string 
-          >>= fun b -> let fmt = (from_string b 
+          >>= fun b -> print_endline b; let fmt = (from_string b 
                                   |> from_body 
                                   |> filter_results price
                                   |> string_of_t) in 
           return := fmt;
-          ignore (Lwt.return (from_string fmt));
+          Lwt.return (from_string fmt));
   print_endline !return;
   !return

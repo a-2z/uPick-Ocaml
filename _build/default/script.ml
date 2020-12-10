@@ -36,6 +36,12 @@ let sample_survey = [
   (3, 3, 42.0, -76.3, "25", 30, 5000);
 ]
 
+let sample_votes = [
+  (3, 4, [20; 30; 10; 50; 40]);
+  (3, 5, [20; 30; 40; 50; 10]);
+  (3, 3, [50; 20; 10; 30; 40]);
+]
+
 let rec add_users' = function 
   | [] -> ();
   | (un, pw, n) :: t -> 
@@ -68,6 +74,11 @@ let rec add_survey' = function
     ignore(ans_survey user_id group_id loc_x loc_y cuisine price range); 
     add_survey' t
 
+let rec add_votes' = function
+  | [] -> ()
+  | (g_id, user_id, lst) :: t -> ignore (add_votes g_id user_id lst);
+  add_votes' t
+
 (**Insert Information*)
 let _ = 
   create_tables ();
@@ -78,6 +89,7 @@ let _ =
   add_restrictions' restriction_list;
   add_rest_idx' restriction_index_list;
   add_survey' sample_survey;
+  add_votes' sample_votes;
 
 
 

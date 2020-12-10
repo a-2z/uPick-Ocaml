@@ -37,7 +37,7 @@ let single_row_query
   FROM %s
   WHERE %s;
   |} sql_select sql_tbl sql_where in
-  print_endline sql;
+  (* print_endline sql; *)
   let stmnt = 
     make_stmt sql in 
   ignore (step stmnt);
@@ -51,6 +51,7 @@ let single_row_query
    [sql_col], [sql_tbl], abd [sql_where] are defined in the schema.*)
 let lst_from_col 
     ?unique:(u = true)
+    ?voting:(v = false)
     (sql_col : string) 
     (sql_tbl : string) 
     (sql_where : string) 
@@ -68,6 +69,8 @@ let lst_from_col
                 |> f in
     arr := Array.append !arr [|value|]
   done;
+  if v then Array.to_list !arr
+  else 
   if u then List.sort_uniq compare (Array.to_list !arr)
   else List.sort compare (Array.to_list !arr)
 
@@ -125,7 +128,7 @@ let add_groups group_id member_id =
     Printf.sprintf "INSERT INTO groups (group_id, member_id) VALUES(%d, %d)"
       group_id member_id in
   let resp = make_response (exec db sql) in 
-    let sql = {|
+  let sql = {|
   UPDATE group_info 
     SET num_members = num_members + 1 
   WHERE rowid = |} ^ string_of_int group_id in
@@ -148,8 +151,8 @@ let add_votes group_id user_id restaurant_id_lst =
   let str_gr = string_of_int group_id in
   print_endline str_gr;
   let check = 
-    print_endline ("count val: " ^ string_of_int ((count "group_info" 
-    ("voting_allowed = 1 AND rowid = " ^ str_gr))));
+    (* print_endline ("count val: " ^ string_of_int ((count "group_info" 
+                                                     ("voting_allowed = 1 AND rowid = " ^ str_gr)))); *)
     (count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr)) = 1 in 
   if check 
   then 
@@ -160,9 +163,10 @@ let add_votes group_id user_id restaurant_id_lst =
         let sql = Printf.sprintf 
             "INSERT INTO votes VALUES(%d, %d, %d, %d); "
             group_id user_id count hd in
-          add_user_votes group_id user_id (count+1) (acc ^ sql) tl end in
-        add_user_votes group_id user_id 1 "" restaurant_id_lst
-  else (fun x -> print_endline "/ready was not true?"; x) None
+        add_user_votes group_id user_id (count+1) (acc ^ sql) tl end in
+    add_user_votes group_id user_id 1 "" restaurant_id_lst
+  else None
+  (* (fun x -> print_endline "/ready was not true?"; x) *)
 
 (* delete user *)
 
@@ -250,13 +254,66 @@ let avg_int col n g_id =
   |> List.fold_left ( + ) 0
   |> fun x -> x / n
 
+(* change voting_allowed from 1 to 0 when we update database with results*)
+
+let string_of_tuplst lst =
+  let rec helper acc = function
+    | [] -> acc
+    | (hs, hv) :: t -> begin 
+        let elm = "(" ^ string_of_int hs ^ ", " ^ string_of_int hv ^ ") " in 
+        helper (acc ^ elm) t end in 
+  "{" ^ (helper "" lst) ^ "}" 
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) 
+     > 0 && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
+  end then 
+    let rank_lst = lst_from_col ~voting:true "ranking" "votes" 
+        ("group_id = " ^ str_gid) int_of_string in
+    let rest_lst = lst_from_col ~voting:true "restaurant_id" "votes" 
+        ("group_id = " ^ str_gid) int_of_string in
+    let matched_ranks = List.combine rest_lst rank_lst in 
+    print_endline (string_of_tuplst matched_ranks); 
+    let rec ranked_lst acc = function
+      | [] -> acc
+      | (rest, rank) :: t -> if List.mem_assoc rest acc then 
+          let current_vote = rank + (List.assoc rest acc) in 
+          let new_acc = acc |> List.remove_assoc rest 
+                        |> List.cons (rest, current_vote) in 
+          ranked_lst new_acc t
+        else 
+          let new_acc = (rest, rank) :: acc in
+          ranked_lst new_acc t in 
+    let ranks = ranked_lst [] matched_ranks in 
+    print_endline (string_of_tuplst ranks); 
+    (* let rec top_pick_tuple result ranks = match ranks with
+    | [] -> result
+    | (rest, rank) :: t -> if rank < snd result || snd result < 0
+    then top_pick_tuple (rest, rank) t
+    else top_pick_tuple result t in  *)
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+    then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks in 
+    print_endline (string_of_tuplst ordered_ranks); 
+    let top_pick = fst (List.hd ordered_ranks) in
+    (* let top_pick = fst ((top_pick_tuple (-1,-1) ranks)) in  *)
+    let sql = Printf.sprintf 
+        "UPDATE group_info SET top_pick = %d WHERE rowid = %d;
+         UPDATE group_info SET voting_allowed = 0 WHERE rowid = %d" 
+        top_pick g_id g_id in 
+        make_response (exec db sql)
+  else None
+
 (*  ^ "AND group_id = " ^ str_gid) *)
 let process_survey g_id h_id = 
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
   if begin
     (count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) 
-    > 0 && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
+     > 0 && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
   end then begin
     let to_drop = {|
   DELETE FROM groups

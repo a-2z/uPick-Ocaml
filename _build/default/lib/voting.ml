@@ -1,7 +1,4 @@
 (* open Sqlite3 *)
-(* open Dbquery *)
-(* host starts voting process
-   groupid userid ranking restaurantid *)
 
 (*
 starting with wanting to start voting

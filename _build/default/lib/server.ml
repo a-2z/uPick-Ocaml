@@ -41,7 +41,7 @@ let load_json_login req ins_func inserter =
     Lwt.return (inserter (from_string a) ins_func) >>= fun a -> make_response a
   with 
   | Login_failure _ -> (fun x -> print_endline "login credentials did not match"; x)
-  Lwt.return None >>= fun a -> make_response a
+                         Lwt.return None >>= fun a -> make_response a
 
 let json_of_user {id; username; password; name; friends; restrictions; 
                   groups} =
@@ -121,7 +121,7 @@ let survey_inserter json ins_func =
     end 
   else None 
 
-let ready_inserter json ins_func = 
+let vote_status_inserter json ins_func = 
   let h_id = id_by_usr (member "username" json |> to_string) in 
   ins_func 
     (member "group_id" json |> to_int)
@@ -231,10 +231,13 @@ let post_list = [
       load_json_login req ans_survey survey_inserter);
 
   post "/ready" (fun req -> 
-      load_json_login req process_survey ready_inserter);
+      load_json_login req process_survey vote_status_inserter);
 
   post "/vote" (fun req ->
       load_json_login req add_votes vote_inserter);
+
+  post "/done" (fun req ->
+      load_json_login req calculate_votes vote_status_inserter);
 ]
 
 let rec app_builder lst app = 
