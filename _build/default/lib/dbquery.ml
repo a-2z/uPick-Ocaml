@@ -254,16 +254,7 @@ let avg_int col n g_id =
   |> List.fold_left ( + ) 0
   |> fun x -> x / n
 
-(* change voting_allowed from 1 to 0 when we update database with results*)
-
-let string_of_tuplst lst =
-  let rec helper acc = function
-    | [] -> acc
-    | (hs, hv) :: t -> begin 
-        let elm = "(" ^ string_of_int hs ^ ", " ^ string_of_int hv ^ ") " in 
-        helper (acc ^ elm) t end in 
-  "{" ^ (helper "" lst) ^ "}" 
-
+(* make sure people voted for restaurants in list and they voted for all *)
 let calculate_votes g_id h_id = 
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
@@ -276,7 +267,6 @@ let calculate_votes g_id h_id =
     let rest_lst = lst_from_col ~voting:true "restaurant_id" "votes" 
         ("group_id = " ^ str_gid) int_of_string in
     let matched_ranks = List.combine rest_lst rank_lst in 
-    print_endline (string_of_tuplst matched_ranks); 
     let rec ranked_lst acc = function
       | [] -> acc
       | (rest, rank) :: t -> if List.mem_assoc rest acc then 
@@ -288,18 +278,10 @@ let calculate_votes g_id h_id =
           let new_acc = (rest, rank) :: acc in
           ranked_lst new_acc t in 
     let ranks = ranked_lst [] matched_ranks in 
-    print_endline (string_of_tuplst ranks); 
-    (* let rec top_pick_tuple result ranks = match ranks with
-    | [] -> result
-    | (rest, rank) :: t -> if rank < snd result || snd result < 0
-    then top_pick_tuple (rest, rank) t
-    else top_pick_tuple result t in  *)
     let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
     then -1 else 0 in 
-    let ordered_ranks = List.sort compare_op ranks in 
-    print_endline (string_of_tuplst ordered_ranks); 
+    let ordered_ranks = List.sort compare_op ranks in  
     let top_pick = fst (List.hd ordered_ranks) in
-    (* let top_pick = fst ((top_pick_tuple (-1,-1) ranks)) in  *)
     let sql = Printf.sprintf 
         "UPDATE group_info SET top_pick = %d WHERE rowid = %d;
          UPDATE group_info SET voting_allowed = 0 WHERE rowid = %d" 

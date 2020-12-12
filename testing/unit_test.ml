@@ -19,7 +19,7 @@ let local_url = "http://localhost:3000"
 (* sample request bodies *)
 let sample_user = [("reetuparikh", "reetu123", "Reetu")]
 let sample_friend_list = [(1, 2); (3,4)]
-let sample_restriction_list = [!1,2); (1,3)]
+let sample_restriction_list = [(1,2); (1,3)]
 let sample_ 
 
 (* unwrap bodies *)

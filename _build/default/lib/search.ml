@@ -105,22 +105,37 @@ let filter_results price l =
   if List.length filtered <= 5 then l |> splice 5
   else filtered |> splice 5
 
+(**[bind_request header url] is a string of a json that resulting from a get 
+   request to the Zomato API
+   at [url] with [header], a list of key: value pairs that contain metadata
+   as well as the API key *)
+let bind_request header url = 
+  let return = ref "" in 
+  ignore (Cohttp_lwt_unix.Client.get ~headers:header (Uri.of_string url)
+          >>= fun a -> snd a 
+                       |> Cohttp_lwt__.Body.to_string 
+          >>= fun b -> return := b; Lwt.return (b));
+  !return
+
+let process_results inbound price =  
+  inbound 
+  |> from_string
+  |> from_body 
+  |> filter_results price
+  |> string_of_t
+
+(**[get_rests num cuisine loc_x Loc_y range price] returns a list of [num] 
+   restaurants as a string of a json. The data in the jsons can be seen in 
+   [to_rest json]
+
+   Requires: [cuisine] must be a list of strings that represent Zomato 
+   cuisine IDs*)
 let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
-  let return = ref "" in
   let price = set_bound price in
   let hdr = add_list (init ())  
       [("Accept", "application/json"); ("user-key", user_key)] in 
   let url = Printf.sprintf 
       {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
       n loc_x loc_y (float_of_int range) (String.concat "%2c" c) in 
-  ignore ( Cohttp_lwt_unix.Client.get ~headers:hdr (Uri.of_string url)
-          >>= fun a -> snd a 
-                       |> Cohttp_lwt__.Body.to_string 
-          >>= fun b -> print_endline b; let fmt = (from_string b 
-                                  |> from_body 
-                                  |> filter_results price
-                                  |> string_of_t) in 
-          return := fmt;
-          Lwt.return (from_string fmt));
-  print_endline !return;
-  !return
+  let json_str = bind_request hdr url in
+  process_results json_str price  
