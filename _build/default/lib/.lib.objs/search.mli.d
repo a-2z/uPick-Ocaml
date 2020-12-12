@@ -1,1 +1,1 @@
-lib/search.mli:
+lib/search.mli: Lwt

@@ -1,3 +1,4 @@
+open Lwt.Infix
 open Sqlite3
 
 let db = db_open "upick.db"
@@ -152,7 +153,7 @@ let add_votes group_id user_id restaurant_id_lst =
   print_endline str_gr;
   let check = 
     (* print_endline ("count val: " ^ string_of_int ((count "group_info" 
-                                                     ("voting_allowed = 1 AND rowid = " ^ str_gr)))); *)
+    ("voting_allowed = 1 AND rowid = " ^ str_gr)))); *)
     (count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr)) = 1 in 
   if check 
   then 
@@ -280,7 +281,7 @@ let calculate_votes g_id h_id =
     let ranks = ranked_lst [] matched_ranks in 
     let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
     then -1 else 0 in 
-    let ordered_ranks = List.sort compare_op ranks in  
+    let ordered_ranks = List.sort compare_op ranks in 
     let top_pick = fst (List.hd ordered_ranks) in
     let sql = Printf.sprintf 
         "UPDATE group_info SET top_pick = %d WHERE rowid = %d;
@@ -289,6 +290,13 @@ let calculate_votes g_id h_id =
         make_response (exec db sql)
   else None
 
+let format_cuisines group_id = 
+lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+(fun x -> x)
+      |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+                  |> String.split_on_char ','
+                  |> List.filter (fun s -> s <> "")
+                  
 (*  ^ "AND group_id = " ^ str_gid) *)
 let process_survey g_id h_id = 
   let str_gid = string_of_int g_id in 
@@ -306,17 +314,15 @@ let process_survey g_id h_id =
     let y = avg_flt "loc_y" num_votes g_id in 
     let price = avg_int "target_price" num_votes g_id in 
     let range = avg_int "range" num_votes g_id in 
-    let cuisines = 
-      lst_from_col "cuisines" "groups" ("group_id = " ^ str_gid)
-        (fun x -> x)
-      |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
-                  |> String.split_on_char ','
-                  |> List.filter (fun s -> s <> "") in
+    let cuisines = format_cuisines g_id in
+                  ignore (Search.get_rests ~cuisine:cuisines x y range price >>=
+                  fun res -> 
     let sql = Printf.sprintf 
-        "UPDATE group_info SET top_5 = '%s' WHERE rowid = %d;
-        UPDATE group_info SET voting_allowed = 1 WHERE rowid = %d" 
-        (Search.get_rests ~cuisine:cuisines x y range price) g_id g_id in 
-    make_response (exec db sql)
+        {|UPDATE group_info SET top_5 = '%s', 
+        voting_allowed = 1 WHERE rowid = %d;|}
+        res g_id in Lwt.return (make_response (exec db sql)));
+        match Sqlite3.last_insert_rowid db with 
+        | id -> Some id; 
   end else None
 
 let create_tables () = Db.create_tables ()

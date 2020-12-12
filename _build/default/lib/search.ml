@@ -105,24 +105,24 @@ let filter_results price l =
   if List.length filtered <= 5 then l |> splice 5
   else filtered |> splice 5
 
-(**[bind_request header url] is a string of a json that resulting from a get 
+
+let process_results price inbound =  
+  inbound 
+  |> from_string
+  |> fun x -> print_endline "hi"; from_body x 
+  |> filter_results price
+  |> string_of_t
+
+  (**[bind_request header url] is a string of a json that resulting from a get 
    request to the Zomato API
    at [url] with [header], a list of key: value pairs that contain metadata
    as well as the API key *)
-let bind_request header url = 
-  let return = ref "" in 
-  ignore (Cohttp_lwt_unix.Client.get ~headers:header (Uri.of_string url)
+let bind_request header url price = 
+  Cohttp_lwt_unix.Client.get ~headers:header (Uri.of_string url)
           >>= fun a -> snd a 
                        |> Cohttp_lwt__.Body.to_string 
-          >>= fun b -> return := b; Lwt.return (b));
-  !return
+          >>= fun b -> b |> process_results price |> Lwt.return
 
-let process_results inbound price =  
-  inbound 
-  |> from_string
-  |> from_body 
-  |> filter_results price
-  |> string_of_t
 
 (**[get_rests num cuisine loc_x Loc_y range price] returns a list of [num] 
    restaurants as a string of a json. The data in the jsons can be seen in 
@@ -137,5 +137,4 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
   let url = Printf.sprintf 
       {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
       n loc_x loc_y (float_of_int range) (String.concat "%2c" c) in 
-  let json_str = bind_request hdr url in
-  process_results json_str price  
+  bind_request hdr url price
