@@ -153,7 +153,7 @@ let add_votes group_id user_id restaurant_id_lst =
   print_endline str_gr;
   let check = 
     (* print_endline ("count val: " ^ string_of_int ((count "group_info" 
-                                                     ("voting_allowed = 1 AND rowid = " ^ str_gr)))); *)
+    ("voting_allowed = 1 AND rowid = " ^ str_gr)))); *)
     (count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr)) = 1 in 
   if check 
   then 
@@ -281,7 +281,7 @@ let calculate_votes g_id h_id =
     let ranks = ranked_lst [] matched_ranks in 
     let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
     then -1 else 0 in 
-    let ordered_ranks = List.sort compare_op ranks in  
+    let ordered_ranks = List.sort compare_op ranks in 
     let top_pick = fst (List.hd ordered_ranks) in
     let sql = Printf.sprintf 
         "UPDATE group_info SET top_pick = %d WHERE rowid = %d;

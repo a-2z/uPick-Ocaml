@@ -109,7 +109,7 @@ let filter_results price l =
 let process_results price inbound =  
   inbound 
   |> from_string
-  |> fun x -> print_endline "hi"; from_body x 
+  |> from_body 
   |> filter_results price
   |> string_of_t
 

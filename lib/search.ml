@@ -113,23 +113,16 @@ let process_results price inbound =
   |> filter_results price
   |> string_of_t
 
-  (**[bind_request header url] is a string of a json that resulting from a get 
+(**[bind_request header url] is a string of a json that resulting from a get 
    request to the Zomato API
    at [url] with [header], a list of key: value pairs that contain metadata
    as well as the API key *)
 let bind_request header url price = 
   Cohttp_lwt_unix.Client.get ~headers:header (Uri.of_string url)
-          >>= fun a -> snd a 
-                       |> Cohttp_lwt__.Body.to_string 
-          >>= fun b -> b |> process_results price |> Lwt.return
+  >>= fun a -> snd a 
+               |> Cohttp_lwt__.Body.to_string 
+  >>= fun b -> b |> process_results price |> Lwt.return
 
-
-(**[get_rests num cuisine loc_x Loc_y range price] returns a list of [num] 
-   restaurants as a string of a json. The data in the jsons can be seen in 
-   [to_rest json]
-
-   Requires: [cuisine] must be a list of strings that represent Zomato 
-   cuisine IDs*)
 let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
   let price = set_bound price in
   let hdr = add_list (init ())  

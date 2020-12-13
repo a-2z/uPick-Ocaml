@@ -23,7 +23,6 @@ type restriction = {
   id : int;
   name : string;
 }
-
 (*Insertion functions for the database*)
 
 (**[add_user username password_hash name] registers a user in the database.*)

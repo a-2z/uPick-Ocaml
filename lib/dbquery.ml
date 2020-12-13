@@ -152,8 +152,6 @@ let add_votes group_id user_id restaurant_id_lst =
   let str_gr = string_of_int group_id in
   print_endline str_gr;
   let check = 
-    (* print_endline ("count val: " ^ string_of_int ((count "group_info" 
-    ("voting_allowed = 1 AND rowid = " ^ str_gr)))); *)
     (count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr)) = 1 in 
   if check 
   then 
@@ -167,7 +165,7 @@ let add_votes group_id user_id restaurant_id_lst =
         add_user_votes group_id user_id (count+1) (acc ^ sql) tl end in
     add_user_votes group_id user_id 1 "" restaurant_id_lst
   else None
-  (* (fun x -> print_endline "/ready was not true?"; x) *)
+(* (fun x -> print_endline "/ready was not true?"; x) *)
 
 (* delete user *)
 
@@ -255,7 +253,6 @@ let avg_int col n g_id =
   |> List.fold_left ( + ) 0
   |> fun x -> x / n
 
-(* make sure people voted for restaurants in list and they voted for all *)
 let calculate_votes g_id h_id = 
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
@@ -280,24 +277,23 @@ let calculate_votes g_id h_id =
           ranked_lst new_acc t in 
     let ranks = ranked_lst [] matched_ranks in 
     let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
-    then -1 else 0 in 
+      then -1 else 0 in 
     let ordered_ranks = List.sort compare_op ranks in 
     let top_pick = fst (List.hd ordered_ranks) in
     let sql = Printf.sprintf 
         "UPDATE group_info SET top_pick = %d WHERE rowid = %d;
          UPDATE group_info SET voting_allowed = 0 WHERE rowid = %d" 
         top_pick g_id g_id in 
-        make_response (exec db sql)
+    make_response (exec db sql)
   else None
 
 let format_cuisines group_id = 
-lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
-(fun x -> x)
-      |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
-                  |> String.split_on_char ','
-                  |> List.filter (fun s -> s <> "")
-                  
-(*  ^ "AND group_id = " ^ str_gid) *)
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
 let process_survey g_id h_id = 
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
@@ -315,14 +311,14 @@ let process_survey g_id h_id =
     let price = avg_int "target_price" num_votes g_id in 
     let range = avg_int "range" num_votes g_id in 
     let cuisines = format_cuisines g_id in
-                  ignore (Search.get_rests ~cuisine:cuisines x y range price >>=
-                  fun res -> 
-    let sql = Printf.sprintf 
-        {|UPDATE group_info SET top_5 = '%s', 
+    ignore (Search.get_rests ~cuisine:cuisines x y range price >>=
+            fun res -> 
+            let sql = Printf.sprintf 
+                {|UPDATE group_info SET top_5 = '%s', 
         voting_allowed = 1 WHERE rowid = %d;|}
-        res g_id in Lwt.return (make_response (exec db sql)));
-        match Sqlite3.last_insert_rowid db with 
-        | id -> Some id; 
+                res g_id in Lwt.return (make_response (exec db sql)));
+    match Sqlite3.last_insert_rowid db with 
+    | id -> Some id; 
   end else None
 
 let create_tables () = Db.create_tables ()
