@@ -15,6 +15,9 @@ type group = {
   name : string;
   host_id : int;
   members : int list;
+  voting_allowed : bool;
+  top_5 : string option;
+  top_pick : string option;
 }
 
 (* type restriction defines an association between a user and their 
@@ -52,7 +55,7 @@ val add_group_info : string -> int -> int64 option
     putting a user into a group.
     Requires: the user_id and group_id must be ids of a user and group 
     respectively that exists in the database *)
-val add_groups : int -> int -> int64 option
+val join_group : int -> int -> int64 option
 
 (** [add_votes group_id user_id restaurant_id_lst] adds users votes for a 
     specific group 

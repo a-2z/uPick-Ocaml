@@ -58,7 +58,7 @@ let rec add_group_info' = function
 
 let rec add_groups' = function 
   | [] -> ();
-  | (gid, mid) :: t -> ignore(add_groups gid mid); add_groups' t
+  | (gid, mid) :: t -> ignore(join_group gid mid); add_groups' t
 
 let rec add_restrictions' = function 
   | [] -> ();
@@ -77,7 +77,7 @@ let rec add_survey' = function
 let rec add_votes' = function
   | [] -> ()
   | (g_id, user_id, lst) :: t -> ignore (add_votes g_id user_id lst);
-  add_votes' t
+    add_votes' t
 
 (**Insert Information*)
 let _ = 

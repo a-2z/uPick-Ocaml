@@ -20,9 +20,27 @@ let local_url = "http://localhost:3000"
 let sample_user = [("reetuparikh", "reetu123", "Reetu")]
 let sample_friend_list = [(1, 2); (3,4)]
 let sample_restriction_list = [(1,2); (1,3)]
-let sample_ 
+
+(* request endpoint generators *)
+let user_id = None
+let base_path = f"{LOCAL_URL}/api/users" in 
+print_endline base_path + "/" if user_id is None else f"{base_path}/{str(user_id)}/"
+
+let gen_courses_path(course_id=None):
+  let base_path = f"{LOCAL_URL}/api/courses" in 
+  return base_path + "/" if course_id is None else f"{base_path}/{str(course_id)
+
+exception Error 
+
+let Error = Error ("Error encountered on the following request: 
+request path: {req.url} request method: {req.method} request body: {str(body)} 
+There is an uncaught-exception being thrown in your
+method handler for this route!")
 
 (* unwrap bodies *)
+(* let unwrap_response = 
+  try response.json()
+  with raise Error  *)
 
 let test_equal name exptd expr = 
   name >:: (fun _ -> assert_equal exptd expr) 
@@ -32,10 +50,9 @@ let port_test = [
   test_equal "port is 3000" port 3000;
 ]
 
-
 let add_user_test = [
   test_equal "no users added" None (add_user empty)
-    test_equal "user list added" user_list (add_user user_list)
+  (* test_equal "user list added" user_list (add_user user_list) *)
 ]
 
 let add_restrictions_test = [

@@ -18,12 +18,19 @@ type group = {
   name : string;
   host_id : int;
   members : int list;
+  voting_allowed : bool;
+  top_5 : string option;
+  top_pick : string option;
 }
 
 type restriction = {
   id : int;
   name : string;
 }
+
+(**Escapes all single quotes in a json string with an additional single quote
+   for SQL compliance*)
+let sanitize sql = Str.global_replace (Str.regexp "'") "''" sql
 
 let make_stmt sql = prepare db sql 
 
@@ -124,16 +131,14 @@ let add_restrictions_index restriction =
   make_response (exec db sql)
 
 (* FIX INCREMENTING NUM_MEMBERS BC IT INCREMENTS BEFORE THE UNIQUE CONSTRAINT ERROR *)
-let add_groups group_id member_id = 
-  let sql =
-    Printf.sprintf "INSERT INTO groups (group_id, member_id) VALUES(%d, %d)"
-      group_id member_id in
-  let resp = make_response (exec db sql) in 
-  let sql = {|
+let join_group group_id member_id = 
+  let sql = Printf.sprintf {|
   UPDATE group_info 
     SET num_members = num_members + 1 
-  WHERE rowid = |} ^ string_of_int group_id in
-  ignore (exec db sql); resp (*Ignore return code of the update operation *)
+  WHERE rowid = %d;
+  INSERT INTO groups (group_id, member_id) VALUES(%d, %d)|} 
+      group_id group_id member_id in 
+  make_response (exec db sql)
 
 let add_group_info group_name host_id = 
   let sql =
@@ -144,16 +149,14 @@ let add_group_info group_name host_id =
   | Rc.OK ->
     let id = Sqlite3.last_insert_rowid db in
     Printf.printf "Row inserted with id %Ld\n" id;
-    ignore (add_groups (Int64.to_int id) host_id); Some id
+    ignore (join_group (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
-(* ACCOUNT FOR NO VOTES IN ACC *)
-let add_votes group_id user_id restaurant_id_lst = 
+(**Inserts a [user_id]'s votes in [group_id] with [ballot] representing
+   the positions of restaurants in the list ranked in order*)
+let add_votes group_id user_id ballot = 
   let str_gr = string_of_int group_id in
-  print_endline str_gr;
-  let check = 
-    (count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr)) = 1 in 
-  if check 
+  if count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr) = 1
   then 
     let rec add_user_votes group_id user_id count acc lst = begin 
       match lst with
@@ -162,12 +165,9 @@ let add_votes group_id user_id restaurant_id_lst =
         let sql = Printf.sprintf 
             "INSERT INTO votes VALUES(%d, %d, %d, %d); "
             group_id user_id count hd in
-        add_user_votes group_id user_id (count+1) (acc ^ sql) tl end in
-    add_user_votes group_id user_id 1 "" restaurant_id_lst
+        add_user_votes group_id user_id (count + 1) (acc ^ sql) tl end in
+    add_user_votes group_id user_id 1 "" ballot
   else None
-(* (fun x -> print_endline "/ready was not true?"; x) *)
-
-(* delete user *)
 
 let login username = 
   try
@@ -207,18 +207,21 @@ let get_user userid =
     groups = groups;
   }
 
-let get_group groupid = 
+let get_group group_id = 
   let arr1 = single_row_query 
-      "group_name, host_id" "group_info" 
-      ("rowid = " ^ string_of_int groupid) in 
+      "group_name, host_id, voting_allowed, top_5, top_pick" "group_info" 
+      ("rowid = " ^ string_of_int group_id) in 
   let mem_lst = lst_from_col 
       "member_id" "groups" 
-      ("group_id = " ^ string_of_int groupid) int_of_string in 
+      ("group_id = " ^ string_of_int group_id) int_of_string in 
   {
-    id = groupid;
+    id = group_id;
     name = arr1.(0);
     host_id = arr1.(1) |> int_of_string; 
-    members = mem_lst
+    voting_allowed = arr1.(2) = "1";
+    members = mem_lst;
+    top_5 = if arr1.(3) = "" then None else Some arr1.(3);
+    top_pick = if arr1.(4) = "" then None else Some arr1.(4)
   }
 
 let get_restrictions () = 
@@ -267,12 +270,13 @@ let calculate_votes g_id h_id =
     let matched_ranks = List.combine rest_lst rank_lst in 
     let rec ranked_lst acc = function
       | [] -> acc
-      | (rest, rank) :: t -> if List.mem_assoc rest acc then 
+      | (rest, rank) :: t -> if List.mem_assoc rest acc 
+        then begin
           let current_vote = rank + (List.assoc rest acc) in 
           let new_acc = acc |> List.remove_assoc rest 
                         |> List.cons (rest, current_vote) in 
           ranked_lst new_acc t
-        else 
+        end else 
           let new_acc = (rest, rank) :: acc in
           ranked_lst new_acc t in 
     let ranks = ranked_lst [] matched_ranks in 
@@ -280,10 +284,14 @@ let calculate_votes g_id h_id =
       then -1 else 0 in 
     let ordered_ranks = List.sort compare_op ranks in 
     let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0)
+                            |> sanitize 
+                            |> Search.get_winner top_pick in
     let sql = Printf.sprintf 
-        "UPDATE group_info SET top_pick = %d WHERE rowid = %d;
-         UPDATE group_info SET voting_allowed = 0 WHERE rowid = %d" 
-        top_pick g_id g_id in 
+        "UPDATE group_info SET top_pick = '%s', voting_allowed = 0 
+    WHERE rowid = %d;" 
+        (sanitize top) g_id in 
     make_response (exec db sql)
   else None
 
@@ -294,31 +302,34 @@ let format_cuisines group_id =
               |> String.split_on_char ','
               |> List.filter (fun s -> s <> "")
 
+let calculate_survey cuisines x y range price g_id = 
+  Search.get_rests ~cuisine:cuisines x y range price >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
 let process_survey g_id h_id = 
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
   if begin
+    (*Ensure that the user making the request is the host of the group*)
     (count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) 
      > 0 && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
   end then begin
-    let to_drop = {|
-  DELETE FROM groups
-  WHERE surveyed = 0 AND group_id = |} ^ str_gid in
+    let to_drop = Printf.sprintf 
+        {|DELETE FROM groups 
+    WHERE surveyed = 0 AND group_id = %d|} g_id in
     ignore (make_response (exec db to_drop));
     let num_votes = count "groups" ("group_id = " ^ str_gid) in 
     let x = avg_flt "loc_x" num_votes g_id in 
     let y = avg_flt "loc_y" num_votes g_id in 
     let price = avg_int "target_price" num_votes g_id in 
     let range = avg_int "range" num_votes g_id in 
-    let cuisines = format_cuisines g_id in
-    ignore (Search.get_rests ~cuisine:cuisines x y range price >>=
-            fun res -> 
-            let sql = Printf.sprintf 
-                {|UPDATE group_info SET top_5 = '%s', 
-        voting_allowed = 1 WHERE rowid = %d;|}
-                res g_id in Lwt.return (make_response (exec db sql)));
-    match Sqlite3.last_insert_rowid db with 
-    | id -> Some id; 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y price range g_id);
+    Some (Int64.zero)
   end else None
 
 let create_tables () = Db.create_tables ()

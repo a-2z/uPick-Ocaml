@@ -15,6 +15,9 @@ type group = {
   name : string;
   host_id : int;
   members : int list;
+  voting_allowed : bool;
+  top_5 : string option;
+  top_pick : string option;
 }
 
 (* type restriction defines an association between a user and their 
@@ -23,57 +26,89 @@ type restriction = {
   id : int;
   name : string;
 }
-(*Insertion functions for the database*)
 
-(**[add_user username password_hash name] registers a user in the database.*)
+(**[add_user username password_hash name] inserts a user in the database.*)
 val add_user : string -> string -> string -> int64 option
 
 (** [add_friends friend1 friend2] inserts a pairing of two friends into the 
-    database
-    Requires: friend1 is not friend2
-    Raises: Invalid_arg *)
+    database based on their ids.
+    Requires: friend1 and friend2 exist in the database *)
 val add_friends : int -> int -> int64 option
 
 (** [add_restrictions user_id restriction_id] performs a restriction insertion 
-    into a table
-    Requires: restriction_id and user_id are both valid integers *)
-val add_restrictions : int -> int -> int64 option
+    into a table pairing a user and their dietary restriction.
+    Requires: restriction_id and user_id exist in the database *)
+val add_restrictions : int -> int -> int64 option 
 
 (** [add_restrictions_index restriction_name] inserts a restriction into a 
-    table and associates it with an id *)
-val add_restrictions_index : string -> int64 option
+    table and associates it with an id. *)
+val add_restrictions_index : string -> int64 option 
 
-(** [add_group_info group_name host_id] inserts information about a group into
-    a table *)
+(** [add_group_info group_name host_id] inserts information about a group 
+    including the group name and host id into a table, associating the group
+    with an id. 
+    Requires: the host_id must be the id of a user that exists in the
+    database *)
 val add_group_info : string -> int -> int64 option
 
-(** [add_groups user_id group_id] *)
-val add_groups : int -> int -> int64 option
+(** [add_groups user_id group_id] associates a group with a user, effectively
+    putting a user into a group.
+    Requires: the user_id and group_id must be ids of a user and group 
+    respectively that exists in the database *)
+val join_group : int -> int -> int64 option
 
+(** [add_votes group_id user_id restaurant_id_lst] adds users votes for a 
+    specific group 
+    Requires: [user_id] and [group_id] must be ids of a user and group 
+    respectively that exists in the database. [restaurant_id_lst] must contain 
+    all restaurant ids once in order of preference (front is first priority, 
+    last is least priority) stored in the database associated with that group.*)
 val add_votes : int -> int -> int list -> int64 option
-(* 
-val lst_from_col : ?unique:bool -> string -> string -> string -> (
-    string -> 'a) -> 'a list *)
 
+(** [login username] checks if user is in the database. *)
 val login : string -> string option
 
+(** [ans_survey user_id group_id loc_x loc_y cuisine price range] adds 
+    survey answers to the user's corresponding information in the groups 
+    table 
+    Requires: the user_id and group_id must be ids of a user and group 
+    respectively that exists in the database  *)
 val ans_survey : int -> int -> float -> float -> string -> int -> int
   -> int64 option
 
+(** [calculate_votes g_id h_id] returns the id of the most preferred restaurant
+    based on the rankings of users in group associated with [g_id] that 
+    voted. 
+    Requires: the group_id and host_id must be ids of a group and user 
+    respectively that exists in the database *)
 val calculate_votes : int -> int -> int64 option
 
+(** [process_survey g_id h_id] uses survey results from users in group
+    associated with [g_id] to return a list of restaurants most closely
+    matching users preferences. *)
 val process_survey : int -> int -> int64 option
 
-(* get from database *)
-(**[get_user user_id] returns a user given [user_id*)
+(**[id_by_usr usr] is the id of the user with unique username [usr]*)
 val id_by_usr : string -> int
 
+(** [get_user userid] is the user with [userid]
+    Requires: [userid] is associated with a user that exists in the database. *)
 val get_user : int -> user
 
+(** [get_group groupid] is the group with [groupid]
+    Requires: [groupid] is associated with a group that exists in the 
+    database. *)
 val get_group : int -> group
 
+(** [get_restriction_by_id rest_id] is the restriction with [rest_id]
+    Requires: [rest_id] is associated with a user that exists in the 
+    database. *)
 val get_restriction_by_id : int -> string
 
+(** [get_restrictions] gets a list of all restrictions that exist in the 
+    database *)
 val get_restrictions : unit -> string list
 
+(** [create_tables] creates all tables if they do not already exist in the 
+    database *)
 val create_tables : unit -> unit

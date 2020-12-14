@@ -40,11 +40,12 @@ let load_json_login req ins_func inserter =
     login json;
     Lwt.return (inserter (from_string a) ins_func) >>= fun a -> make_response a
   with 
-  | Login_failure _ -> (fun x -> print_endline "login credentials did not match"; x)
+  | Login_failure _ -> (fun x -> 
+      print_endline "login credentials did not match"; x)
                          Lwt.return None >>= fun a -> make_response a
 
-let json_of_user {id; username; password; name; friends; restrictions; 
-                  groups} =
+let json_of_user 
+    {id; username; password; name; friends; restrictions; groups} =
   ignore (password); (*Do not return the user's password on a get request*)
   let open Ezjsonm in
   dict [("id", int id); ("username", string username); 
@@ -52,10 +53,13 @@ let json_of_user {id; username; password; name; friends; restrictions;
         ("restrictions", list int restrictions);
         ("groups", list int groups);]
 
-let json_of_group {id; name; host_id; members} = 
+let json_of_group 
+    {id; name; host_id; members; voting_allowed; top_5; top_pick} = 
   let open Ezjsonm in 
   dict [("id", int id); ("name", string name); ("host_id", int host_id); 
-        ("members", list int members)]
+        ("members", list int members); ("voting_allowed", bool voting_allowed); 
+        ("top_5", option string top_5); 
+        ("top_pick", option string top_pick)]
 
 (* grabs by user id *)
 let json_of_restriction_id restriction = 
@@ -104,7 +108,7 @@ let group_info_inserter json ins_func =
 let group_inserter json ins_func = 
   ins_func
     (member "group_id" json |> to_int)
-    (member "user_id" json |> to_int)
+    (member "username" json |> to_string |> id_by_usr)
 
 let survey_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in
@@ -198,8 +202,8 @@ let post_list = [
       fun a -> make_response a);
 
   (* let insert_group =  *)
-  post "/groups" (fun req -> 
-      load_json_login req add_groups group_inserter);
+  post "/groups/join" (fun req -> 
+      load_json_login req join_group group_inserter);
 
   post "/groups/add" (fun req -> 
       load_json_login req add_group_info group_info_inserter);

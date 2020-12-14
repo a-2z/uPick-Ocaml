@@ -69,7 +69,7 @@ let create_restriction_index () =
 
 let create_groups_info_table () =
   let create_groups_info_table = {|
-  CREATE TABLE IF NOT EXISTS group_info ( 
+  CREATE TABLE IF NOT EXISTS group_info (
     group_name TEXT NOT NULL,
     host_id INTEGER NOT NULL,
     num_members INTEGER DEFAULT 0,
