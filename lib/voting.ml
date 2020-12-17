@@ -13,3 +13,7 @@ elected.
 
 (* let num_surveyed group_id = 
    Dbquery.lst_from_col "surveyed" "groups" "group_id= " ^ string_of_int group_id *)
+
+(* add restrictions features
+   delete functions
+   admins *)

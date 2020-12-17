@@ -4,12 +4,16 @@ open Opium.Std
 open Yojson.Basic
 open Yojson.Basic.Util
 
+(**Creates a server module with database query module M1 and database module 
+   M2 with names "upick.db"*)
+(* module type ServerMaker = functor (M1 : Dbquery) -> functor (M2 : Db) ->  *)
+
 (**************************JSON builders and parsers***************************)
 exception Login_failure of string
 
 let login json =
   let pw = (member "password" json |> to_string) in 
-  let stor_pw = (member "username" json |> to_string |> Dbquery.login) in 
+  let stor_pw = (member "username" json |> to_string |> login) in 
   match stor_pw with 
   | None -> raise (Login_failure ", Invalid username or password")
   | Some p -> if Bcrypt.verify pw (Bcrypt.hash_of_string p) then ()
@@ -143,7 +147,6 @@ let vote_inserter json ins_func =
   else (fun x -> print_endline "was not in group"; x) None 
 
 (*******************************route list*************************************)
-
 (* Route not found *)     
 let default =
   not_found (fun _req ->

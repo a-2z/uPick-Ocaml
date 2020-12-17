@@ -19,18 +19,10 @@ clean:
 	@dune clean
 	rm -rf doc.public project.zip
 
-docs: 
-	mkdir -p doc.public
-
-doc.public: build
+docs: clean build 
 	@dune build @doc
-
-# docs: docs-public docs-private
-	
-# docs-public: build
-# 	mkdir -p doc.public
-# 	ocamlfind ocamldoc -I _build -package yojson,ANSITerminal \
-# 		-html -stars -d doc.public $(MLIS)
+	mkdir -p doc.public
+	mv _build/default/_doc/_html doc.public
 	
 app:
 	@dune exec ./main.exe

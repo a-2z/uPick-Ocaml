@@ -7,7 +7,7 @@ let error error message =
   let () = prerr_endline (errmsg db) in
   let () = prerr_endline message in
   let _closed = db_close db in
-  let () = prerr_endline "Exiting ..." in
+  let () = prerr_endline "Exiting..." in
   exit 1
 
 let create_users_table () =

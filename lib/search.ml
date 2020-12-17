@@ -15,7 +15,7 @@ type result = {
   phone : string;
   reservation : bool;
   takeout : bool;
-}
+}  
 
 (*Zomato API Key*)
 let user_key = "0b2c1f4d2cea4f954b70b3d12683036c"
@@ -132,6 +132,7 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
   let url = Printf.sprintf 
       {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
       n loc_x loc_y (float_of_int range) (String.concat "%2c" c) in 
+  print_endline url;
   bind_request hdr url price
 
 (*Calculate the winner of a vote given by an id (position in a list)*)
@@ -151,13 +152,11 @@ let to_winner json =
   }
 
 let get_winner rank json_str = 
-  print_endline (json_str);
   json_str 
   |> from_string 
   |> member "restaurants"
   |> to_list 
   |> fun l -> List.nth l rank 
               |> to_winner
-              |> fun x -> print_endline "selected"; x
-                                                    |> string_of_rest
+              |> string_of_rest
 
