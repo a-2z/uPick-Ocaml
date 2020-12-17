@@ -89,7 +89,7 @@ let _ =
   add_restrictions' restriction_list;
   add_rest_idx' restriction_index_list;
   add_survey' sample_survey;
-  add_votes' sample_votes;
+  (* add_votes' sample_votes; *)
 
 
 

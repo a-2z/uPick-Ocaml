@@ -1,5 +1,7 @@
 open Lwt.Infix
 open Sqlite3
+open Yojson.Basic
+open Yojson.Basic.Util
 
 let db = db_open "upick.db"
 
@@ -51,7 +53,7 @@ let single_row_query
   ignore (step stmnt);
   Array.map Data.to_string_coerce (row_data stmnt)
 
-(**[lst_from_col sql_col sql_tbl sql_where f] is a list of lists containing 
+(**[  sql_col sql_tbl sql_where f] is a list of lists containing 
    the values of [sql_col] in [sql_tbl] satisfying [sql_where], converted into 
    their primitive types from a string representation with [f]
    Returns: a list of lists of values for a query
@@ -152,21 +154,40 @@ let add_group_info group_name host_id =
     ignore (join_group (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
+(* if searches appear off maybe we need hostid? *)
+let num_rests str_gid =
+  let json_str = List.hd (lst_from_col "top_5" "group_info" ("rowid = " ^
+   str_gid) (fun x -> x)) in 
+  let json = from_string json_str in 
+  json |> member "restaurants" |> to_list |> List.length
+
+let rec add_user_votes group_id user_id count acc lst =
+  match lst with
+  | [] -> acc
+  | hd :: tl ->
+    let sql = Printf.sprintf 
+        "INSERT INTO votes VALUES(%d, %d, %d, %d); "
+        group_id user_id count hd in
+    add_user_votes group_id user_id (count + 1) (acc ^ sql) tl
+
 (**Inserts a [user_id]'s votes in [group_id] with [ballot] representing
    the positions of restaurants in the list ranked in order*)
 let add_votes group_id user_id ballot = 
-  let str_gr = string_of_int group_id in
-  if count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gr) = 1
-  then 
-    let rec add_user_votes group_id user_id count acc lst = begin 
-      match lst with
-      | [] -> make_response (exec db acc)
-      | hd :: tl ->
-        let sql = Printf.sprintf 
-            "INSERT INTO votes VALUES(%d, %d, %d, %d); "
-            group_id user_id count hd in
-        add_user_votes group_id user_id (count + 1) (acc ^ sql) tl end in
-    add_user_votes group_id user_id 1 "" ballot
+  let str_gid = string_of_int group_id in
+  let str_uid = string_of_int user_id in
+  let rest_size = num_rests str_gid in 
+  let rec valid_ballot counter lst = 
+  if counter = 0 then true else 
+  if List.mem (counter-1) lst then valid_ballot (counter-1) lst else false in 
+  if count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gid) = 1 && 
+  List.length ballot = rest_size && valid_ballot rest_size ballot
+  then let new_votes = add_user_votes group_id user_id 1 "" ballot in 
+  if count "votes" ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) > 0
+   then 
+  let deletion_sql = Printf.sprintf {|DELETE FROM votes 
+    WHERE group_id = '%s' AND user_id = '%s'; |} str_gid str_uid in 
+    make_response (exec db (deletion_sql ^ new_votes))
+    else make_response (exec db new_votes)
   else None
 
 let login username = 
