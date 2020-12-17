@@ -1,7 +1,12 @@
 # dune exec ./main.exe
 # OCAMLPARAM: unset
+<<<<<<< HEAD
 # Workspace root: /Users/reetuparikh/Desktop/3110Project
 $ /usr/bin/getconf _NPROCESSORS_ONLN > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dunecfb6a9.output 2> /dev/null
+=======
+# Workspace root: /mnt/c/Users/drewm/desktop/upick
+$ /usr/bin/nproc > /tmp/dunee89b14.output 2> /dev/null
+>>>>>>> 48a3d1d0bc6170c034bb5d20ce82c0b1dd5d30f1
 # Auto-detected concurrency: 8
 # disable binary cache
 $ /usr/local/bin/ocamlc.opt -config > /var/folders/4h/71phn61j2_z3d3r_06m9dnq80000gn/T/dune3cc841.output
