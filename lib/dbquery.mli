@@ -81,12 +81,12 @@ val add_votes : int -> int -> int list -> int64 option
 (** [login username] checks if user is in the database. *)
 val login : string -> string option
 
-(** [ans_survey user_id group_id loc_x loc_y cuisine price range] adds 
-    survey answers to the user's corresponding information in the groups 
+(** [ans_survey user_id group_id loc_x loc_y cuisine price range preferences] 
+    adds survey answers to the user's corresponding information in the groups 
     table 
     Requires: the user_id and group_id must be ids of a user and group 
     respectively that exists in the database  *)
-val ans_survey : int -> int -> float -> float -> string -> int -> int
+val ans_survey : int -> int -> float -> float -> string -> int -> int -> string
   -> int64 option
 
 (** [calculate_votes g_id h_id] returns the id of the most preferred restaurant

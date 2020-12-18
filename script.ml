@@ -23,17 +23,17 @@ let group_list = [
 ]
 
 let restriction_list = [
-  (1, 2); (1, 3); (4, 1); (5, 3); (7, 1); (7, 2); (7, 3); (7, 4)
+  (1, 2); (1, 3); (4, 1); (5, 3); (7, 1); (7, 2); (7, 3);
 ]
 
 let restriction_index_list = [
-  "eggs"; "dairy"; "gluten"; "vegan"; "peanuts"
+  "Vegetarian Friendly"; "Vegan Options"; "Gluten Free Options";
 ]
 
 let sample_survey = [
-  (4, 3, 40.0, -77.3, "22", 30, 5000);
-  (5, 3, 40.0, -77.3, "25", 30, 5000);
-  (3, 3, 40.0, -77.3, "25", 30, 5000);
+  (4, 3, 42.4, -76.5, "22", 30, 50, "Dinner");
+  (5, 3, 42.4, -76.5, "25", 30, 50, "Lunch,Outdoor Seating" );
+  (3, 3, 42.4, -76.5, "25", 30, 50, "Dinner");
 ]
 
 let sample_votes = [
@@ -41,6 +41,9 @@ let sample_votes = [
   (3, 5, [20; 30; 40; 50; 10]);
   (3, 3, [50; 20; 10; 30; 40]);
 ]
+
+(* lat=42.444000&lon=-76.501900&radius=4000&cuisines=25&sort=rating&order=desc
+lat=42.400000&lon=-76.500000&radius=5000.000000&cuisines=22%2c25&sort=rating&order=desc *)
 
 let rec add_users' = function 
   | [] -> ();
@@ -70,8 +73,10 @@ let rec add_rest_idx' = function
 
 let rec add_survey' = function 
   | [] -> ();
-  | (user_id, group_id, loc_x, loc_y, cuisine, price, range) :: t -> 
-    ignore(ans_survey user_id group_id loc_x loc_y cuisine price range); 
+  | (user_id, group_id, loc_x, loc_y, cuisine, price, range, preferences) :: 
+  t -> 
+    ignore
+    (ans_survey user_id group_id loc_x loc_y cuisine price range preferences); 
     add_survey' t
 
 let rec add_votes' = function
@@ -90,7 +95,5 @@ let _ =
   add_rest_idx' restriction_index_list;
   add_survey' sample_survey;
   (* add_votes' sample_votes; *)
-
-
 
 

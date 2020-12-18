@@ -1,25 +1,18 @@
-(* open Sqlite3 *)
 
-(*
-starting with wanting to start voting
-wait for an accepted /ready post request. 
--/ready -> call process_survey -> process_survey will return top 5 restaurants 
-and sets top_5 to null. /ready will just return true.
 
-/vote -> checks if top_5 is null, if so then accepts vote, voting is uploaded
-/calculate -> calculate and return the order in which restaurants were 
-elected. 
-*)
-
-(* let num_surveyed group_id = 
-   Dbquery.lst_from_col "surveyed" "groups" "group_id= " ^ string_of_int group_id *)
 
 (* add restrictions features
-   delete functions
    admins 
    cuisine ids
    restrictions/preferences *)
 
-   (* Breakfast, Brunch, Lunch, Dinner, Outdoor Seating, Nightlife, Buffet, Michelin Starred,
+(* Breakfast, Brunch, Lunch, Dinner, Outdoor Seating, Nightlife, Buffet, Michelin Starred,
+
    Vegetarian Friendly, Vegan Options, Gluten Free Options *)
-    (* have preferences and do restrictions *)
+(* have preferences and do restriction
+
+   s *)
+
+(* 95 - Thai, 83 - Seafood, 82 - Pizza, 1064 - Pasta, 73 - Mexican, 55 - Italian, 
+   40 - Fast Food, 25 - Chinese, 30 - Cafe, 148 - Indian, 70 - Mediterranean, 
+*)

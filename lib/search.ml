@@ -102,18 +102,23 @@ let filter_results price l =
   if List.length filtered <= 5 then l |> splice 5
   else filtered |> splice 5
 
+(* let filter_preferences preferences =  *)
+
+
 let process_results price inbound =  
   inbound 
+  |> fun x -> print_endline inbound; x 
   |> from_string
   |> from_body 
   |> filter_results price
+  (* |> filter_preferences  *)
   |> string_of_t
 
 (**[bind_request header url] is a string of a json that resulting from a get 
    request to the Zomato API
    at [url] with [header], a list of key: value pairs that contain metadata
    as well as the API key *)
-let bind_request header url price = 
+let bind_request header url price  = 
   Cohttp_lwt_unix.Client.get ~headers:header (Uri.of_string url)
   >>= fun a -> snd a 
                |> Cohttp_lwt__.Body.to_string 
@@ -125,16 +130,16 @@ let bind_request header url price =
 
    Requires: [cuisine] must be a list of strings that represent Zomato 
    cuisine IDs*)
-let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
+let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price  =
   let price = set_bound price in
-  let hdr = add_list (init ())  
+  let hdr = add_list (init ()) 
       [("Accept", "application/json"); ("user-key", user_key)] in 
-  let url = Printf.sprintf 
-      (* This line had to exceed 80 characters because it is a rawstring link *)
-      {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
-      n loc_x loc_y (float_of_int range) (String.concat "%2c" c) in 
-  print_endline url;
-  bind_request hdr url price
+  let url =
+      "https://developers.zomato.com/api/v2.1/search?count=" ^ string_of_int n ^
+      "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
+      ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ "&cuisines=" 
+      ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" in
+  bind_request hdr url price 
 
 (*Calculate the winner of a vote given by an id (position in a list)*)
 let to_winner json = 

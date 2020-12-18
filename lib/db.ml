@@ -7,7 +7,7 @@ let error error message =
   let () = prerr_endline (errmsg db) in
   let () = prerr_endline message in
   let _closed = db_close db in
-  let () = prerr_endline "Exiting..." in
+  let () = prerr_endline "exit..." in
   exit 1
 
 let create_users_table () =
@@ -98,6 +98,7 @@ let create_groups_table () =
     target_price INT,
     cuisines TEXT,
     range INT,
+    preferences TEXT,
     surveyed INTEGER DEFAULT 0,
     voted INTEGER DEFAULT 0,
     PRIMARY KEY(group_id, member_id),
@@ -134,8 +135,8 @@ let create_tables _ =
   () 
   |> create_users_table
   |> create_friends_table
-  |> create_restrictions_table
   |> create_restriction_index
+  |> create_restrictions_table
   |> create_groups_info_table
   |> create_groups_table
   |> create_votes_table 

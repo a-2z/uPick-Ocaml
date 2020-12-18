@@ -135,6 +135,11 @@ let add_restrictions_index restriction =
       restriction in
   make_response (exec db sql)
 
+(* let rec initialize_restrictions restriction_lst acc = 
+   match restriction_lst with
+   | [] -> Some acc
+   | hd :: tl -> initialize_restrictions tl ((add_restrictions_index hd) :: acc) *)
+
 let join_group group_id member_id = 
   let sql = Printf.sprintf {|
   INSERT INTO groups (group_id, member_id) VALUES(%d, %d);|} 
@@ -294,13 +299,13 @@ let reassign_host group_id user_id host_id =
     make_response (exec db update_sql)
   else None
 
-let ans_survey user_id group_id loc_x loc_y cuisine price range = 
+let ans_survey user_id group_id loc_x loc_y cuisine price range preferences = 
   let sql = Printf.sprintf {|
   UPDATE groups 
-  SET loc_x = %f, loc_y = %f, 
-  target_price = %d, cuisines = %s, range = %d, surveyed = 1 
+  SET loc_x = %f, loc_y = %f, target_price = %d, 
+  cuisines = '%s', range = %d, preferences = '%s', surveyed = 1 
   WHERE member_id = %d AND group_id = %d; |} 
-      loc_x loc_y price cuisine range user_id group_id in
+      loc_x loc_y price cuisine range preferences user_id group_id in
   make_response (exec db sql) 
 
 let avg_flt col n g_id =
@@ -309,6 +314,10 @@ let avg_flt col n g_id =
   lst_from_col ~unique:false col "groups" ("group_id = " ^ g) float_of_string
   |> List.fold_left ( +. ) 0.
   |> fun x -> x /. n
+  |> string_of_float 
+  |> fun x -> if String.length x > 7 then 
+  float_of_string (String.sub x 0 6)
+  else float_of_string x
 
 let avg_int col n g_id = 
   let g = string_of_int g_id in 
@@ -370,6 +379,7 @@ let calculate_survey cuisines x y range price g_id =
                  (sanitize res) g_id in
   Lwt.return (make_response (exec db sql))
 
+(* /ready fails when no one has filled out survey*)
 let process_survey g_id h_id = 
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
@@ -378,16 +388,22 @@ let process_survey g_id h_id =
     is_host str_hid str_gid && 
     count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 
   end then begin
+    let count_drop = 
+      count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
     let to_drop = 
       delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
     ignore (make_response (exec db to_drop));
+    let update_num_members = Printf.sprintf
+    "UPDATE group_info SET num_members = num_members - %d WHERE rowid = %d; "
+    count_drop g_id in 
+    ignore (make_response (exec db update_num_members));
     let num_votes = count "groups" ("group_id = " ^ str_gid) in 
     let x = avg_flt "loc_x" num_votes g_id in 
     let y = avg_flt "loc_y" num_votes g_id in 
     let price = avg_int "target_price" num_votes g_id in 
     let range = avg_int "range" num_votes g_id in 
     let cuisines = format_cuisines g_id in 
-    ignore(calculate_survey cuisines x y price range g_id);
+    ignore(calculate_survey cuisines x y range price g_id);
     Some (Int64.zero)
   end else None
 

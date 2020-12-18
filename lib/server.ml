@@ -121,7 +121,7 @@ let group_host_user_inserter json ins_func =
     (member "member_id" json |> to_int)
     h_id
 
-let survey_inserter json ins_func = 
+let survey_inserter json ins_func : int64 option = 
   let u_id = id_by_usr (member "username" json |> to_string) in
   if is_member (member "group_id" json |> to_int) u_id then 
     begin 
@@ -130,11 +130,17 @@ let survey_inserter json ins_func =
         (member "group_id" json |> to_int)
         (member "loc_x" json |> to_float)
         (member "loc_y" json |> to_float)
-        (member "cuisine" json |> to_string)
+        (member "cuisines" json |> to_list 
+          |> List.map to_string |> String.concat ",")
         (member "price" json |> to_int)
         (member "range" json |> to_int)
+        (member "preferences" json |> to_list 
+          |> List.map to_string |> String.concat ",")
     end 
-  else None 
+  else (fun x -> print_endline "not a member"; x) None 
+
+(* (member "cuisines" json |> to_list 
+          |> List.map to_string |> string_of_list) *)
 
 let vote_status_inserter json ins_func = 
   let h_id = id_by_usr (member "username" json |> to_string) in 
