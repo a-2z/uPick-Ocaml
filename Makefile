@@ -22,7 +22,7 @@ clean:
 docs: clean build 
 	@dune build @doc
 	mkdir -p doc.public
-	mv _build/default/_doc/_html doc.public
+	cp -r _build/default/_doc/_html doc.public
 	
 app:
 	@dune exec ./main.exe
