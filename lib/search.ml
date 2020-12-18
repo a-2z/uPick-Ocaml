@@ -130,6 +130,7 @@ let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price =
   let hdr = add_list (init ())  
       [("Accept", "application/json"); ("user-key", user_key)] in 
   let url = Printf.sprintf 
+      (* This line had to exceed 80 characters because it is a rawstring link *)
       {|https://developers.zomato.com/api/v2.1/search?count=%d&lat=%f&lon=%f&radius=%f&cuisines=%s&sort=rating&order=desc|} 
       n loc_x loc_y (float_of_int range) (String.concat "%2c" c) in 
   print_endline url;

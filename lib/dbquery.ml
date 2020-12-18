@@ -163,8 +163,8 @@ let delete_sql (sql_tbl : string) (sql_where : string) =
 
 (* if searches appear off maybe we need hostid? *)
 let num_rests str_gid =
-  let json_str = List.hd (lst_from_col "top_5" "group_info" ("rowid = " ^
-                                                             str_gid) (fun x -> x)) in 
+  let json_str = List.hd (
+      lst_from_col "top_5" "group_info" ("rowid = " ^ str_gid) (fun x -> x)) in 
   let json = from_string json_str in 
   json |> member "restaurants" |> to_list |> List.length
 
@@ -185,14 +185,16 @@ let add_votes group_id user_id ballot =
   let rest_size = num_rests str_gid in 
   let rec valid_ballot counter lst = 
     if counter = 0 then true else 
-    if List.mem (counter-1) lst then valid_ballot (counter-1) lst else false in 
+    if List.mem (counter-1) lst 
+    then valid_ballot (counter-1) lst 
+    else false in 
   if count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gid) = 1 && 
      List.length ballot = rest_size && valid_ballot rest_size ballot
   then let new_votes = add_user_votes group_id user_id 1 "" ballot in 
     if count "votes" ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) > 0
     then let drop_sql = 
-           delete_sql "votes" ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) 
-      in 
+           delete_sql "votes" ("group_id = " ^ str_gid ^ " AND user_id = "
+                               ^ str_uid) in 
       make_response (exec db (drop_sql ^ new_votes))
     else make_response (exec db new_votes)
   else None

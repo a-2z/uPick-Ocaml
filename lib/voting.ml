@@ -19,3 +19,7 @@ elected.
    admins 
    cuisine ids
    restrictions/preferences *)
+
+   (* Breakfast, Brunch, Lunch, Dinner, Outdoor Seating, Nightlife, Buffet, Michelin Starred,
+   Vegetarian Friendly, Vegan Options, Gluten Free Options *)
+    (* have preferences and do restrictions *)
