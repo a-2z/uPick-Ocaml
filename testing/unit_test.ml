@@ -1,69 +1,49 @@
 (*TEST SUITE *)
 open OUnit2
-open Lib.Server
-(* open Sqlite3
-open Lwt.Infix
-open Yojson.Basic
-open Yojson.Basic.Util *)
-(* open Opium.Std *)
 (* open Lib.Dbquery *)
+open Lwt.Infix
+open Lib.Server
+(* open Opium.Std *)
+open Yojson.Basic
+open Yojson.Basic.Util
 
-(* URL pointing to local host *)
-let local_url = "http://localhost:3000"
+(* URI pointing to local host*)
+let make_uri route = Uri.of_string ("http://localhost:3000" ^ route)
 
-let empty = [] 
-(* sample request bodies *)
-let sample_user = [("reetuparikh", "reetu123", "Reetu")]
-let sample_friend_list = [(1, 2); (3,4)]
-let sample_restriction_list = [(1,2); (1,3)]
+let is_success json = json |> from_string |> member "success" |> to_bool
+
+let make_body = Cohttp_lwt__Body.of_string
+
+(* let send_get route body unwrapper = 
+   Cohttp_lwt_unix.Client.post ~body:(make_body body) (make_uri route)
+   >>= fun a -> snd a 
+               |> Cohttp_lwt__.Body.to_string 
+   >>= fun b -> b |> unwrapper |> Lwt.return *)
 
 let test_equal name exptd expr = 
   name >:: (fun _ -> assert_equal exptd expr) 
 
-let port_test = [
-  test_equal "two is two" 2 2;
-  test_equal "port is 3000" port 3000;
-]
-
+  let port_test = [
+    test_equal "two is two" 2 2;
+    test_equal "port is 3000" port 3000;
+  ]
+(* 
 let add_user_test = [
-  (* test_equal "user list added" user_list (add_user user_list) *)
-]
+  assert_equal "add andrew01 user" 
+] *)
 
-let add_restrictions_test = [
-]
-
-let add_groups_test = [
-]
-
-let login_test = [
-]
-
-let get_user_test = [
-]
-
-let get_group_test = [
-]
-
-let get_restrictions_test = [
-]
-
-let filter_test = [
-]
-
-let get_restaurant_test = [
-]
-
-let tests = "test suite fo r uPick" >::: List.flatten [
-    port_test;
-    add_user_test;
-    add_restrictions_test;
-    add_groups_test;
-    login_test;
-    get_user_test;
-    get_group_test;
-    get_restrictions_test;
-    filter_test;
-    get_restaurant_test;
+let tests = "test suite for uPick" >::: List.flatten [
+    (* port_test; *)
   ]
 
-let _ = start(); run_test_tt_main tests
+let run_server = Lwt_timeout.create 1 (fun () -> start ())
+
+let run_tests () = run_test_tt_main tests
+
+let send_get () = Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/users/2") 
+  >>= fun a -> print_endline "hi"; snd a 
+                                   |> Cohttp_lwt__.Body.to_string 
+  >>= fun b -> b |> fun x -> print_endline b; x |> Lwt.return
+
+(**Fix later *) 
+let _ = Lwt_timeout.start run_server; run_tests (); ignore(send_get ());

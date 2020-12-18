@@ -56,8 +56,6 @@ B /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian
 B /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian/bigstring
 B /home/andrew/.opam/cs3110-2020fa/lib/opium
 B /home/andrew/.opam/cs3110-2020fa/lib/opium_kernel
-B /home/andrew/.opam/cs3110-2020fa/lib/ounit2
-B /home/andrew/.opam/cs3110-2020fa/lib/ounit2/advanced
 B /home/andrew/.opam/cs3110-2020fa/lib/parsexp
 B /home/andrew/.opam/cs3110-2020fa/lib/ppx_sexp_conv/runtime-lib
 B /home/andrew/.opam/cs3110-2020fa/lib/ptime
@@ -83,8 +81,9 @@ B /home/andrew/.opam/cs3110-2020fa/lib/uutf
 B /home/andrew/.opam/cs3110-2020fa/lib/x509
 B /home/andrew/.opam/cs3110-2020fa/lib/yojson
 B /home/andrew/.opam/cs3110-2020fa/lib/zarith
-B ../_build/default/lib/.lib.objs/byte
-B ../_build/default/testing/.unit_test.eobjs/byte
+B _build/default/.main.eobjs/byte
+B _build/default/.script.eobjs/byte
+B _build/default/lib/.lib.objs/byte
 S /home/andrew/.opam/cs3110-2020fa/lib/asn1-combinators
 S /home/andrew/.opam/cs3110-2020fa/lib/astring
 S /home/andrew/.opam/cs3110-2020fa/lib/base
@@ -142,8 +141,6 @@ S /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian
 S /home/andrew/.opam/cs3110-2020fa/lib/ocplib-endian/bigstring
 S /home/andrew/.opam/cs3110-2020fa/lib/opium
 S /home/andrew/.opam/cs3110-2020fa/lib/opium_kernel
-S /home/andrew/.opam/cs3110-2020fa/lib/ounit2
-S /home/andrew/.opam/cs3110-2020fa/lib/ounit2/advanced
 S /home/andrew/.opam/cs3110-2020fa/lib/parsexp
 S /home/andrew/.opam/cs3110-2020fa/lib/ppx_sexp_conv/runtime-lib
 S /home/andrew/.opam/cs3110-2020fa/lib/ptime
@@ -169,6 +166,6 @@ S /home/andrew/.opam/cs3110-2020fa/lib/uutf
 S /home/andrew/.opam/cs3110-2020fa/lib/x509
 S /home/andrew/.opam/cs3110-2020fa/lib/yojson
 S /home/andrew/.opam/cs3110-2020fa/lib/zarith
-S ../lib
 S .
-FLG -open Dune__exe -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs
+S lib
+FLG -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs
