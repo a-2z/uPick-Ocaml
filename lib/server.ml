@@ -114,6 +114,13 @@ let group_inserter json ins_func =
     (member "group_id" json |> to_int)
     (member "username" json |> to_string |> id_by_usr)
 
+let group_host_user_inserter json ins_func = 
+  let h_id = id_by_usr (member "username" json |> to_string) in 
+  ins_func 
+    (member "group_id" json |> to_int)
+    (member "member_id" json |> to_int)
+    h_id
+
 let survey_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in
   if is_member (member "group_id" json |> to_int) u_id then 
@@ -205,11 +212,17 @@ let post_list = [
       fun a -> make_response a);
 
   (* let insert_group =  *)
-  post "/groups/join" (fun req -> 
+  post "/groups/join" (fun req ->
       load_json_login req join_group group_inserter);
 
-  post "/groups/add" (fun req -> 
+  post "/groups/add" (fun req ->
       load_json_login req add_group_info group_info_inserter);
+
+  post "/groups/newhost" (fun req ->
+      load_json_login req reassign_host group_host_user_inserter);
+
+  post "/groups/rmuser" (fun req ->
+      load_json_login req delete_from_group group_host_user_inserter);
 
   post "/login" (fun req -> 
       req.Request.body

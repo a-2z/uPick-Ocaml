@@ -51,6 +51,19 @@ val add_restrictions_index : string -> int64 option
     database *)
 val add_group_info : string -> int -> int64 option
 
+(** [delete_from_group group_id user_id host_id] deletes a user from a group,
+    romoving all data from the group associated with that user.
+    Requires: the group_id, user_id (member_id), and host_id, must be ids of a 
+    user and group respectively that exists in the database *)
+val delete_from_group : int -> int -> int -> int64 option
+
+(** [reassign_host group_id user_id host_id] changes the host of a group from
+    the user associated with [host_id] to a different member of the group 
+    associated with [user_id].
+    Requires: the group_id, user_id (member_id), and host_id, must be ids of a 
+    user and group respectively that exists in the database *)
+val reassign_host : int -> int -> int -> int64 option
+
 (** [add_groups user_id group_id] associates a group with a user, effectively
     putting a user into a group.
     Requires: the user_id and group_id must be ids of a user and group 

@@ -16,4 +16,6 @@ elected.
 
 (* add restrictions features
    delete functions
-   admins *)
+   admins 
+   cuisine ids
+   restrictions/preferences *)

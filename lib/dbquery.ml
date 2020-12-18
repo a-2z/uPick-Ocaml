@@ -98,6 +98,9 @@ let make_response = function
     Printf.printf "Row inserted with id %Ld\n" id; Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
+let is_host str_hid str_gid = 
+  count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) > 0
+
 (*insertion functions *)
 let add_user username password name =
   let sql =
@@ -132,15 +135,16 @@ let add_restrictions_index restriction =
       restriction in
   make_response (exec db sql)
 
-(* FIX INCREMENTING NUM_MEMBERS BC IT INCREMENTS BEFORE THE UNIQUE CONSTRAINT ERROR *)
 let join_group group_id member_id = 
   let sql = Printf.sprintf {|
-  UPDATE group_info 
-    SET num_members = num_members + 1 
-  WHERE rowid = %d;
-  INSERT INTO groups (group_id, member_id) VALUES(%d, %d)|} 
-      group_id group_id member_id in 
-  make_response (exec db sql)
+  INSERT INTO groups (group_id, member_id) VALUES(%d, %d);|} 
+      group_id member_id in 
+  let resp = make_response (exec db sql) in 
+  if resp = None then None else  
+    let update_sql = Printf.sprintf {|UPDATE group_info 
+  SET num_members = num_members + 1 
+  WHERE rowid = %d;|} group_id in 
+    make_response (exec db update_sql)
 
 let add_group_info group_name host_id = 
   let sql =
@@ -154,10 +158,13 @@ let add_group_info group_name host_id =
     ignore (join_group (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
+let delete_sql (sql_tbl : string) (sql_where : string) =
+  Printf.sprintf {|DELETE FROM %s WHERE %s; |} sql_tbl sql_where 
+
 (* if searches appear off maybe we need hostid? *)
 let num_rests str_gid =
   let json_str = List.hd (lst_from_col "top_5" "group_info" ("rowid = " ^
-   str_gid) (fun x -> x)) in 
+                                                             str_gid) (fun x -> x)) in 
   let json = from_string json_str in 
   json |> member "restaurants" |> to_list |> List.length
 
@@ -177,16 +184,16 @@ let add_votes group_id user_id ballot =
   let str_uid = string_of_int user_id in
   let rest_size = num_rests str_gid in 
   let rec valid_ballot counter lst = 
-  if counter = 0 then true else 
-  if List.mem (counter-1) lst then valid_ballot (counter-1) lst else false in 
+    if counter = 0 then true else 
+    if List.mem (counter-1) lst then valid_ballot (counter-1) lst else false in 
   if count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gid) = 1 && 
-  List.length ballot = rest_size && valid_ballot rest_size ballot
+     List.length ballot = rest_size && valid_ballot rest_size ballot
   then let new_votes = add_user_votes group_id user_id 1 "" ballot in 
-  if count "votes" ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) > 0
-   then 
-  let deletion_sql = Printf.sprintf {|DELETE FROM votes 
-    WHERE group_id = '%s' AND user_id = '%s'; |} str_gid str_uid in 
-    make_response (exec db (deletion_sql ^ new_votes))
+    if count "votes" ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) > 0
+    then let drop_sql = 
+           delete_sql "votes" ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) 
+      in 
+      make_response (exec db (drop_sql ^ new_votes))
     else make_response (exec db new_votes)
   else None
 
@@ -254,13 +261,43 @@ let get_restriction_by_id rest_id =
       ("rowid = " ^ string_of_int rest_id) in
   rest.(0)
 
-(* INSERT VOTING INFO FROM BALLOT INTO GROUPS TABLE *)
+let delete_from_group group_id member_id host_id = 
+  let str_gid = string_of_int group_id in
+  let str_hid = string_of_int host_id in
+  let str_uid = string_of_int member_id in
+  let num_members = count "groups" ("group_id = " ^ str_gid) in
+  let is_host_bool = is_host str_hid str_gid in
+  let mem_not_host = member_id <> host_id  in
+  if (is_host_bool && (mem_not_host || num_members = 1) 
+      || (is_host_bool = false && mem_not_host = false)) then
+    let sql_grouprm = delete_sql 
+        "groups" ("group_id = " ^ str_gid ^ " AND member_id = " ^ str_uid) in 
+    let update_sql = Printf.sprintf {|
+    UPDATE group_info 
+    SET num_members = num_members - 1 
+    WHERE rowid = %d; |} group_id in 
+    let voting_updated = delete_sql "votes" 
+        ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) in
+    make_response (exec db (voting_updated ^ sql_grouprm ^ update_sql))
+  else None
+
+let reassign_host group_id user_id host_id = 
+  let str_gid = string_of_int group_id in
+  let str_hid = string_of_int host_id in
+  if is_host str_hid str_gid then
+    let update_sql = Printf.sprintf {|
+    UPDATE group_info 
+    SET host_id = %d 
+    WHERE rowid = %d; |} user_id group_id in 
+    make_response (exec db update_sql)
+  else None
+
 let ans_survey user_id group_id loc_x loc_y cuisine price range = 
   let sql = Printf.sprintf {|
   UPDATE groups 
   SET loc_x = %f, loc_y = %f, 
   target_price = %d, cuisines = %s, range = %d, surveyed = 1 
-  WHERE member_id = %d AND group_id = %d|} 
+  WHERE member_id = %d AND group_id = %d; |} 
       loc_x loc_y price cuisine range user_id group_id in
   make_response (exec db sql) 
 
@@ -281,8 +318,8 @@ let calculate_votes g_id h_id =
   let str_gid = string_of_int g_id in 
   let str_hid = string_of_int h_id in
   if begin
-    (count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) 
-     > 0 && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
+    is_host str_hid str_gid 
+    && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0
   end then 
     let rank_lst = lst_from_col ~voting:true "ranking" "votes" 
         ("group_id = " ^ str_gid) int_of_string in
@@ -336,12 +373,11 @@ let process_survey g_id h_id =
   let str_hid = string_of_int h_id in
   if begin
     (*Ensure that the user making the request is the host of the group*)
-    (count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) 
-     > 0 && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0) 
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 
   end then begin
-    let to_drop = Printf.sprintf 
-        {|DELETE FROM groups 
-    WHERE surveyed = 0 AND group_id = %d|} g_id in
+    let to_drop = 
+      delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
     ignore (make_response (exec db to_drop));
     let num_votes = count "groups" ("group_id = " ^ str_gid) in 
     let x = avg_flt "loc_x" num_votes g_id in 
