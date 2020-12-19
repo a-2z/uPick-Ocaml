@@ -20,8 +20,8 @@ let create_users_table () =
   |}
   in match exec db create_usertable with
   | Rc.OK -> ()
-  | err -> let message = 
-    "Can't create table users (malformed sql/already exists)" in
+  | err -> 
+    let message = "Can't create table users (malformed sql/already exists)" in
     error err message
 
 let create_friends_table () =
@@ -38,7 +38,7 @@ let create_friends_table () =
   in match exec db create_friends with
   | Rc.OK -> ()
   | err -> let message = 
-    "Can't create table friends (malformed sql/already exists)" in
+             "Can't create table friends (malformed sql/already exists)" in
     error err message
 
 let create_restrictions_table () =
@@ -54,7 +54,7 @@ let create_restrictions_table () =
   in match exec db create_restrictions with
   | Rc.OK -> ()
   | err -> let message = 
-    "Can't create table restrictions (malformed sql/already exists)" in
+             "Can't create table restrictions (malformed sql/already exists)" in
     error err message
 
 let create_restriction_index () =
@@ -65,7 +65,7 @@ let create_restriction_index () =
   in match exec db create_restrictions with
   | Rc.OK -> ()
   | err -> let message = 
-    "Can't create table restriction (molformed sql/already exists)" in
+             "Can't create table restriction (malformed sql/already exists)" in
     error err message
 
 let create_groups_info_table () =
@@ -86,7 +86,7 @@ let create_groups_info_table () =
   in match exec db create_groups_info_table with
   | Rc.OK -> ()
   | err -> let message = 
-  "Can't create table group_info (malformed sql/already exists)" in
+             "Can't create table group_info (malformed sql/already exists)" in
     error err message
 
 let create_groups_table () =
@@ -144,28 +144,52 @@ let create_group_invites_table () =
     |}
   in match exec db create_group_invite_table with
   | Rc.OK -> ()
-  | err -> let message = 
-    "Can't create table group_invites (malformed sql/already exists)" in
+  | err -> let message = "Can't 
+      create table group_invites (malformed sql/already exists)" in
     error err message
 
+let create_cuisines_table () = 
+  let create_cuisine_table = {|
+    CREATE TABLE IF NOT EXISTS cuisines ( 
+    cuisine_id INTEGER NOT NULL,  
+    cuisine TEXT NOT NULL);
+    |}
+  in match exec db create_cuisine_table with
+  | Rc.OK -> ()
+  | err -> let message = 
+             "Can't create table cuisines (malformed sql/already exists)" in
+    error err message
+
+let create_preferences_table () = 
+  let create_preference_table = {|
+    CREATE TABLE IF NOT EXISTS preferences ( 
+    preference TEXT NOT NULL);
+    |}
+  in match exec db create_preference_table with
+  | Rc.OK -> ()
+  | err -> let message = 
+             "Can't create table preferences (malformed sql/already exists)" in
+    error err message
+
+
 let set_admins () = 
-let env_field fld = List.assoc fld (Dotenv.parse ())
-|> String.split_on_char ',' in
-let usernames = env_field "ADMINS" in
-let passwords = List.map (fun pw -> pw |> Bcrypt.hash |> Bcrypt.string_of_hash)
-(env_field "PASSWORDS") in 
-let names = env_field "NAMES" in 
-try begin
-assert (List.length usernames = List.length passwords && 
-  List.length usernames = List.length names);
-for i = 0 to List.length usernames do 
-let sql = Printf.sprintf 
-    "INSERT INTO users (username, password, name, is_admin) 
+  let env_field fld = List.assoc fld (Dotenv.parse ())
+                      |> String.split_on_char ',' in
+  let usernames = env_field "ADMINS" in
+  let passwords = List.map (fun pw -> pw |> Bcrypt.hash |> Bcrypt.string_of_hash)
+      (env_field "PASSWORDS") in 
+  let names = env_field "NAMES" in 
+  try begin
+    assert (List.length usernames = List.length passwords && 
+            List.length usernames = List.length names);
+    for i = 0 to List.length usernames do 
+      let sql = Printf.sprintf 
+          "INSERT INTO users (username, password, name, is_admin) 
     VALUES ('%s','%s','%s', 1); "
-      (List.nth usernames i) (List.nth passwords i) (List.nth names i ) in
-  ignore (exec db sql);
-done 
-end with _ -> ()
+          (List.nth usernames i) (List.nth passwords i) (List.nth names i ) in
+      ignore (exec db sql);
+    done 
+  end with _ -> ()
 
 let create_tables _ = 
   () 
@@ -177,4 +201,6 @@ let create_tables _ =
   |> create_groups_table
   |> create_votes_table 
   |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
   |> set_admins

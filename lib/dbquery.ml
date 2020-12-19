@@ -94,8 +94,14 @@ let make_response = function
     Printf.printf "Row inserted with id %Ld\n" id; Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
 
+let delete_sql (sql_tbl : string) (sql_where : string) =
+  Printf.sprintf {|DELETE FROM %s WHERE %s; |} sql_tbl sql_where
+
 let is_host str_hid str_gid = 
   count "group_info" ("host_id = " ^ str_hid ^ " AND rowid = " ^ str_gid) > 0
+
+let is_admin user_id = 
+  count "users" ("is_admin = 1 AND rowid = " ^ (string_of_int user_id)) > 0
 
 (*insertion functions *)
 let add_user username password name =
@@ -111,10 +117,12 @@ let add_user username password name =
 let add_friends friend1 friend2 = 
   try 
     assert (friend1 <> friend2);
-    let sql =
-      Printf.sprintf "INSERT INTO friends VALUES(%d, %d); "
-        friend1 friend2 in
-    make_response (exec db sql)
+    if count "users" ("rowid = " ^ string_of_int friend2) > 0 then
+      let sql =
+        Printf.sprintf "INSERT INTO friends VALUES(%d, %d); "
+          friend1 friend2 in
+      make_response (exec db sql)
+    else None
   with e -> 
     print_endline (Printexc.to_string e);
     print_endline "Cannot friend yourself";
@@ -126,13 +134,66 @@ let add_restrictions user_id restriction =
       user_id restriction in
   make_response (exec db sql)
 
+let add_rest_pref_helper user_id sql_text = 
+  if is_admin user_id
+  then
+    let sql = sql_text in
+    make_response (exec db sql)
+  else None
+
 let add_restrictions_index user_id restriction = 
-if count "users" ("is_admin = 1 AND rowid = " ^ (string_of_int user_id)) > 0 
-then
   let sql =
     Printf.sprintf "INSERT INTO restriction_index VALUES('%s'); "
       restriction in
-  make_response (exec db sql)
+  add_rest_pref_helper user_id sql
+
+let add_preferences_index user_id preference = 
+  let sql =
+    Printf.sprintf "INSERT INTO preferences VALUES('%s'); "
+      preference in
+  add_rest_pref_helper user_id sql
+
+let rm_rest_pref_helper user_id sql_text = 
+  if is_admin user_id
+  then
+    let sql = sql_text in
+    make_response (exec db sql)
+  else None
+
+let remove_restrictions_index user_id restriction_id =
+  if count "restriction_index" ("rowid = " ^ string_of_int restriction_id) > 0 
+  then
+    let sql_index = delete_sql "restriction_index" 
+        ("rowid = " ^ string_of_int restriction_id) in
+    let sql_restr = delete_sql "restrictions" 
+        ("restriction = " ^ string_of_int restriction_id) in
+    rm_rest_pref_helper user_id (sql_restr ^ sql_index)
+  else None
+
+let remove_preferences_index user_id preference_id =
+  if count "preference_index" ("rowid = " ^ string_of_int preference_id) > 0 
+  then
+    let sql = delete_sql "preferences" 
+        ("rowid = " ^ string_of_int preference_id) in
+    rm_rest_pref_helper user_id sql
+  else None
+
+let add_cuisine user_id cuisine_id cuisine = 
+  if is_admin user_id
+  then
+    let sql =
+      Printf.sprintf "INSERT INTO cuisines VALUES(%d, '%s'); "
+        cuisine_id cuisine in
+    make_response (exec db sql)
+  else None
+
+let remove_cuisine user_id cuisine_id =
+  if is_admin user_id && 
+     count "cuisines" ("cuisine_id = " ^ string_of_int cuisine_id) > 0 
+  then
+    let sql = delete_sql "cuisines" 
+        ("cuisine_id = " ^ string_of_int cuisine_id) in
+    make_response (exec db sql)
   else None
 
 (* let rec initialize_restrictions restriction_lst acc = 
@@ -141,25 +202,29 @@ then
    | hd :: tl -> initialize_restrictions tl ((add_restrictions_index hd) :: acc) *)
 
 let join_group group_id member_id = 
-if count "group_invites" ("group_id = " ^ string_of_int group_id ^
-" AND user_id = " ^ string_of_int member_id) > 0 then begin 
-  let sql = Printf.sprintf {|
+  if count "group_invites" ("group_id = " ^ string_of_int group_id ^
+                            " AND user_id = " ^ string_of_int member_id) > 0 
+  then begin 
+    let sql = Printf.sprintf {|
   INSERT INTO groups (group_id, member_id) VALUES(%d, %d); |} 
-      group_id member_id in 
-  let resp = make_response (exec db sql) in 
-  if resp = None then None else  
-    let update_sql = Printf.sprintf {|UPDATE group_info 
+        group_id member_id in 
+    let resp = make_response (exec db sql) in 
+    if resp = None then None else  
+      let update_sql = Printf.sprintf {|UPDATE group_info 
   SET num_members = num_members + 1 
   WHERE rowid = %d; |} group_id in 
-    make_response (exec db update_sql) end 
-else None
+      make_response (exec db update_sql) end 
+  else None
 
 let add_group_invites group_id user_id host_id = 
-if is_host (string_of_int host_id) (string_of_int group_id) then
-let sql = "INSERT INTO group_invites VALUES ("
-^ (string_of_int group_id)^ ", " ^(string_of_int user_id)^ "); " in 
-make_response (exec db sql) 
-else None
+  if is_host (string_of_int host_id) (string_of_int group_id) && 
+     count "group_info" ("rowid = " ^ string_of_int group_id) > 0 &&
+     count "users" ("rowid = " ^ string_of_int user_id) > 0 
+  then
+    let sql = "INSERT INTO group_invites VALUES (" ^ (string_of_int group_id) ^ 
+              ", " ^(string_of_int user_id)^ "); " in 
+    make_response (exec db sql) 
+  else None
 
 let add_group_info group_name host_id = 
   let sql =
@@ -172,10 +237,7 @@ let add_group_info group_name host_id =
     Printf.printf "Row inserted with id %Ld\n" id;
     ignore (add_group_invites (Int64.to_int id) host_id host_id);
     ignore (join_group (Int64.to_int id) host_id); Some id
-  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None
-
-let delete_sql (sql_tbl : string) (sql_where : string) =
-  Printf.sprintf {|DELETE FROM %s WHERE %s; |} sql_tbl sql_where 
+  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None 
 
 (* if searches appear off maybe we need hostid? *)
 let num_rests str_gid =
@@ -280,15 +342,15 @@ let get_restriction_by_id rest_id =
   rest.(0)
 
 let deletion_updates str_gid str_uid = 
-let sql_grouprm = delete_sql 
-        "groups" ("group_id = " ^ str_gid ^ " AND member_id = " ^ str_uid) in 
-    let update_sql = Printf.sprintf {|
+  let sql_grouprm = delete_sql 
+      "groups" ("group_id = " ^ str_gid ^ " AND member_id = " ^ str_uid) in 
+  let update_sql = Printf.sprintf {|
     UPDATE group_info 
     SET num_members = num_members - 1 
     WHERE rowid = %d; |} (int_of_string str_gid) in 
-    let voting_updated = delete_sql "votes" 
-        ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) in
-    voting_updated ^ sql_grouprm ^ update_sql
+  let voting_updated = delete_sql "votes" 
+      ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) in
+  voting_updated ^ sql_grouprm ^ update_sql
 
 let delete_from_group group_id member_id host_id = 
   let str_gid = string_of_int group_id in
@@ -296,21 +358,27 @@ let delete_from_group group_id member_id host_id =
   let str_uid = string_of_int member_id in
   let num_members = count "groups" ("group_id = " ^ str_gid) in
   let is_host_bool = is_host str_hid str_gid in
-  let mem_not_host = member_id <> host_id  in
-  if (is_host_bool && (mem_not_host || num_members = 1) 
-      || (is_host_bool = false && mem_not_host = false)) then
-      let response = deletion_updates str_gid str_uid in 
-      if is_host_bool then 
-      let sql_invite = delete_sql "group_invites" "group_id = " ^ str_gid ^ 
-      " AND user_id = " ^ str_uid in 
+  let mem_not_host = member_id <> host_id in
+  let is_group_mem = count "groups" ("member_id = " ^ str_uid ^ 
+                                     " AND group_id = " ^ str_gid) > 0 in
+  if is_group_mem && (is_host_bool && (mem_not_host || num_members = 1) 
+                      || (is_host_bool = false && mem_not_host = false)) then
+    let response = deletion_updates str_gid str_uid in 
+    if is_host_bool then 
+      let sql_invite = delete_sql "group_invites" ("group_id = " ^ str_gid ^ 
+                                                   " AND user_id = " ^ str_uid) in 
+      print_endline (response ^ sql_invite);
       make_response (exec db (response ^ sql_invite))
-      else make_response (exec db response)
+    else make_response (exec db response)
   else None
 
 let reassign_host group_id user_id host_id = 
   let str_gid = string_of_int group_id in
   let str_hid = string_of_int host_id in
-  if is_host str_hid str_gid then
+  let str_uid = string_of_int host_id in
+  let is_group_mem = count "groups" ("member_id = " ^ str_uid ^ 
+                                     " AND group_id = " ^ str_gid) > 0 in
+  if is_host str_hid str_gid && is_group_mem then
     let update_sql = Printf.sprintf {|
     UPDATE group_info 
     SET host_id = %d 
@@ -397,7 +465,7 @@ let gather_restrictions g_id =
     | [] -> acc
     | h :: t -> restr_lst 
                   ((lst_from_col "restriction" "restrictions" 
-                  ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
   let restr = List.flatten (restr_lst [] mems) in 
   let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
       (fun x -> x) in List.flatten (List.map f restr)

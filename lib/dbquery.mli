@@ -41,9 +41,38 @@ val add_friends : int -> int -> int64 option
 val add_restrictions : int -> int -> int64 option 
 
 (** [add_restrictions_index user_id restriction] inserts a restriction into a 
-    table and associates it with an id.
-    Requires: user_id exists in the database *)
+    table and associates it with an id if the user is an admin.
+    Requires: user_id exists in the database and that the restriciton is a 
+    valid highlight in the Zomato API *)
 val add_restrictions_index : int -> string -> int64 option 
+
+(** [add_preferences_index user_id preference] inserts a preference into a 
+    table if the user is an admin.
+    Requires: user_id exists in the database and that preference is a valid 
+    highlight in the Zomato API *)
+val add_preferences_index : int -> string -> int64 option
+
+(** [remove_restrictions_index user_id restriction_id] removes a restriction
+    from the restriction index table associated with the restriction id if the
+    user is an admin.
+    Requires: user_id and restriction_id exist in the database *)
+val remove_restrictions_index : int -> int -> int64 option 
+
+(** [remove_preferences_index user_id preference_id] removes a preference
+    from the preferences table associated with it's preference_id if the user 
+    is an admin.
+    Requires: user_id and preference_id exist in the database *)
+val remove_preferences_index : int -> int -> int64 option
+
+(** [add_cuisine user_id cuisine cuisine_id] inserts a type of cuisine and its 
+    corresponding Zomato API cuisine id into a table if the user is an admin.
+    Requires: user_id exists in the database *)
+val add_cuisine : int -> int -> string -> int64 option
+
+(** [remove_cuisine user_id cuisine_id] removes a cuisine from the cuisine 
+    table associated with the cuisine id if the user is an admin.
+    Requires: user_id and cuisine_id exist in the database *)
+val remove_cuisine : int -> int -> int64 option
 
 (** [add_group_info group_name host_id] inserts information about a group 
     including the group name and host id into a table, associating the group

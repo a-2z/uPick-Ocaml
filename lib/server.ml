@@ -84,19 +84,20 @@ let is_member g_id u_id =
 (**[user_inserter json ins_func] inserts the data representing a user into
    the database*)
 let user_inserter json ins_func = 
-let raw_pw = member "password" json |> to_string in
-try begin 
-assert (Passwords.is_valid raw_pw);
-  ins_func
-    (member "username" json |> to_string)
-    (raw_pw |> Bcrypt.hash |> Bcrypt.string_of_hash) 
-    (member "name" json |> to_string)
-    end with _ -> raise (Password_failure "invalid password")
+  let raw_pw = member "password" json |> to_string in
+  try begin 
+    assert (Passwords.is_valid raw_pw);
+    ins_func
+      (member "username" json |> to_string)
+      (raw_pw |> Bcrypt.hash |> Bcrypt.string_of_hash) 
+      (member "name" json |> to_string)
+  end with _ -> raise (Password_failure "invalid password")
 
 let friend_inserter json ins_func = 
+let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func
-    (member "friend1" json |> to_int)
-    (member "friend2" json |> to_int) 
+    u_id
+    (member "friend" json |> to_int) 
 
 let rest_inserter json ins_func = 
   ins_func
@@ -104,8 +105,34 @@ let rest_inserter json ins_func =
     (member "restriction_id" json |> to_int)
 
 let rest_indx_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in
+  let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func u_id (member "restriction" json |> to_string)
+
+let rm_rest_inserter json ins_func = 
+let u_id = id_by_usr (member "username" json |> to_string) in
+ins_func
+  u_id (member "restriction_id" json |> to_int)
+
+let pref_indx_inserter json ins_func = 
+  let u_id = id_by_usr (member "username" json |> to_string) in
+  ins_func u_id (member "preference" json |> to_string)
+
+let rm_pref_inserter json ins_func = 
+let u_id = id_by_usr (member "username" json |> to_string) in
+ins_func
+  u_id (member "preference_id" json |> to_int)
+
+let add_cuisine_inserter json ins_func = 
+  let u_id = id_by_usr (member "username" json |> to_string) in
+  ins_func
+    u_id
+    (member "cuisine_id" json |> to_int)
+    (member "cuisine" json |> to_string)
+
+let rm_cuisine_inserter json ins_func = 
+let u_id = id_by_usr (member "username" json |> to_string) in
+ins_func
+  u_id (member "cuisine_id" json |> to_int)
 
 let group_info_inserter json ins_func = 
   ins_func
@@ -121,7 +148,7 @@ let group_host_user_inserter json ins_func =
   let h_id = id_by_usr (member "username" json |> to_string) in 
   ins_func 
     (member "group_id" json |> to_int)
-    (member "member_id" json |> to_int)
+    (member "user_id" json |> to_int)
     h_id
 
 let survey_inserter json ins_func = 
@@ -219,7 +246,26 @@ let post_list = [
       load_json req add_restrictions_index rest_indx_inserter >>= 
       fun a -> make_response a);
 
-  (* let insert_group =  *)
+  post "/preferences/add" (fun req -> 
+      load_json req add_preferences_index pref_indx_inserter >>= 
+      fun a -> make_response a);
+
+  post "/cuisine/add" (fun req -> 
+      load_json req add_cuisine add_cuisine_inserter >>= 
+      fun a -> make_response a);
+
+  post "/restrictions/remove" (fun req -> 
+      load_json req remove_restrictions_index rm_rest_inserter >>= 
+      fun a -> make_response a);
+
+  post "/preferences/remove" (fun req -> 
+      load_json req remove_preferences_index rm_pref_inserter >>= 
+      fun a -> make_response a);
+
+  post "/cuisine/remove" (fun req -> 
+      load_json req remove_cuisine rm_cuisine_inserter >>= 
+      fun a -> make_response a);
+
   post "/groups/join" (fun req ->
       load_json_login req join_group group_inserter);
 
