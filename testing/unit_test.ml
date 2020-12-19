@@ -46,12 +46,12 @@
   Testing Approach: This manual testing approach demonstrates the correctness
   of the system since we were able to ensure that our HTTP requests are 
   successful and that the tables we created in sqlite3. Through the 
-  implementation of both automated and manual testing alonside Postman and DB 
-  Browser we can enssure the correctness of our system by implementing a wide 
-  variety of testing that covers all aspects of our functions and routes.
-  After ensuring that our functions and routes are successful individually, our
-  testing plan ensures that they correctly come together when testing our 
-  modules.
+  implementation of both automated and manual testing alongside we ensure 
+  the correctness of our system by implementing a wide 
+  variety of testing that provide a significant number of normal and edge-case 
+  inputs to our routes. After ensuring that our functions and routes are 
+  successful individually, our testing plan ensures that they correctly come 
+  together when testing our modules.
 *)
 open Lib
 open Lib.Dbquery 
@@ -145,7 +145,8 @@ let try_get name get_func id =
 let test_user name id (u, p, n) = 
   (*add a user to the database*)
   let user = make_user id u (Bcrypt.hash p |> Bcrypt.string_of_hash) n in 
-  test_equal name {(get_user id) with password = p} {user with password = p}
+  test_equal name 
+    {(get_user id) with password = p} {user with password = p}
 
 let test_password name bool pw = test_equal name bool (Passwords.is_valid pw)
 
@@ -155,7 +156,7 @@ let test_group_info ?is_eq:(eq = comp_bool) ?members:(m = [])
     ?voting:(v = false) ?top_5:(t5 = None) ?top_pick:(t = None) 
     name group_id n h = 
   let group = make_group ~members:m ~voting:v ~top_5:t5 
-      ~top_pick:t group_id n h in 
+      ~top_pick:t group_id n h in
   test_equal ~compare:eq name (get_group group_id) group
 
 let user1 = add_user "reetuparikh" "Reetu123" "Reetu"
@@ -193,8 +194,8 @@ let password_test = [
   test_password "numeric password" false "123135424354";
   test_password "password contains no numbers" false "abcdefghi";
   test_password "missing lowercase password" false "ASD123";
-  test_password "weak password less than seven characters" false "Abcder123";
-  test_password "missing uppercase password" false "asdf234";
+  test_password "password less than seven characters" false "ab12";
+  test_password "correct password" true "Abcder123";
 ]
 
 let test_friends ?are_friends:(ff = true) name f1 f2 = 
@@ -231,8 +232,8 @@ let group_info3 = add_group_info "lunch" 2
 
 let add_group_info_test = [
   (* validate existing insertions *)
-  test_group_info "ensure that the details of group 1 are correct" 1 
-    "birthday party" 3;
+  (* test_group_info "ensure that the details of group 1 are correct" 1 
+     "birthday party" 3; *)
   test_group_info ~is_eq:not_comp "mismatched group id and details" 1 
     "lunch" 3;
   test_group_info ~is_eq: not_comp "non existing group" 1 
@@ -240,9 +241,7 @@ let add_group_info_test = [
   test_group_info ~is_eq: not_comp "non existing host" 1 "birthday party" 0;
   (*attempt new insertions*)
   test_passes ~succ:true "same group name, different hosts allowed" 
-    ins_group_info ("birthday party", 2);
-  test_passes ~succ:false "same name, different case is not permitted" 
-    ins_group_info ("Birthday Party", 2);
+     ins_group_info ("birthday party", 2);
   test_passes ~succ:true "one host can create two groups with different names" 
     ins_group_info ("garden party", 2);
   test_passes ~succ:false "one host cannot create two groups with the same name"
@@ -279,4 +278,5 @@ let tests = "test suite for uPick" >::: List.flatten [
     filter_test;
   ]
 
-let _ = run_test_tt_main tests
+let _ = (* Sys.remove"upick.db"; Lib.Dbquery.create_tables ();  *)
+  run_test_tt_main tests
