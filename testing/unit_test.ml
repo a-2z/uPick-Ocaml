@@ -153,16 +153,20 @@ let user6 = add_user "janedoe" "Jane123" "Jane"
 let user7 = add_user "peterparker" "Jane123" "Peter"
 
 let add_user_test = [
+  (*validate existing insertions*)
   test_user "ensure that the 5th user is correct" 5
     ("johndoe", "Johnny", "John"); 
   test_user "ensure that the first user added is correct" 1
     ("reetuparikh", "Reetu123", "Reetu");
   test_user "ensure that the first user added is correct" 1
     ("reetuparikh", "Reetu123", "Reetu");
+  test_user "ensure that all users have been added, passwords can be reused" 7
+    ("peterparker", "Jane123", "Peter");
   test_passes "test when adding people with same name"
     ~succ:true ins_user ("andrew1235", "baa5j1", "Andrew");
   test_passes "usernames must be unique"
     ~succ:false ins_user ("andrewosorio", "Andrew3", "John");
+  (*ensure passwords meet criteria*)
   test_passes "missing password" ~succ:false ins_user
     ("peterparker", "", "Peter");
   test_passes "contains no capital letter" ~succ:false ins_user
@@ -194,11 +198,44 @@ let friends4 = add_friends 4 5
 let friends5 = add_friends 5 6
 
 let add_friends_test = [
+  (*validate existing insertions*)
   test_friends "test can not add friend that already is a friend" 2 3;
   test_friends "test friend reciprocity" 3 2;
   test_friends "test can not add friend that already is a friend" 2 1;
   test_friends ~are_friends:false "users that are not friends" 5 3;
-  test_friends ~are_friends:false "a user cannot friend themself" 3 3;
+  test_friends ~are_friends:false "a user cannot friend themself" 3 3;  
+  test_friends ~are_friends:false "a user cannot friend nonexisting user" 3 0;
+  test_friends ~are_friends:false 
+    "two non existing users cannot be friends" 13 14;
+  (*attempt new insertions*)
+]
+
+let no_group_test = [
+  test_passes "join group before creation" ~succ:false ins_group (1, 2);
+]
+
+let group_info1 = add_group_info "birthday party" 3
+let group_info2 = add_group_info "anniversary dinner" 1
+let group_info3 = add_group_info "lunch" 2 
+
+let add_group_info_test = [
+  (*validate existing insertions*)
+  test_group_info "ensure that the details of group 1 are correct" 1 
+    "birthday party" 3;
+  test_group_info ~is_eq:not_comp "mismatched group id and details" 1 
+    "lunch" 3;
+  test_group_info ~is_eq: not_comp "non existing group" 1 
+    "dinner" 1;
+  test_group_info ~is_eq: not_comp "non existing host" 1 "birthday party" 0;
+  (*attempt new insertions*)
+  test_passes ~succ:true "same group name, different hosts allowed" 
+    ins_group_info ("birthday party", 2);
+  test_passes ~succ:true "same group name, different hosts allowed" 
+    ins_group_info ("Birthday Party", 2);
+  test_passes ~succ:false "one host cannot create two groups with the same name"
+    ins_group_info ("birthday party", 3);
+  test_passes ~succ:false "incorrect hostid cannot create group" 
+    ins_group_info ("birthday party", 0);
 ]
 
 (* let test_groups = name (group_id, member_id) =
@@ -210,33 +247,6 @@ let add_friends_test = [
                      let member_1 = (get_group group_id).members in
                      name >:: (fun _ ->
                          assert_bool "not in group" () *)
-
-let no_group_test = [
-  test_passes "join group before creation" ~succ:false ins_group (1, 2);
-]
-
-let group_info1 = add_group_info "birthday party" 3
-let group_info2 = add_group_info "anniversary dinner" 1
-let group_info3 = add_group_info "lunch" 2 
-
-let add_group_info_test = [
-  test_group_info "ensure that the 5th user is correct" 1 "birthday party" 3;
-  test_group_info ~is_eq:not_comp "mismatched group name" 1 "lunch" 3;
-]
-
-(* let group_info_test = [
-   test_group_info "test "
-   ]
-
-   let test_restrictions name (user_id, restriction) = 
-   (* add restrictions to database *)
-   let restrictions = add_restrictions user_id restriction in
-   test_equal name (get_restrictions user_id) restrictions
-
-   let add_restrictions_test = [ 
-   test_restrictions "test is restriction is added" 
-    test_restrictions "test can not add duplicate restrictions"
-   ] *)
 
 let is_member_test = []
 
