@@ -40,9 +40,10 @@ val add_friends : int -> int -> int64 option
     Requires: restriction_id and user_id exist in the database *)
 val add_restrictions : int -> int -> int64 option 
 
-(** [add_restrictions_index restriction_name] inserts a restriction into a 
-    table and associates it with an id. *)
-val add_restrictions_index : string -> int64 option 
+(** [add_restrictions_index user_id restriction] inserts a restriction into a 
+    table and associates it with an id.
+    Requires: user_id exists in the database *)
+val add_restrictions_index : int -> string -> int64 option 
 
 (** [add_group_info group_name host_id] inserts information about a group 
     including the group name and host id into a table, associating the group
@@ -69,6 +70,13 @@ val reassign_host : int -> int -> int -> int64 option
     Requires: the user_id and group_id must be ids of a user and group 
     respectively that exists in the database *)
 val join_group : int -> int -> int64 option
+
+(** [add_group_invites group_id user_id host_id] adds an entry to the 
+    group_invites table representing a pending invite from the host user to 
+    another user for the group associated with group_id.
+    Requires: the user_id, host_id, and group_id must be ids of a user and group 
+    respectively that exists in the database *)
+val add_group_invites: int -> int -> int -> int64 option
 
 (** [add_votes group_id user_id restaurant_id_lst] adds users votes for a 
     specific group 

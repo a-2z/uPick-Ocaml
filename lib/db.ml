@@ -2,12 +2,12 @@ open Sqlite3
 
 let db = db_open "upick.db"
 
-let error error message =
-  let () = prerr_endline (Rc.to_string error) in
+let error err message =
+  let () = prerr_endline (Rc.to_string err) in
   let () = prerr_endline (errmsg db) in
   let () = prerr_endline message in
   let _closed = db_close db in
-  let () = prerr_endline "exit..." in
+  let () = prerr_endline "exit" in
   exit 1
 
 let create_users_table () =
@@ -20,9 +20,9 @@ let create_users_table () =
   |}
   in match exec db create_usertable with
   | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table users." in
-    error r message
+  | err -> let message = 
+    "Can't create table users (malformed sql/already exists)" in
+    error err message
 
 let create_friends_table () =
   let create_friends = {|
@@ -37,9 +37,9 @@ let create_friends_table () =
   |}
   in match exec db create_friends with
   | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table friends." in
-    error r message
+  | err -> let message = 
+    "Can't create table friends (malformed sql/already exists)" in
+    error err message
 
 let create_restrictions_table () =
   let create_restrictions = {|
@@ -53,9 +53,9 @@ let create_restrictions_table () =
     |}
   in match exec db create_restrictions with
   | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table restrictions." in
-    error r message
+  | err -> let message = 
+    "Can't create table restrictions (malformed sql/already exists)" in
+    error err message
 
 let create_restriction_index () =
   let create_restrictions = {|
@@ -64,9 +64,9 @@ let create_restriction_index () =
     |}
   in match exec db create_restrictions with
   | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table restriction." in
-    error r message
+  | err -> let message = 
+    "Can't create table restriction (molformed sql/already exists)" in
+    error err message
 
 let create_groups_info_table () =
   let create_groups_info_table = {|
@@ -85,9 +85,9 @@ let create_groups_info_table () =
   |}
   in match exec db create_groups_info_table with
   | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table group_info." in
-    error r message
+  | err -> let message = 
+  "Can't create table group_info (malformed sql/already exists)" in
+    error err message
 
 let create_groups_table () =
   let create_groups_table = {|
@@ -110,9 +110,9 @@ let create_groups_table () =
   |}
   in match exec db create_groups_table with
   | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table groups." in
-    error r message
+  | err ->
+    let message = "Can't create table groups (malformed sql/already exists)" in
+    error err message
 
 let create_votes_table () = 
   let create_vote_table = {|
@@ -128,9 +128,25 @@ let create_votes_table () =
     |}
   in match exec db create_vote_table with
   | Rc.OK -> ()
-  | r ->
-    let message = "Unable to create table votes." in
-    error r message
+  | err ->
+    let message = "Can't create table votes (malformed sql/already exists)" in
+    error err message
+
+let create_group_invites_table () = 
+  let create_group_invite_table = {|
+    CREATE TABLE IF NOT EXISTS group_invites ( 
+    group_id INTEGER NOT NULL,  
+    user_id INTEGER NOT NULL, 
+    FOREIGN KEY(group_id) REFERENCES group_info(rowid)
+          ON DELETE SET NULL
+    FOREIGN KEY(user_id) REFERENCES user(rowid)
+          ON DELETE SET NULL);
+    |}
+  in match exec db create_group_invite_table with
+  | Rc.OK -> ()
+  | err -> let message = 
+    "Can't create table group_invites (malformed sql/already exists)" in
+    error err message
 
 let set_admins () = 
 let env_field fld = List.assoc fld (Dotenv.parse ())
@@ -160,4 +176,5 @@ let create_tables _ =
   |> create_groups_info_table
   |> create_groups_table
   |> create_votes_table 
+  |> create_group_invites_table
   |> set_admins

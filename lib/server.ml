@@ -10,6 +10,7 @@ open Yojson.Basic.Util
 
 (**************************JSON builders and parsers***************************)
 exception Login_failure of string
+exception Password_failure of string 
 
 let login json =
   let pw = (member "password" json |> to_string) in 
@@ -31,7 +32,8 @@ let load_json req ins_func inserter =
   req.Request.body
   |> Body.to_string
   >>= fun a -> 
-  Lwt.return (inserter (from_string a) ins_func)
+  try Lwt.return (inserter (from_string a) ins_func)
+  with Password_failure _ -> Lwt.return None
 
 (**[load_json req ins_func inserter] inserts the contents of load_json
    into the database*)
@@ -82,13 +84,14 @@ let is_friend f1 f2 =
 (**[user_inserter json ins_func] inserts the data representing a user into
    the database*)
 let user_inserter json ins_func = 
+let raw_pw = member "password" json |> to_string in
+try begin 
+assert (Passwords.is_valid raw_pw);
   ins_func
     (member "username" json |> to_string)
-    (member "password" json
-     |> to_string 
-     |> Bcrypt.hash 
-     |> Bcrypt.string_of_hash) 
+    (raw_pw |> Bcrypt.hash |> Bcrypt.string_of_hash) 
     (member "name" json |> to_string)
+    end with _ -> raise (Password_failure "invalid password")
 
 let friend_inserter json ins_func = 
   ins_func
@@ -101,8 +104,8 @@ let rest_inserter json ins_func =
     (member "restriction_id" json |> to_int)
 
 let rest_indx_inserter json ins_func = 
-  ins_func
-    (member "restriction" json |> to_string)
+let u_id = id_by_usr (member "username" json |> to_string) in
+  ins_func u_id (member "restriction" json |> to_string)
 
 let group_info_inserter json ins_func = 
   ins_func
@@ -121,7 +124,7 @@ let group_host_user_inserter json ins_func =
     (member "member_id" json |> to_int)
     h_id
 
-let survey_inserter json ins_func : int64 option = 
+let survey_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in
   if is_member (member "group_id" json |> to_int) u_id then 
     begin 
@@ -229,6 +232,9 @@ let post_list = [
 
   post "/groups/rmuser" (fun req ->
       load_json_login req delete_from_group group_host_user_inserter);
+
+  post "/groups/invite" (fun req ->
+      load_json_login req add_group_invites group_host_user_inserter);
 
   post "/login" (fun req -> 
       req.Request.body

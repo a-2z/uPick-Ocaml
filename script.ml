@@ -1,10 +1,10 @@
 open Lib.Dbquery
 
 let user_list = [
-  ("reetuparikh", "reetu123", "Reetu");
-  ("andrewzeng", "andrew123", "Andrew");
-  ("andrewosorio", "andrewo123", "Andrew");
-  ("zachtegtmeier", "zach123", "Zachary");
+  ("reetuparikh", "Reetu123", "Reetu");
+  ("andrewzeng", "Andrew123", "Andrew");
+  ("andrewosorio", "Andrewo123", "Andrew");
+  ("zachtegtmeier", "Zach123", "Zachary");
   ("johndoe", "johnny", "John");
   ("janedoe", "jane123", "Jane");
   ("ben", "benny", "Ben");
@@ -18,7 +18,7 @@ let group_info_list = [
   ("bday party", 1); ("anniversary dinner", 3); ("lunch", 4)
 ]
 
-let group_list = [
+let group_invite_list = [
   (1, 2); (1, 5); (1, 6); (1, 7); (3, 5); (3, 3)
 ]
 
@@ -27,7 +27,7 @@ let restriction_list = [
 ]
 
 let restriction_index_list = [
-  "Vegetarian Friendly"; "Vegan Options"; "Gluten Free Options";
+  (1, "Vegetarian Friendly"); (2, "Vegan Options"); (1, "Gluten Free Options");
 ]
 
 let sample_survey = [
@@ -41,9 +41,6 @@ let sample_votes = [
   (3, 5, [20; 30; 40; 50; 10]);
   (3, 3, [50; 20; 10; 30; 40]);
 ]
-
-(* lat=42.444000&lon=-76.501900&radius=4000&cuisines=25&sort=rating&order=desc
-lat=42.400000&lon=-76.500000&radius=5000.000000&cuisines=22%2c25&sort=rating&order=desc *)
 
 let rec add_users' = function 
   | [] -> ();
@@ -61,7 +58,9 @@ let rec add_group_info' = function
 
 let rec add_groups' = function 
   | [] -> ();
-  | (gid, mid) :: t -> ignore(join_group gid mid); add_groups' t
+  | (gid, mid) :: t -> begin 
+  ignore(add_group_invites gid mid (snd (List.nth group_info_list (gid - 1)))); 
+  ignore(join_group gid mid); add_groups' t end
 
 let rec add_restrictions' = function 
   | [] -> ();
@@ -69,7 +68,8 @@ let rec add_restrictions' = function
 
 let rec add_rest_idx' = function 
   | [] -> ();
-  | rest_name :: t -> ignore(add_restrictions_index rest_name); add_rest_idx' t
+  | (admin, rest_name) :: t -> 
+  ignore(add_restrictions_index admin rest_name); add_rest_idx' t
 
 let rec add_survey' = function 
   | [] -> ();
@@ -90,7 +90,7 @@ let _ =
   add_users' user_list;
   add_friends' friends_list;
   add_group_info' group_info_list;
-  add_groups' group_list;
+  add_groups' group_invite_list;
   add_restrictions' restriction_list;
   add_rest_idx' restriction_index_list;
   add_survey' sample_survey;

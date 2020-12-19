@@ -15,11 +15,15 @@
 
   Types of testing: We used a mix of black box and glass box testing for the
   automatic portion. We created tests by using "make docs" and using the 
-  generated documentation to ensure that specifications were met. We then reviewed
-  the actual implementation to ensure coverage of all branches. We did not utilize randomized testing. 
+  generated documentation to ensure that specifications were met. We then 
+  reviewed the actual implementation to ensure coverage of all branches. We did 
+  not utilize randomized testing. 
 
   Manual (Db, Server)  
-  We used Postman to specifically test our http regarding adding a new user, friends, restriction, or creating a new group. With Postman we can also manually test whether our login were correct and if our hashing and Bcrypt of passwords were correct from the server file.
+  We used Postman to specifically test our http regarding adding a new user, 
+  friends, restriction, or creating a new group. With Postman we can also 
+  manually test whether our login were correct and if our hashing and Bcrypt 
+  of passwords were correct from the server file.
   From Postman we can see whether or unique keys were created properly 
   and we can see whether our get and post functions were implemented correctly 
   on Postman through a raw JSON body format to have a visual representation of 
@@ -28,7 +32,8 @@
   presented to determine whether our functions performed properly and if tables
   are created and formatted correctly. 
 
-  Types of testing: We used a combination of both black box and glass box testing for the manual portion. We 
+  Types of testing: We used a combination of both black box and glass box 
+  testing for the manual portion. We 
 
 *)
 

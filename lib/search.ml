@@ -18,7 +18,7 @@ type result = {
 }  
 
 (*Zomato API Key*)
-let user_key = "0b2c1f4d2cea4f954b70b3d12683036c"
+let user_key = List.assoc "USER_KEY" (Dotenv.parse ()) 
 
 let string_of_rest r = Printf.sprintf 
     {|{
@@ -43,8 +43,9 @@ let string_of_t t =
   |> String.concat ",\n"
   |> (fun l -> "{\"restaurants\": [\n" ^ l ^ "\n]}")
 
-let split_str_lst l = 
-  match String.split_on_char ',' l with
+(**[let split_str_lst s] is the first string in the comma-separated string [s]*)
+let split_str_lst s = 
+  match String.split_on_char ',' s with
   | [] -> ""
   | h :: _ -> String.trim h
 
@@ -52,8 +53,7 @@ let split_str_lst l =
    Requires: [lst] has at least [n] elements.*)
 let splice n lst =
   let rec aux lst i acc = 
-    if i = n then 
-      acc 
+    if i = n then acc 
     else 
       match lst with 
       | [] -> failwith "invariant violated"
@@ -68,8 +68,11 @@ let to_result json =
     cuisines = json |> member "cuisines" |> to_string;
     price = json |> member "average_cost_for_two" |> to_int |> (fun p -> p / 2);
     highlights = json |> member "highlights" |> to_list |> List.map to_string; 
-    rating = json |> member "user_rating" |> member "aggregate_rating" 
-             |> to_string |> float_of_string;
+    rating = json 
+             |> member "user_rating" 
+             |> member "aggregate_rating" 
+             |> to_string 
+             |> float_of_string;
     photo = json |> member "photos_url" |> to_string;
     timing = json |> member "timings" |> to_string;
     phone = json |> member "phone_numbers" |> to_string |> split_str_lst;
@@ -103,48 +106,50 @@ let filter_results price l =
   else filtered
 
 let compare_op = fun x y -> if snd x > snd y then -1 else if snd x < snd y 
-      then 1 else 0
+  then 1 else 0
 
 let rank_highlights preferences = 
-let rec helper acc = function
-  | [] -> acc 
-  | h :: t -> begin if List.mem_assoc h acc then 
-  let count = List.assoc h acc in 
-  let new_lst = acc |> List.remove_assoc h |> List.cons (h, count+1) in 
-  helper new_lst t else 
-  helper (List.cons (h,1) acc) t end in 
+  let rec helper acc = function
+    | [] -> acc 
+    | h :: t -> begin if List.mem_assoc h acc then 
+          let count = List.assoc h acc in 
+          let new_lst = acc |> List.remove_assoc h |> List.cons (h, count+1) in 
+          helper new_lst t else 
+          helper (List.cons (h,1) acc) t end in 
   let pref = helper [] preferences in
   List.sort compare_op pref
 
 let rec highlights_recurser acc sorted_highlights = function 
-| [] -> acc
-| h :: t -> if List.mem_assoc h sorted_highlights 
-then highlights_recurser (acc + (List.assoc h sorted_highlights)) 
-sorted_highlights t
-else highlights_recurser acc sorted_highlights t
+  | [] -> acc
+  | h :: t -> if List.mem_assoc h sorted_highlights 
+    then highlights_recurser (acc + (List.assoc h sorted_highlights)) 
+        sorted_highlights t
+    else highlights_recurser acc sorted_highlights t
 
 let rec results_recurser acc sorted_highlights = function 
-| [] -> acc
-| h :: t -> results_recurser 
-((h, (highlights_recurser 0 sorted_highlights h.highlights)) :: acc) 
-sorted_highlights t
-  
+  | [] -> acc
+  | h :: t -> 
+  results_recurser 
+  ((h, (highlights_recurser 0 sorted_highlights h.highlights)) :: acc) 
+   sorted_highlights t
+
 let filter_highlights highlights results = 
   let sorted_highlights = rank_highlights highlights in
   if List.length results <= 5 then results
   else 
-  let rest_scores = List.rev (results_recurser [] sorted_highlights results) in 
-  let sorted_rests = List.sort compare_op rest_scores in 
-  sorted_rests |> List.split |> fst |> splice 5
+    let rest_scores = 
+      List.rev (results_recurser [] sorted_highlights results) in 
+    let sorted_rests = List.sort compare_op rest_scores in 
+    sorted_rests |> List.split |> fst |> splice 5
 
 let process_results price pref inbound =  
   inbound 
-  |> fun x -> print_endline inbound; x 
   |> from_string
   |> from_body 
   |> filter_results price
   |> filter_highlights pref
-  |> string_of_t |> (fun x -> print_endline x; x)
+  |> string_of_t 
+  |> (fun x -> print_endline x; x)
 
 (**[bind_request header url] is a string of a json that resulting from a get 
    request to the Zomato API
@@ -162,16 +167,15 @@ let bind_request header url price pref =
 
    Requires: [cuisine] must be a list of strings that represent Zomato 
    cuisine IDs*)
-let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price pref =
+let get_rests ?cuisine:(c = []) loc_x loc_y range price pref =
   let price = set_bound price in
   let hdr = add_list (init ()) 
       [("Accept", "application/json"); ("user-key", user_key)] in 
-  let url =
-      "https://developers.zomato.com/api/v2.1/search?count=" ^ string_of_int n 
-      ^ "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
-      ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ "&cuisines=" 
-      ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" in
-       bind_request hdr url price pref
+  let url = "https://developers.zomato.com/api/v2.1/search?count=20" ^ 
+    "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
+    ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ "&cuisines=" 
+    ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" in
+  bind_request hdr url price pref
 
 (*Calculate the winner of a vote given by an id (position in a list)*)
 let to_winner json = 
