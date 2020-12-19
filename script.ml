@@ -2,8 +2,8 @@ open Lib.Dbquery
 
 let user_list = [
   ("reetuparikh", "reetu123", "Reetu");
-  ("andrewzeng", "andrew1", "Andrew");
-  ("andrewosorio", "andrew2", "Andrew");
+  ("andrewzeng", "andrew123", "Andrew");
+  ("andrewosorio", "andrewo123", "Andrew");
   ("zachtegtmeier", "zach123", "Zachary");
   ("johndoe", "johnny", "John");
   ("janedoe", "jane123", "Jane");
@@ -31,9 +31,9 @@ let restriction_index_list = [
 ]
 
 let sample_survey = [
-  (4, 3, 42.4, -76.5, "22", 30, 50, "Dinner");
-  (5, 3, 42.4, -76.5, "25", 30, 50, "Lunch,Outdoor Seating" );
-  (3, 3, 42.4, -76.5, "25", 30, 50, "Dinner");
+  (4, 3, 40.7159, -74.0025, "22", 30, 5000, "Kid Friendly");
+  (5, 3, 40.7159, -74.0025, "25", 30, 5000, "Kid Friendly,Lunch" );
+  (3, 3, 40.7159, -74.0025, "25", 30, 5000, "Kid Friendly");
 ]
 
 let sample_votes = [

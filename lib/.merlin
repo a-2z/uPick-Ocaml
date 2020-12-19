@@ -19,6 +19,7 @@ B /Users/reetuparikh/.opam/cs3110-2020fa/lib/conduit-lwt-unix
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/cstruct
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/cstruct-sexp
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/domain-name
+B /Users/reetuparikh/.opam/cs3110-2020fa/lib/dotenv
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/duration
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/easy-format
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/eqaf
@@ -55,6 +56,7 @@ B /Users/reetuparikh/.opam/cs3110-2020fa/lib/ocplib-endian/bigstring
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/opium
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/opium_kernel
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/parsexp
+B /Users/reetuparikh/.opam/cs3110-2020fa/lib/pcre
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/ppx_sexp_conv/runtime-lib
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/ptime
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/ptime/os
@@ -67,6 +69,7 @@ B /Users/reetuparikh/.opam/cs3110-2020fa/lib/seq
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/sexplib
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/sexplib0
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/sqlite3
+B /Users/reetuparikh/.opam/cs3110-2020fa/lib/stdio
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/stdlib-shims
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/stringext
 B /Users/reetuparikh/.opam/cs3110-2020fa/lib/tls
@@ -102,6 +105,7 @@ S /Users/reetuparikh/.opam/cs3110-2020fa/lib/conduit-lwt-unix
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/cstruct
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/cstruct-sexp
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/domain-name
+S /Users/reetuparikh/.opam/cs3110-2020fa/lib/dotenv
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/duration
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/easy-format
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/eqaf
@@ -138,6 +142,7 @@ S /Users/reetuparikh/.opam/cs3110-2020fa/lib/ocplib-endian/bigstring
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/opium
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/opium_kernel
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/parsexp
+S /Users/reetuparikh/.opam/cs3110-2020fa/lib/pcre
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/ppx_sexp_conv/runtime-lib
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/ptime
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/ptime/os
@@ -150,6 +155,7 @@ S /Users/reetuparikh/.opam/cs3110-2020fa/lib/seq
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/sexplib
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/sexplib0
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/sqlite3
+S /Users/reetuparikh/.opam/cs3110-2020fa/lib/stdio
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/stdlib-shims
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/stringext
 S /Users/reetuparikh/.opam/cs3110-2020fa/lib/tls

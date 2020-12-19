@@ -99,30 +99,62 @@ end
 
 let filter_results price l = 
   let filtered = List.filter (fun x -> (x.price <= price)) l in 
-  if List.length filtered <= 5 then l |> splice 5
-  else filtered |> splice 5
+  if List.length filtered <= 5 then l
+  else filtered
 
-(* let filter_preferences preferences =  *)
+let compare_op = fun x y -> if snd x > snd y then -1 else if snd x < snd y 
+      then 1 else 0
 
+let rank_highlights preferences = 
+let rec helper acc = function
+  | [] -> acc 
+  | h :: t -> begin if List.mem_assoc h acc then 
+  let count = List.assoc h acc in 
+  let new_lst = acc |> List.remove_assoc h |> List.cons (h, count+1) in 
+  helper new_lst t else 
+  helper (List.cons (h,1) acc) t end in 
+  let pref = helper [] preferences in
+  List.sort compare_op pref
 
-let process_results price inbound =  
+let rec highlights_recurser acc sorted_highlights = function 
+| [] -> acc
+| h :: t -> if List.mem_assoc h sorted_highlights 
+then highlights_recurser (acc + (List.assoc h sorted_highlights)) 
+sorted_highlights t
+else highlights_recurser acc sorted_highlights t
+
+let rec results_recurser acc sorted_highlights = function 
+| [] -> acc
+| h :: t -> results_recurser 
+((h, (highlights_recurser 0 sorted_highlights h.highlights)) :: acc) 
+sorted_highlights t
+  
+let filter_highlights highlights results = 
+  let sorted_highlights = rank_highlights highlights in
+  if List.length results <= 5 then results
+  else 
+  let rest_scores = List.rev (results_recurser [] sorted_highlights results) in 
+  let sorted_rests = List.sort compare_op rest_scores in 
+  sorted_rests |> List.split |> fst |> splice 5
+
+let process_results price pref inbound =  
   inbound 
   |> fun x -> print_endline inbound; x 
   |> from_string
   |> from_body 
   |> filter_results price
-  (* |> filter_preferences  *)
-  |> string_of_t
+  |> filter_highlights pref
+  |> string_of_t |> (fun x -> print_endline x; x)
 
 (**[bind_request header url] is a string of a json that resulting from a get 
    request to the Zomato API
    at [url] with [header], a list of key: value pairs that contain metadata
    as well as the API key *)
-let bind_request header url price  = 
+let bind_request header url price pref = 
   Cohttp_lwt_unix.Client.get ~headers:header (Uri.of_string url)
   >>= fun a -> snd a 
                |> Cohttp_lwt__.Body.to_string 
-  >>= fun b -> b |> process_results price |> Lwt.return
+  >>= fun b -> b |> process_results price pref |> Lwt.return
 
 (**[get_rests num cuisine loc_x Loc_y range price] returns a list of [num] 
    restaurants as a string of a json. The data in the jsons can be seen in 
@@ -130,16 +162,16 @@ let bind_request header url price  =
 
    Requires: [cuisine] must be a list of strings that represent Zomato 
    cuisine IDs*)
-let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price  =
+let get_rests ?num:(n = 20) ?cuisine:(c = []) loc_x loc_y range price pref =
   let price = set_bound price in
   let hdr = add_list (init ()) 
       [("Accept", "application/json"); ("user-key", user_key)] in 
   let url =
-      "https://developers.zomato.com/api/v2.1/search?count=" ^ string_of_int n ^
-      "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
+      "https://developers.zomato.com/api/v2.1/search?count=" ^ string_of_int n 
+      ^ "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
       ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ "&cuisines=" 
       ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" in
-  bind_request hdr url price 
+       bind_request hdr url price pref
 
 (*Calculate the winner of a vote given by an id (position in a list)*)
 let to_winner json = 
