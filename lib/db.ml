@@ -160,7 +160,6 @@ let create_cuisines_table () =
              "Can't create table cuisines (malformed sql/already exists)" in
     error err message
 
-<<<<<<< HEAD
 let create_preferences_table () = 
   let create_preference_table = {|
     CREATE TABLE IF NOT EXISTS preferences ( 
@@ -191,26 +190,6 @@ let set_admins () =
       ignore (exec db sql);
     done 
   end with _ -> ()
-=======
-(* let set_admins () = 
-let env_field fld = List.assoc fld (Dotenv.parse ())
-|> String.split_on_char ',' in
-let usernames = env_field "ADMINS" in
-let passwords = List.map (fun pw -> pw |> Bcrypt.hash |> Bcrypt.string_of_hash)
-(env_field "PASSWORDS") in 
-let names = env_field "NAMES" in 
-try begin
-assert (List.length usernames = List.length passwords && 
-  List.length usernames = List.length names);
-for i = 0 to List.length usernames do 
-let sql = Printf.sprintf 
-    "INSERT INTO users (username, password, name, is_admin) 
-    VALUES ('%s','%s','%s', 1); "
-      (List.nth usernames i) (List.nth passwords i) (List.nth names i ) in
-  ignore (exec db sql);
-done 
-end with _ -> () *)
->>>>>>> db740d4635fa024da087eb754c0192bb923a17fe
 
 let create_tables _ = 
   () 
@@ -222,10 +201,7 @@ let create_tables _ =
   |> create_groups_table
   |> create_votes_table 
   |> create_group_invites_table
-<<<<<<< HEAD
   |> create_cuisines_table
   |> create_preferences_table
   |> set_admins
-=======
-  (* |> set_admins *)
->>>>>>> db740d4635fa024da087eb754c0192bb923a17fe
+

@@ -239,6 +239,50 @@ let add_group_info group_name host_id =
     ignore (join_group (Int64.to_int id) host_id); Some id
   | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None 
 
+let remove_a_user str_did = 
+  let lst = lst_from_col "group_id" "groups" ("member_id = " ^ str_did) 
+      (fun x -> x) in 
+  let sql_lst = List.map (fun x -> "UPDATE group_info 
+        SET num_members = num_members - 1 
+        WHERE rowid = " ^ x ^ "; " ) lst in 
+  List.fold_left (fun x y -> x ^ y) "" sql_lst
+
+let delete_user user_id delete_id = 
+  let str_did = string_of_int delete_id in
+  let are_users = count "users" ("rowid = " ^ string_of_int user_id) > 0 &&
+                  count "users" ("rowid = " ^ str_did) > 0 in
+  let is_a_host = count "group_info" 
+      ("host_id = " ^ str_did) > 0 in 
+  if are_users && (user_id = delete_id || is_admin user_id) 
+     && is_admin delete_id = false && is_a_host = false
+  then 
+    let user = delete_sql "users" ("rowid = " ^ str_did) in
+    let groups = delete_sql "groups" ("member_id = " ^ str_did) in
+    let group_invites = delete_sql "group_invites" ("user_id = " ^ str_did) in
+    let votes = delete_sql "votes" ("user_id = " ^ str_did) in
+    let restrictions = delete_sql "restrictions" ("user_id = " ^ str_did) in
+    let group_members_update = remove_a_user str_did in 
+    let friends = delete_sql "friends" 
+        ("friend_1 = " ^ str_did ^ " OR friend_2 = " ^ str_did) in 
+    make_response (exec db (user ^ groups ^ group_invites ^ votes 
+                            ^ restrictions ^ friends ^ group_members_update))
+  else None
+
+let delete_group user_id group_id = 
+  let str_uid = string_of_int user_id in
+  let str_gid = string_of_int group_id in
+  let is_user = count "users" ("rowid = " ^ str_uid) > 0 in
+  let is_group = count "group_info" ("rowid = " ^ str_gid) > 0 in
+  let is_host_or_admin = is_host (str_uid) (str_gid) || is_admin user_id in
+  if is_user && is_group && is_host_or_admin 
+  then 
+    let group_info = delete_sql "group_info" ("rowid = " ^ str_gid) in
+    let groups = delete_sql "groups" ("group_id = " ^ str_gid) in
+    let group_invites = delete_sql "group_invites" ("group_id = " ^ str_gid) in
+    let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+    make_response (exec db (votes ^ group_invites ^ groups ^ group_info))
+  else None
+
 (* if searches appear off maybe we need hostid? *)
 let num_rests str_gid =
   let json_str = List.hd (
@@ -366,7 +410,8 @@ let delete_from_group group_id member_id host_id =
     let response = deletion_updates str_gid str_uid in 
     if is_host_bool then 
       let sql_invite = delete_sql "group_invites" ("group_id = " ^ str_gid ^ 
-                                                   " AND user_id = " ^ str_uid) in 
+                                                   " AND user_id = " ^ str_uid) 
+      in 
       print_endline (response ^ sql_invite);
       make_response (exec db (response ^ sql_invite))
     else make_response (exec db response)

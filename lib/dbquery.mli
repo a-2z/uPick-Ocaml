@@ -30,6 +30,12 @@ type restriction = {
 (**[add_user username password_hash name] inserts a user in the database.*)
 val add_user : string -> string -> string -> int64 option
 
+(** [delete_user user_id delete_id] removes the user associated with the 
+    delete_id as long as user_id is equivalent to delete_id or user_id 
+    associates with a user who is also an admin. 
+    Requires: user_id and delete_id exist in the database *)
+val delete_user : int -> int -> int64 option
+
 (** [add_friends friend1 friend2] inserts a pairing of two friends into the 
     database based on their ids.
     Requires: friend1 and friend2 exist in the database *)
@@ -99,6 +105,13 @@ val reassign_host : int -> int -> int -> int64 option
     Requires: the user_id and group_id must be ids of a user and group 
     respectively that exists in the database *)
 val join_group : int -> int -> int64 option
+
+(** [delete_group user_id group_id] deletes the group associated with group_id
+    if the user associated with user_id is either the host of the group or an 
+    admin.
+    Requires: the user_id and group_id must be ids of a user and group 
+    respectively that exists in the database *)
+val delete_group : int -> int -> int64 option
 
 (** [add_group_invites group_id user_id host_id] adds an entry to the 
     group_invites table representing a pending invite from the host user to 

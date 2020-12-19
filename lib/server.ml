@@ -93,6 +93,12 @@ let user_inserter json ins_func =
       (member "name" json |> to_string)
   end with _ -> raise (Password_failure "invalid password")
 
+let user_delete_inserter json ins_func = 
+let u_id = id_by_usr (member "username" json |> to_string) in 
+ins_func 
+u_id
+(member "user_id" json |> to_int)
+
 let friend_inserter json ins_func = 
 let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func
@@ -135,14 +141,21 @@ ins_func
   u_id (member "cuisine_id" json |> to_int)
 
 let group_info_inserter json ins_func = 
+let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func
     (member "group_name" json |> to_string)
-    (member "host_id" json |> to_int)
+    u_id
 
 let group_inserter json ins_func = 
   ins_func
     (member "group_id" json |> to_int)
     (member "username" json |> to_string |> id_by_usr)
+
+let delete_group_inserter json ins_func = 
+let u_id = id_by_usr (member "username" json |> to_string) in
+ins_func 
+u_id
+(member "group_id" json |> to_int)
 
 let group_host_user_inserter json ins_func = 
   let h_id = id_by_usr (member "username" json |> to_string) in 
@@ -231,6 +244,9 @@ let post_list = [
   (* let insert_user =  *)
   post "/users" (fun req -> 
       load_json req add_user user_inserter >>= fun a -> make_response a);
+  
+  post "/users/delete" (fun req -> 
+      load_json_login req delete_user user_delete_inserter);
 
   (* let insert_friends =  *)
   post "/friends" (fun req -> 
@@ -271,6 +287,9 @@ let post_list = [
 
   post "/groups/add" (fun req ->
       load_json_login req add_group_info group_info_inserter);
+
+  post "/groups/delete" (fun req ->
+      load_json_login req delete_group delete_group_inserter);
 
   post "/groups/newhost" (fun req ->
       load_json_login req reassign_host group_host_user_inserter);
