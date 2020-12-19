@@ -68,17 +68,17 @@ let json_of_group
         ("top_pick", option string top_pick)]
 
 (* grabs by user id *)
-let json_of_restriction_id restriction = 
-  let open Ezjsonm in 
-  dict [("restriction", string restriction)]
+(* let json_of_restriction_id restriction = 
+   let open Ezjsonm in 
+   dict [("restriction", string restriction)] *)
 
 (**Checks to see if [u_id] is in [g_id*)
 let is_member g_id u_id =
   List.mem g_id (get_user u_id).groups
 
 (**Checks to see if two users are friends, with [f1] being the sender*)
-let is_friend f1 f2 = 
-  List.mem f2 (get_user f1).friends
+(* let is_friend f1 f2 = 
+   List.mem f2 (get_user f1).friends *)
 
 (*****************************database inserters*******************************)
 (**[user_inserter json ins_func] inserts the data representing a user into
@@ -134,11 +134,11 @@ let survey_inserter json ins_func =
         (member "loc_x" json |> to_float)
         (member "loc_y" json |> to_float)
         (member "cuisines" json |> to_list 
-          |> List.map to_string |> String.concat ",")
+         |> List.map to_string |> String.concat ",")
         (member "price" json |> to_int)
         (member "range" json |> to_int)
         (member "preferences" json |> to_list 
-          |> List.map to_string |> String.concat ",")
+         |> List.map to_string |> String.concat ",")
     end 
   else (fun x -> print_endline "not a member"; x) None 
 
@@ -148,8 +148,7 @@ let survey_inserter json ins_func =
 let vote_status_inserter json ins_func = 
   let h_id = id_by_usr (member "username" json |> to_string) in 
   ins_func 
-    (member "group_id" json |> to_int)
-    h_id
+    (member "group_id" json |> to_int) h_id
 
 let vote_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in
