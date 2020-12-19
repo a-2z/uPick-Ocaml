@@ -1,7 +1,7 @@
 (*Test Plan: We used a mix of manual and automated testing to ensure the 
   robustness of our backend. 
 
-  **********************Automated (Dbquery, Search)**************************
+  *****************Automated (Dbquery, Search, Passwords)***********************
 
   We used OUnit2 specifically to test interaction with the Database in terms of 
   insertions, updates, and deletions. By performing operations using the in
@@ -53,6 +53,7 @@
   testing plan ensures that they correctly come together when testing our 
   modules.
 *)
+open Lib
 open Lib.Dbquery 
 open OUnit2
 
@@ -128,12 +129,25 @@ let test_equal ?compare:(cmp = comp_bool) name exptd expr =
 let test_passes name ?succ:(s = true) ins_func data = 
   name >:: (fun _ -> assert_equal s (try_test ins_func data)) 
 
+(**[try_get get_func id] is false if an attempt to retrieve data with [id] 
+   using get_func raises and exception. The resulting data are ignored.*)
+let try_get name get_func id = 
+  let success = begin
+    try 
+      match get_func id with 
+      | _ -> true
+    with 
+      _ -> false end in
+  test_equal name true success
+
 (**ensures that the user matching [n] in the database matches the user 
    generated with [make_user]*) 
 let test_user name id (u, p, n) = 
   (*add a user to the database*)
   let user = make_user id u (Bcrypt.hash p |> Bcrypt.string_of_hash) n in 
   test_equal name {(get_user id) with password = p} {user with password = p}
+
+let test_password name bool pw = test_equal name bool (Passwords.is_valid pw)
 
 (**ensures that the group matching [n] in the database matches the user 
    generated with [make_group]*) 
@@ -166,23 +180,21 @@ let add_user_test = [
     ~succ:true ins_user ("andrew1235", "baa5j1", "Andrew");
   test_passes "usernames must be unique"
     ~succ:false ins_user ("andrewosorio", "Andrew3", "John");
-  (*ensure passwords meet criteria*)
-  test_passes "missing password" ~succ:false ins_user
-    ("peterparker", "", "Peter");
-  test_passes "contains no capital letter" ~succ:false ins_user
-    ("abc123", "abc123", "Peter");
-  test_passes "missing numbers" ~succ:false ins_user
-    ("abc123", "abcdefgh", "Peter");
-  test_passes "missing lowercase password" ~succ:false ins_user
-    ("peter", "ASD123", "Peter");
-  test_passes "weak password, less than seven characters" ~succ:false ins_user
-    ("peterparker", "asd", "Peter");
-  test_passes "missing uppercase password" ~succ:false ins_user
-    ("peter", "asdf234", "Peter");
   test_passes "username is incorrect"  ~succ:false ins_user 
     ("", "Jane123", "Jane");
   test_passes "malformed name" ~succ:false ins_user 
     ("peterparker", "Jane123", "");
+]
+
+let password_test = [
+  (*ensure passwords meet criteria*)
+  test_password "password cannot be empty" false "";
+  test_password "contains no capital letter" false "abcd123";
+  test_password "numeric password" false "123135424354";
+  test_password "password contains no numbers" false "abcdefghi";
+  test_password "missing lowercase password" false "ASD123";
+  test_password "weak password less than seven characters" false "Abcder123";
+  test_password "missing uppercase password" false "asdf234";
 ]
 
 let test_friends ?are_friends:(ff = true) name f1 f2 = 
@@ -205,8 +217,7 @@ let add_friends_test = [
   test_friends ~are_friends:false "users that are not friends" 5 3;
   test_friends ~are_friends:false "a user cannot friend themself" 3 3;  
   test_friends ~are_friends:false "a user cannot friend nonexisting user" 3 0;
-  test_friends ~are_friends:false 
-    "two non existing users cannot be friends" 13 14;
+  try_get "invalid friend ids are handled" get_user 13;
   (*attempt new insertions*)
 ]
 
@@ -219,7 +230,7 @@ let group_info2 = add_group_info "anniversary dinner" 1
 let group_info3 = add_group_info "lunch" 2 
 
 let add_group_info_test = [
-  (*validate existing insertions*)
+  (* validate existing insertions *)
   test_group_info "ensure that the details of group 1 are correct" 1 
     "birthday party" 3;
   test_group_info ~is_eq:not_comp "mismatched group id and details" 1 
@@ -230,23 +241,17 @@ let add_group_info_test = [
   (*attempt new insertions*)
   test_passes ~succ:true "same group name, different hosts allowed" 
     ins_group_info ("birthday party", 2);
-  test_passes ~succ:true "same group name, different hosts allowed" 
+  test_passes ~succ:false "same name, different case is not permitted" 
     ins_group_info ("Birthday Party", 2);
+  test_passes ~succ:true "one host can create two groups with different names" 
+    ins_group_info ("garden party", 2);
   test_passes ~succ:false "one host cannot create two groups with the same name"
     ins_group_info ("birthday party", 3);
   test_passes ~succ:false "incorrect hostid cannot create group" 
     ins_group_info ("birthday party", 0);
 ]
 
-(* let test_groups = name (group_id, member_id) =
-                  (* add groups to database *)
-                  let groups = join_group group_id member_id in
-                  test_equal name (get_group group_id) groups
-
-   let test_not_group = name group_id member_id = 
-                     let member_1 = (get_group group_id).members in
-                     name >:: (fun _ ->
-                         assert_bool "not in group" () *)
+let add_group_test = []
 
 let is_member_test = []
 
@@ -263,9 +268,9 @@ let filter_test = []
 let voting_test = []
 
 let tests = "test suite for uPick" >::: List.flatten [
+    no_group_test;
     add_user_test;
     add_friends_test;
-    no_group_test;
     add_group_info_test;
     (* add_restrictions_test; *)
     get_user_test;

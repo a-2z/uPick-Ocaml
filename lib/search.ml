@@ -18,7 +18,8 @@ type result = {
 }  
 
 (*Zomato API Key*)
-let user_key = List.assoc "USER_KEY" (Dotenv.parse ()) 
+(* let user_key = List.assoc "USER_KEY" (Dotenv.parse ())  *)
+let user_key = "0b2c1f4d2cea4f954b70b3d12683036c"
 
 let string_of_rest r = Printf.sprintf 
     {|{
@@ -129,9 +130,9 @@ let rec highlights_recurser acc sorted_highlights = function
 let rec results_recurser acc sorted_highlights = function 
   | [] -> acc
   | h :: t -> 
-  results_recurser 
-  ((h, (highlights_recurser 0 sorted_highlights h.highlights)) :: acc) 
-   sorted_highlights t
+    results_recurser 
+      ((h, (highlights_recurser 0 sorted_highlights h.highlights)) :: acc) 
+      sorted_highlights t
 
 let filter_highlights highlights results = 
   let sorted_highlights = rank_highlights highlights in
@@ -172,9 +173,9 @@ let get_rests ?cuisine:(c = []) loc_x loc_y range price pref =
   let hdr = add_list (init ()) 
       [("Accept", "application/json"); ("user-key", user_key)] in 
   let url = "https://developers.zomato.com/api/v2.1/search?count=20" ^ 
-    "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
-    ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ "&cuisines=" 
-    ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" in
+            "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
+            ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ "&cuisines=" 
+            ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" in
   bind_request hdr url price pref
 
 (*Calculate the winner of a vote given by an id (position in a list)*)

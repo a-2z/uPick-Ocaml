@@ -148,7 +148,7 @@ let create_group_invites_table () =
     "Can't create table group_invites (malformed sql/already exists)" in
     error err message
 
-let set_admins () = 
+(* let set_admins () = 
 let env_field fld = List.assoc fld (Dotenv.parse ())
 |> String.split_on_char ',' in
 let usernames = env_field "ADMINS" in
@@ -165,7 +165,7 @@ let sql = Printf.sprintf
       (List.nth usernames i) (List.nth passwords i) (List.nth names i ) in
   ignore (exec db sql);
 done 
-end with _ -> ()
+end with _ -> () *)
 
 let create_tables _ = 
   () 
@@ -177,4 +177,4 @@ let create_tables _ =
   |> create_groups_table
   |> create_votes_table 
   |> create_group_invites_table
-  |> set_admins
+  (* |> set_admins *)
