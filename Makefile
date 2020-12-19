@@ -13,6 +13,7 @@ script:
 	@dune exec ./script.exe
 
 test: 
+	@dune clean
 	@dune runtest
 
 clean:
