@@ -106,13 +106,13 @@ let is_admin user_id =
 
 (*insertion functions *)
 let add_user username password name =
-  if name = "" || username = ""
-  then None  
+  if name = "" || username = "" then None  
   else
     let sql =
       Printf.sprintf 
         "INSERT INTO users (username, password, name) VALUES('%s','%s','%s'); "
-        username password name in
+        username password name in 
+        print_endline username;
     make_response (exec db sql)
 
 (**[add_friends friend1 friend2 inserts a pairing of two friends]

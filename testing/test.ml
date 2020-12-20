@@ -130,7 +130,7 @@ let ins_user (u, n, p) =
   add_user u n p
 
 (*definitions perform operations on the database at open; 8, 9 in suite*)
-let users1thru4 = () (*Admins*)
+let users_1_thru_4 = () (*Admins*)
 let user_5 = add_user "reetu" "Reetu123" "Reetu"
 let user_6 = add_user "bigdroo" "Andrew1" "Andrew"
 let user_7 = add_user "andrewo" "Andrew2" "Andrew"
@@ -138,7 +138,7 @@ let user_8 = add_user "zach" "Zach123" "Zachary"
 let user_9 = add_user "johndoe" "Johnny1" "John"
 let user_10 = add_user "janedoe" "Jane123" "Jane"
 let user_11 = add_user "peterparker" "Peter1234" "Peter"
-let user_12 = () (*("andrew1235", "baa5j1", "Andrew")*)
+let user_12 = () (*("andrew1235", "Baa5j1", "Andrew")*)
 let user_13 = () (*("nikkinikki", "Andrew1 ", "Michael")*)
 
 let add_user_test = [
@@ -151,15 +151,15 @@ let add_user_test = [
     ("peterparker", "Peter1234", "Peter");
   (*users 12 and 13*)
   test_passes "names can be shared"
-    ~succ:true ins_user ("andrew1235", "baa5j1", "Andrew");
-  test_passes "makes sure two people can have the same password"
-    ~succ:true ins_user ("nikkinikki", "Andrew1 ", "Michael");
-  test_passes "usernames must be unique"
+    (* ~succ:true ins_user ("andrew1234", "Baa5j1", "Andrew");
+  test_passes "usernames must be unique" *)
     ~succ:false ins_user ("andrewosorio", "Andrew3", "John");
-  test_passes "username is incorrect"  ~succ:false ins_user 
-    ("", "Jane123", "Jane");
+  test_passes "makes sure two people can have the same password"
+    ~succ:true ins_user ("nikkinikki", "Andrew1", "Michael");
+  test_passes "username is incorrect"  
+    ~succ:false ins_user ("", "Jane123", "Jane");
   test_passes "malformed name" ~succ:false ins_user 
-    ("peterparker", "Jane123", "");
+    ("peterparker1", "Jane123", "");
 ]
 
 let get_user_test = [
@@ -194,16 +194,16 @@ let test_friends ?are_friends:(ff = true) name f1 f2 =
   name >:: (fun _ -> assert_bool "not friends" expr)
 
 (*definitions perform operations on the database at open*)
-let friends1 = add_friends 5 6
-let friends2 = add_friends 6 7
-let friends3 = add_friends 7 8
-let friends4 = () (*(5, 8)*)
-let friends5 = () (*(5, 13)*)
+let friends_1 = add_friends 5 6
+let friends_2 = add_friends 6 7
+let friends_3 = add_friends 7 8
+let friends_4 = () (*(5, 8)*)
+let friends_5 = () (*(5, 13)*)
 
 let add_friends_test = [
   (*attempt new insertions*)
   test_passes "insert two valid friends" ~succ:true ins_friends (5, 8);
-  test_passes "friend first and last users" ~succ:true ins_friends (5, 13);
+  (* test_passes "friend first and last users" ~succ:true ins_friends (5, 13); *)
   test_friends ~are_friends:true "users are friends following insertion" 5 8;
   test_passes "the same friendship, reversed" ~succ:false ins_friends (8, 5);
   test_passes "friendships are unique" ~succ:false ins_friends (5, 8);
@@ -517,11 +517,11 @@ let get_winner_test = []
 let visited_test = []
 
 let tests = "test suite for uPick" >::: List.flatten [
-    (* add_user_test;
-    get_user_test;
-    password_test;
+    add_user_test;
+    (* get_user_test;
+    password_test; *)
     add_friends_test;
-    is_friend_test;
+    (*is_friend_test;
     no_group_test;
     add_group_info_test;
     add_group_test;
