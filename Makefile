@@ -30,7 +30,3 @@ app:
 
 zip:
 	zip project.zip *.ml* .ocamlinit .merlin *.mli* dune dune-project *.txt* *.md* *.json _tags Makefile
-
-
-
-

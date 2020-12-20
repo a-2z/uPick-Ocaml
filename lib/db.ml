@@ -236,3 +236,453 @@ let create_tables _ =
   |> create_feedbacks_table
   |> set_admins
 
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+
+  |> create_groups_table
+  |> create_votes_table 
+  |> create_group_invites_table
+  |> create_cuisines_table
+  |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
+  |> set_admins
+

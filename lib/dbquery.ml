@@ -637,4 +637,5982 @@ let top_visited () =
   ignore(make_response (exec db sql));
   ["apple"]
   
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
+
+let calculate_votes g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if is_host str_hid str_gid 
+  && count "groups" ("surveyed = 1 AND member_id = " ^ str_hid) > 0 then 
+    let ranks_final = ranks str_gid in 
+    let compare_op = fun x y -> if snd x > snd y then 1 else if snd x < snd y 
+      then -1 else 0 in 
+    let ordered_ranks = List.sort compare_op ranks_final in 
+    let top_pick = fst (List.hd ordered_ranks) in
+    let top = single_row_query "top_5" "group_info" ("rowid = " ^ str_gid) 
+              |> fun row -> row.(0) 
+                            |> sanitize 
+                            |> Search.get_winner top_pick in 
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
+        (sanitize top) g_id in 
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
+
+let format_cuisines group_id = 
+  lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
+    (fun x -> x)
+  |> fun l -> List.fold_right (fun x y -> x ^ "," ^ y) l ""
+              |> String.split_on_char ','
+              |> List.filter (fun s -> s <> "")
+
+let gather_restrictions g_id = 
+  let mems = lst_from_col "member_id" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in 
+  let rec restr_lst acc = function
+    | [] -> acc
+    | h :: t -> restr_lst 
+                  ((lst_from_col "restriction" "restrictions" 
+                      ("user_id = " ^ h) (fun x -> x)) :: acc) t in
+  let restr = List.flatten (restr_lst [] mems) in 
+  let f x = lst_from_col "restriction" "restriction_index" ("rowid = " ^ x) 
+      (fun x -> x) in List.flatten (List.map f restr)
+
+let calculate_survey cuisines x y range price g_id = 
+  let pref = lst_from_col ~unique:false "preferences" "groups" 
+      ("group_id = " ^ string_of_int g_id) (fun x -> x) in
+  let pref_str = List.fold_left (fun x y -> x ^ "," ^ y) "" pref in
+  let pref_list = String.split_on_char ',' pref_str in
+  let pref_restr = pref_list @ (gather_restrictions g_id) in
+  Search.get_rests ~cuisine:cuisines x y range price pref_restr >>= 
+  fun res -> let sql = Printf.sprintf 
+                 {|UPDATE group_info SET top_5 = '%s', voting_allowed = 1 
+                 WHERE rowid = %d;|}
+                 (sanitize res) g_id in
+  Lwt.return (make_response (exec db sql))
+
+let adjust_group str_gid = 
+  let count_drop = 
+    count "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in 
+  let to_drop = 
+    delete_sql "groups" ("surveyed = 0 AND group_id = " ^ str_gid) in
+  ignore (make_response (exec db to_drop));
+  let update_num_members = Printf.sprintf
+      {|UPDATE group_info SET num_members = num_members - %d 
+          WHERE rowid = %d; |}
+      count_drop (int_of_string str_gid) in 
+  ignore (make_response (exec db update_num_members))
+
+let process_survey g_id h_id = 
+  let str_gid = string_of_int g_id in 
+  let str_hid = string_of_int h_id in
+  if begin
+    (*Ensure that the user making the request is the host of the group*)
+    is_host str_hid str_gid && 
+    count "groups" ("surveyed = 1 AND member_id = " ^ str_hid ^ 
+                    " AND group_id = " ^ str_gid) > 0 
+  end then begin
+    adjust_group str_gid;
+    let num_votes = count "groups" ("group_id = " ^ str_gid) in 
+    let x = avg_flt "loc_x" num_votes g_id in 
+    let y = avg_flt "loc_y" num_votes g_id in 
+    let price = avg_int "target_price" num_votes g_id in 
+    let range = avg_int "range" num_votes g_id in 
+    let cuisines = format_cuisines g_id in 
+    ignore(calculate_survey cuisines x y range price g_id);
+    Some (Int64.zero)
+  end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
 let create_tables () = Db.create_tables ()
