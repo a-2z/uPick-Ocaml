@@ -198,7 +198,9 @@ val get_cuisine_by_id : int -> string
     application into the database anonymously *)
 val add_feedback : float -> string -> int64 option
 
-(* val top_visited : unit -> string list *)
+(** [top_visited] returns a list of the top visited restaurants among users in 
+    the database *)
+val top_visited : unit -> string list
 
 (** [create_tables] creates all tables if they do not already exist in the 
     database *)

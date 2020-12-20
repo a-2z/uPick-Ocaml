@@ -218,16 +218,19 @@ let default =
 let get_list = [
   (* user *)
   get "/users/:id" (fun req -> 
-  try
-      let user = Dbquery.get_user (int_of_string (param req "id")) in
-      `Json (user |> json_of_user) |> respond'; 
-  with e -> ignore (e); 
-        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
+      try
+        let user = Dbquery.get_user (int_of_string (param req "id")) in
+        `Json (user |> json_of_user) |> respond'; 
+      with e -> ignore (e);
+        respond' (`Json (Ezjsonm.from_string {|{"success": false}|})));
 
   (* groups *)  
   get "/groups/:id" (fun req ->
-      let group = Dbquery.get_group (int_of_string (param req "id")) in
-      `Json (group |> json_of_group) |> respond');
+      try
+        let group = Dbquery.get_group (int_of_string (param req "id")) in
+        `Json (group |> json_of_group) |> respond';
+      with e -> ignore (e); 
+        respond' (`Json (Ezjsonm.from_string {|{"success": false}|})));
 
   (* get restriction by id *)
   get "/restrictions/:id" (fun req ->
@@ -239,7 +242,7 @@ let get_list = [
                      restriction)))
         |> respond'
       with e -> ignore (e); 
-        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
+        respond' (`Json (Ezjsonm.from_string {|{"success": false}|})));
 
   (* get all restrictions *)
   get "/restrictions" 
@@ -255,7 +258,7 @@ let get_list = [
                      preference)))
         |> respond'
       with e -> ignore (e); 
-        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
+        respond' (`Json (Ezjsonm.from_string {|{"success": false}|})));
 
   get "/preferences" 
     (fun _ -> let preference = Dbquery.get_preferences () in 
@@ -269,7 +272,7 @@ let get_list = [
                   (Printf.sprintf {|{"success": true, "data": "%s"}|} cuisine)))
         |> respond'
       with e -> ignore (e); 
-        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
+        respond' (`Json (Ezjsonm.from_string {|{"success": false}|})));
 
   get "/cuisines" 
     (fun _ -> let cuisine_id, cuisine_str = Dbquery.get_cuisines () in 
@@ -277,11 +280,10 @@ let get_list = [
       let cuisine_str_lst = List.map (fun x -> Ezjsonm.string x) cuisine_str in 
       `Json (Ezjsonm.dict (List.combine cuisine_id_lst cuisine_str_lst)) 
       |> respond');
-(* 
+
   get "/topvisits" 
-  (fun _ -> let top_rests = Dbquery.top_visited () in 
-      `Json (Ezjsonm.list Ezjsonm.string top_rests) |> respond');
- *)
+    (fun _ -> let top_rests = Dbquery.top_visited () in 
+      `Json (Ezjsonm.list Ezjsonm.from_string top_rests) |> respond');
 
 ]
 

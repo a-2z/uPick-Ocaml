@@ -114,7 +114,7 @@ let add_user username password name =
       Printf.sprintf 
         "INSERT INTO users (username, password, name) VALUES('%s','%s','%s'); "
         username password name in 
-        print_endline username;
+    print_endline username;
     make_response (exec db sql)
 
 (**[add_friends friend1 friend2 inserts a pairing of two friends]
@@ -355,60 +355,67 @@ let get_friends u_id =
     inputted, [groups] inputted definined in the same user *)
 let get_user user_id = 
   try begin
-  let arr1 = single_row_query "username, password, name" "users" 
-      ("rowid = " ^ string_of_int user_id) in
-  let friends = get_friends user_id in
-  let restrictions = lst_from_col "restriction" "restrictions" 
-      ("user_id = " ^ string_of_int user_id) int_of_string in
-  let groups = lst_from_col "group_id" "groups" 
-      ("member_id = " ^ string_of_int user_id) int_of_string in
-  let visited = lst_from_col "restaurant" "visited_restaurants" 
-    ("user_id = " ^ string_of_int user_id) (fun x -> x) in
-      { 
-        id = user_id;
-        username = arr1.(0);
-        password = arr1.(1);
-        name = arr1.(2); 
-        friends = friends;
-        restrictions = restrictions;
-        groups = groups;
-        visited = visited;
-      }
-      end
-    with _-> raise Not_found
+    let arr1 = single_row_query "username, password, name" "users" 
+        ("rowid = " ^ string_of_int user_id) in
+    let friends = get_friends user_id in
+    let restrictions = lst_from_col "restriction" "restrictions" 
+        ("user_id = " ^ string_of_int user_id) int_of_string in
+    let groups = lst_from_col "group_id" "groups" 
+        ("member_id = " ^ string_of_int user_id) int_of_string in
+    let visited = lst_from_col "restaurant" "visited_restaurants" 
+        ("user_id = " ^ string_of_int user_id) (fun x -> x) in
+    { 
+      id = user_id;
+      username = arr1.(0);
+      password = arr1.(1);
+      name = arr1.(2); 
+      friends = friends;
+      restrictions = restrictions;
+      groups = groups;
+      visited = visited;
+    }
+  end
+  with _ -> raise Not_found 
 
 let get_group group_id = 
-  let arr1 = single_row_query 
-      "group_name, host_id, voting_allowed, top_5, top_pick" "group_info" 
-      ("rowid = " ^ string_of_int group_id) in 
-  let mem_lst = lst_from_col 
-      "member_id" "groups" 
-      ("group_id = " ^ string_of_int group_id) int_of_string in 
-  {
-    id = group_id;
-    name = arr1.(0);
-    host_id = arr1.(1) |> int_of_string; 
-    voting_allowed = arr1.(2) = "1";
-    members = mem_lst;
-    top_5 = if arr1.(3) = "" then None else Some arr1.(3);
-    top_pick = if arr1.(4) = "" then None else Some arr1.(4)
-  }
+  try
+    let arr1 = single_row_query 
+        "group_name, host_id, voting_allowed, top_5, top_pick" "group_info" 
+        ("rowid = " ^ string_of_int group_id) in 
+    let mem_lst = lst_from_col 
+        "member_id" "groups" 
+        ("group_id = " ^ string_of_int group_id) int_of_string in 
+    {
+      id = group_id;
+      name = arr1.(0);
+      host_id = arr1.(1) |> int_of_string; 
+      voting_allowed = arr1.(2) = "1";
+      members = mem_lst;
+      top_5 = if arr1.(3) = "" then None else Some arr1.(3);
+      top_pick = if arr1.(4) = "" then None else Some arr1.(4)
+    }
+  with _ -> raise Not_found
 
 let get_restrictions () = 
-  lst_from_col "restriction" "restriction_index" "1 = 1" (fun x -> x)
+  lst_from_col ~voting:true "restriction" "restriction_index" "1 = 1" 
+    (fun x -> x)
 
 let get_restriction_by_id rest_id = 
-  let rest = single_row_query "restriction" "restriction_index" 
-      ("rowid = " ^ string_of_int rest_id) in
-  rest.(0)
+  try
+    let rest = single_row_query "restriction" "restriction_index" 
+        ("rowid = " ^ string_of_int rest_id) in
+    rest.(0)
+  with _ -> raise Not_found
 
 let get_preferences () = 
-  lst_from_col "preference" "preferences" "1 = 1" (fun x -> x)
+  lst_from_col ~voting:true "preference" "preferences" "1 = 1" (fun x -> x)
 
 let get_preference_by_id pref_id = 
-  let pref = single_row_query "preference" "preferences" 
-      ("rowid = " ^ string_of_int pref_id) in
-  pref.(0)
+  try
+    let pref = single_row_query "preference" "preferences" 
+        ("rowid = " ^ string_of_int pref_id) in
+    pref.(0)
+  with _ -> raise Not_found
 
 let get_cuisines () = 
   let cuisine_id_lst = lst_from_col ~voting:true "cuisine_id" 
@@ -418,9 +425,11 @@ let get_cuisines () =
   (cuisine_id_lst, cuisine_lst)
 
 let get_cuisine_by_id cuisine_id = 
-  let cuisine = single_row_query "cuisine" "cuisines" 
-      ("cuisine_id = " ^ string_of_int cuisine_id) in
-  cuisine.(0)
+  try
+    let cuisine = single_row_query "cuisine" "cuisines" 
+        ("cuisine_id = " ^ string_of_int cuisine_id) in
+    cuisine.(0)
+  with _ -> raise Not_found
 
 (* let get_visited_restaurants user_id request_user_id = 
    let str_uid = string_of_int user_id in 
@@ -634,26 +643,16 @@ let add_feedback rating comments =
               ", '" ^ comments ^ "'); " in 
     make_response (exec db sql)
 
-(* let top_visited () =
-  let sql = "SELECT restaurant, 
-  COUNT (restaurant) AS total 
-  FROM visited_restaurants
-  GROUP BY restaurant
-  ORDER BY total DESC; 
-  SELECT FIRST (restaurant) FROM visited_restaurant" in
-  make_response (exec db sql); *)
-
-
-(*  let sql = "SELECT user_id, restaurant
+let top_visited () =
+  let arr = ref [||] in
+  let sql = "SELECT restaurant, COUNT(*) AS total 
   FROM visited_restaurants 
-  INNER JOIN (SELECT restaurant, COUNT(1) AS tot_occ 
-   ) " *)
-  (* SELECT id, tbl.col
-      FROM tbl
-INNER JOIN (  SELECT col, COUNT(1) AS freq
-                FROM tbl
-            GROUP BY 1) derived
-           USING (col)
-  ORDER BY derived.freq DESC; *)
-  
+  GROUP BY restaurant 
+  ORDER BY total DESC LIMIT 5; " in
+  let stmnt = make_stmt sql in
+  while (step stmnt) = ROW do 
+    let value = (row_data stmnt).(0) |> Data.to_string_coerce in
+    arr := Array.append !arr [|value|] done;
+  Array.to_list !arr
+
 let create_tables () = Db.create_tables ()

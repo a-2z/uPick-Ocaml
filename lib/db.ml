@@ -137,7 +137,7 @@ let create_group_invites_table () =
     user_id INTEGER NOT NULL, 
     FOREIGN KEY(group_id) REFERENCES group_info(rowid)
           ON DELETE SET NULL
-    FOREIGN KEY(user_id) REFERENCES user(rowid)
+    FOREIGN KEY(user_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
     |}
   in match exec db create_group_invite_table with
