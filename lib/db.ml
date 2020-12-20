@@ -53,8 +53,8 @@ let create_restrictions_table () =
     |}
   in match exec db create_restrictions with
   | Rc.OK -> ()
-  | err -> let message = 
-             "Can't create table restrictions (malformed sql/already exists)" in
+  | err -> let message = "Can't 
+              create table restrictions (malformed sql/already exists)" in
     error err message
 
 let create_restriction_index () =
@@ -201,7 +201,7 @@ let set_admins () =
                       |> String.split_on_char ',' in
   let usernames = env_field "ADMINS" in
   let passwords = List.map (fun pw -> pw |> Bcrypt.hash 
-  |> Bcrypt.string_of_hash)
+                                      |> Bcrypt.string_of_hash)
       (env_field "PASSWORDS") in 
   let names = env_field "NAMES" in 
   try begin

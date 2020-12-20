@@ -206,11 +206,6 @@ let remove_cuisine user_id cuisine_id =
     make_response (exec db sql)
   else None
 
-(* let rec initialize_restrictions restriction_lst acc = 
-   match restriction_lst with
-   | [] -> Some acc
-   | hd :: tl -> initialize_restrictions tl ((add_restrictions_index hd) :: acc) *)
-
 let join_group group_id member_id = 
   if count "group_invites" ("group_id = " ^ string_of_int group_id ^
                             " AND user_id = " ^ string_of_int member_id) > 0 
@@ -346,9 +341,9 @@ let id_by_usr usr =
 
 (** [get_user userid] returns a representation of a single user from the 
     database in type user.  
-    Requires: A valid userid is inputted, valid [username], [password] inputted, 
-    valid [name] inputted, valid [friends] inputted, [restricitons] inputted,
-    [groups] inputted definined in the same user *)
+    Requires: A valid userid is inputted, valid [username], [password] 
+    inputted, valid [name] inputted, valid [friends] inputted, [restricitons] 
+    inputted, [groups] inputted definined in the same user *)
 let get_user userid = 
   let arr1 = single_row_query "username, password, name" "users" 
       ("rowid = " ^ string_of_int userid) in

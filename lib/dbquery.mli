@@ -117,8 +117,8 @@ val delete_group : int -> int -> int64 option
 (** [add_group_invites group_id user_id host_id] adds an entry to the 
     group_invites table representing a pending invite from the host user to 
     another user for the group associated with group_id.
-    Requires: the user_id, host_id, and group_id must be ids of a user and group 
-    respectively that exists in the database *)
+    Requires: the user_id, host_id, and group_id must be ids of a user and  
+    group respectively that exists in the database *)
 val add_group_invites: int -> int -> int -> int64 option
 
 (** [add_votes group_id user_id restaurant_id_lst] adds users votes for a 

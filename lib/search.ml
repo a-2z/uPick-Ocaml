@@ -44,7 +44,8 @@ let string_of_t t =
   |> String.concat ",\n"
   |> (fun l -> "{\"restaurants\": [\n" ^ l ^ "\n]}")
 
-(**[let split_str_lst s] is the first string in the comma-separated string [s]*)
+(** [let split_str_lst s] is the first string in the comma-separated string 
+[s] *)
 let split_str_lst s = 
   match String.split_on_char ',' s with
   | [] -> ""
@@ -174,9 +175,9 @@ let get_rests ?cuisine:(c = []) loc_x loc_y range price pref =
       [("Accept", "application/json"); ("user-key", user_key)] in 
   let url = "https://developers.zomato.com/api/v2.1/search?count=20" ^ 
             "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
-            ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ "&cuisines=" 
-            ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" in
-  bind_request hdr url price pref
+            ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ 
+            "&cuisines=" ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" 
+            in bind_request hdr url price pref
 
 (*Calculate the winner of a vote given by an id (position in a list)*)
 let to_winner json = 
