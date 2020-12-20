@@ -71,7 +71,7 @@ val remove_restrictions_index : int -> int -> int64 option
     Requires: user_id and preference_id exist in the database *)
 val remove_preferences_index : int -> int -> int64 option
 
-(** [add_cuisine user_id cuisine cuisine_id] inserts a type of cuisine and its 
+(** [add_cuisine user_id cuisine_id cuisine] inserts a type of cuisine and its 
     corresponding Zomato API cuisine id into a table if the user is an admin.
     Requires: user_id exists in the database *)
 val add_cuisine : int -> int -> string -> int64 option
