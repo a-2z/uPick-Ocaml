@@ -218,8 +218,11 @@ let default =
 let get_list = [
   (* user *)
   get "/users/:id" (fun req -> 
+  try
       let user = Dbquery.get_user (int_of_string (param req "id")) in
-      `Json (user |> json_of_user) |> respond'); 
+      `Json (user |> json_of_user) |> respond'; 
+  with e -> ignore (e); 
+        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
 
   (* groups *)  
   get "/groups/:id" (fun req ->

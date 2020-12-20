@@ -31,6 +31,8 @@ type restriction = {
   name : string;
 }
 
+exception Not_found
+
 (**Escapes all single quotes in a json string with an additional single quote
    for SQL compliance*)
 let sanitize sql = Str.global_replace (Str.regexp "'") "''" sql
@@ -339,27 +341,31 @@ let id_by_usr usr =
   (single_row_query "rowid" "users" ("username = '" ^ usr ^ "'")).(0)
   |> int_of_string
 
+let get_friends u_id = 
+  let friends1 = lst_from_col "friend_2" "friends" 
+      ("friend_1 = " ^ string_of_int u_id) int_of_string in
+  let friends2 = lst_from_col "friend_1" "friends" 
+      ("friend_2 = " ^ string_of_int u_id) int_of_string in
+  List.sort_uniq compare (friends1 @ friends2)
+
 (** [get_user userid] returns a representation of a single user from the 
     database in type user.  
     Requires: A valid userid is inputted, valid [username], [password] 
     inputted, valid [name] inputted, valid [friends] inputted, [restricitons] 
     inputted, [groups] inputted definined in the same user *)
-let get_user userid = 
+let get_user user_id = 
+  try begin
   let arr1 = single_row_query "username, password, name" "users" 
-      ("rowid = " ^ string_of_int userid) in
-  let friends1 = lst_from_col "friend_2" "friends" 
-      ("friend_1 = " ^ string_of_int userid) int_of_string in
-  let friends2 = lst_from_col "friend_1" "friends" 
-      ("friend_2 = " ^ string_of_int userid) int_of_string in
-  let friends = List.sort_uniq compare (friends1 @ friends2) in
+      ("rowid = " ^ string_of_int user_id) in
+  let friends = get_friends user_id in
   let restrictions = lst_from_col "restriction" "restrictions" 
-      ("user_id = " ^ string_of_int userid) int_of_string in
+      ("user_id = " ^ string_of_int user_id) int_of_string in
   let groups = lst_from_col "group_id" "groups" 
-      ("member_id = " ^ string_of_int userid) int_of_string in
+      ("member_id = " ^ string_of_int user_id) int_of_string in
   let visited = lst_from_col "restaurant" "visited_restaurants" 
-    ("user_id = " ^ string_of_int userid) (fun x -> x) in
-      {
-        id = userid;
+    ("user_id = " ^ string_of_int user_id) (fun x -> x) in
+      { 
+        id = user_id;
         username = arr1.(0);
         password = arr1.(1);
         name = arr1.(2); 
@@ -368,6 +374,8 @@ let get_user userid =
         groups = groups;
         visited = visited;
       }
+      end
+    with _-> raise Not_found
 
 let get_group group_id = 
   let arr1 = single_row_query 

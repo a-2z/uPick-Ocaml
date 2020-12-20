@@ -28,6 +28,8 @@ type restriction = {
   name : string;
 }
 
+exception Not_found
+
 (**[add_user username password_hash name] inserts a user in the database.*)
 val add_user : string -> string -> string -> int64 option
 
@@ -156,7 +158,8 @@ val process_survey : int -> int -> int64 option
 val id_by_usr : string -> int
 
 (** [get_user userid] is the user with [userid]
-    Requires: [userid] is associated with a user that exists in the database. *)
+    Requires: [userid] is associated with a user that exists in the database. 
+    Raises: Not_found*)
 val get_user : int -> user
 
 (** [get_group groupid] is the group with [groupid]
@@ -195,7 +198,7 @@ val get_cuisine_by_id : int -> string
     application into the database anonymously *)
 val add_feedback : float -> string -> int64 option
 
-val top_visited : unit -> string list
+(* val top_visited : unit -> string list *)
 
 (** [create_tables] creates all tables if they do not already exist in the 
     database *)

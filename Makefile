@@ -14,7 +14,8 @@ script:
 
 test: 
 	@dune clean
-	@dune runtest
+	@dune runtest -j 1
+
 
 clean:
 	@dune clean
