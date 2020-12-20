@@ -6,7 +6,8 @@ type user = {
   name : string;
   friends : int list; 
   restrictions : int list; 
-  groups : int list 
+  groups : int list;
+  visited : string list
 }
 
 (* type group contains all relevant information for a group *)
@@ -189,12 +190,6 @@ val get_cuisines : unit -> int list * string list
     Requires: [cuisine_id] is associated with a cuisine that exists in the 
     database. *)
 val get_cuisine_by_id : int -> string
-
-(** [get_visited_restaurants user_id] gets a list of restaurants a specified 
-    user has visited
-    Requires: [user_id] is associated with a user that exists in the 
-    database. *)
-val get_visited_restaurants : int -> string list 
 
 (** [add_feedback rating comments] inserts a users feedback about the 
     application into the database anonymously *)

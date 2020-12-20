@@ -51,13 +51,13 @@ let load_json_login req ins_func inserter =
                          Lwt.return None >>= fun a -> make_response a
 
 let json_of_user 
-    {id; username; password; name; friends; restrictions; groups} =
+    {id; username; password; name; friends; restrictions; groups; visited} =
   ignore (password); (*Do not return the user's password on a get request*)
   let open Ezjsonm in
   dict [("id", int id); ("username", string username); 
         ("name", string name); ("friends", list int friends);
         ("restrictions", list int restrictions);
-        ("groups", list int groups);]
+        ("groups", list int groups); ("visited", list from_string visited)]
 
 let json_of_group 
     {id; name; host_id; members; voting_allowed; top_5; top_pick} = 
@@ -232,7 +232,8 @@ let get_list = [
         let restriction = Dbquery.get_restriction_by_id 
             (int_of_string (param req "id")) in 
         (`Json (Ezjsonm.from_string 
-                  (Printf.sprintf {|{"success": true, "data": "%s"}|} restriction)))
+                  (Printf.sprintf {|{"success": true, "data": "%s"}|} 
+                     restriction)))
         |> respond'
       with e -> ignore (e); 
         respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
@@ -247,7 +248,8 @@ let get_list = [
         let preference = Dbquery.get_preference_by_id 
             (int_of_string (param req "id")) in 
         (`Json (Ezjsonm.from_string 
-                  (Printf.sprintf {|{"success": true, "data": "%s"}|} preference)))
+                  (Printf.sprintf {|{"success": true, "data": "%s"}|} 
+                     preference)))
         |> respond'
       with e -> ignore (e); 
         respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
@@ -266,21 +268,12 @@ let get_list = [
       with e -> ignore (e); 
         respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
 
-  (* get "/cuisine" 
-     (fun _ -> let cuisine_id, cuisine_str = Dbquery.get_cuisines () in 
-      let cuisine_id_lst = List.map (fun x -> Ezjsonm.int x) cuisine_id in 
+  get "/cuisines" 
+    (fun _ -> let cuisine_id, cuisine_str = Dbquery.get_cuisines () in 
+      let cuisine_id_lst = List.map (fun x -> string_of_int x) cuisine_id in 
       let cuisine_str_lst = List.map (fun x -> Ezjsonm.string x) cuisine_str in 
-      `Json (Ezjsonm.list (List.combine cuisine_id_lst cuisine_str_lst)) 
-      |> respond')); *)
-
-  get "/visited/:id" (fun req ->
-      try 
-        let visited = Dbquery.get_visited_restaurants 
-            (int_of_string (param req "id")) in 
-        (`Json (Ezjsonm.list Ezjsonm.from_string visited))
-        |> respond'
-      with e -> ignore (e); 
-        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
+      `Json (Ezjsonm.dict (List.combine cuisine_id_lst cuisine_str_lst)) 
+      |> respond');
 ]
 
 let post_list = [

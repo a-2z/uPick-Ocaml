@@ -67,16 +67,16 @@ let to_result json =
     name = json |> member "name" |> to_string;
     address = json |> member "location" |> member "address" |> to_string;
     cuisines = json |> member "cuisines" |> to_string;
-    price = json |> member "average_cost_for_two" |> to_int |> (fun p -> p / 2);
-    highlights = json |> member "highlights" |> to_list |> List.map to_string; 
-    rating = json 
-             |> member "user_rating" 
-             |> member "aggregate_rating" 
-             |> to_string 
-             |> float_of_string;
+    price = json |> member "average_cost_for_two" |> to_int  
+            |> (fun p -> p / 2);
+    highlights = json |> member "highlights" |> to_list 
+                 |> List.map to_string; 
+    rating = json |> member "user_rating" |> member "aggregate_rating" 
+             |> to_string |> float_of_string;
     photo = json |> member "photos_url" |> to_string;
     timing = json |> member "timings" |> to_string;
-    phone = json |> member "phone_numbers" |> to_string |> split_str_lst;
+    phone = json |> member "phone_numbers" |> to_string 
+            |> split_str_lst;
     reservation = json |> member "is_table_reservation_supported" 
                   |> to_int 
                   |> ( <> ) 0;

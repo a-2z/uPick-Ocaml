@@ -12,7 +12,8 @@ type user = {
   name : string;
   friends : int list; 
   restrictions : int list; 
-  groups : int list
+  groups : int list;
+  visited: string list
 }
 
 type group = {
@@ -360,15 +361,18 @@ let get_user userid =
       ("user_id = " ^ string_of_int userid) int_of_string in
   let groups = lst_from_col "group_id" "groups" 
       ("member_id = " ^ string_of_int userid) int_of_string in
-  {
-    id = userid;
-    username = arr1.(0);
-    password = arr1.(1);
-    name = arr1.(2); 
-    friends = friends;
-    restrictions = restrictions;
-    groups = groups;
-  }
+  let visited = lst_from_col "restaurant" "visited_restaurants" 
+    ("user_id = " ^ string_of_int userid) (fun x -> x) in
+      {
+        id = userid;
+        username = arr1.(0);
+        password = arr1.(1);
+        name = arr1.(2); 
+        friends = friends;
+        restrictions = restrictions;
+        groups = groups;
+        visited = visited;
+      }
 
 let get_group group_id = 
   let arr1 = single_row_query 
@@ -404,9 +408,10 @@ let get_preference_by_id pref_id =
   pref.(0)
 
 let get_cuisines () = 
-  let cuisine_id_lst = lst_from_col "cuisine_id" "cuisines" "1 = 1" 
-      (fun x -> int_of_string x) in 
-  let cuisine_lst = lst_from_col "cuisine" "cuisines" "1 = 1" (fun x -> x) in 
+  let cuisine_id_lst = lst_from_col ~voting:true "cuisine_id" 
+      "cuisines" "1 = 1" (fun x -> int_of_string x) in 
+  let cuisine_lst = lst_from_col ~voting:true "cuisine" 
+      "cuisines" "1 = 1" (fun x -> x) in 
   (cuisine_id_lst, cuisine_lst)
 
 let get_cuisine_by_id cuisine_id = 
@@ -424,11 +429,6 @@ let get_cuisine_by_id cuisine_id =
    lst_from_col "restaurant" "visited_restaurants" ("user_id = " ^ str_ruid)
    (fun x -> x)
    else [] *)
-
-let get_visited_restaurants user_id = 
-  let str_uid = string_of_int user_id in
-  lst_from_col "restaurant" "visited_restaurants" 
-    ("user_id = " ^ str_uid) (fun x -> x)
 
 let deletion_updates str_gid str_uid = 
   let sql_grouprm = delete_sql 
