@@ -274,11 +274,11 @@ let get_list = [
       let cuisine_str_lst = List.map (fun x -> Ezjsonm.string x) cuisine_str in 
       `Json (Ezjsonm.dict (List.combine cuisine_id_lst cuisine_str_lst)) 
       |> respond');
-
+(* 
   get "/topvisits" 
   (fun _ -> let top_rests = Dbquery.top_visited () in 
       `Json (Ezjsonm.list Ezjsonm.string top_rests) |> respond');
-
+ *)
 
 ]
 
