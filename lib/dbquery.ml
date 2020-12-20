@@ -105,11 +105,14 @@ let is_admin user_id =
 
 (*insertion functions *)
 let add_user username password name =
-  let sql =
-    Printf.sprintf 
-      "INSERT INTO users (username, password, name) VALUES('%s','%s','%s'); "
-      username password name in
-  make_response (exec db sql)
+  if name = "" || username = ""
+  then None  
+  else
+    let sql =
+      Printf.sprintf 
+        "INSERT INTO users (username, password, name) VALUES('%s','%s','%s'); "
+        username password name in
+    make_response (exec db sql)
 
 (**[add_friends friend1 friend2 inserts a pairing of two friends]
    Requires: friend1 is not friend2
@@ -118,10 +121,16 @@ let add_friends friend1 friend2 =
   try 
     assert (friend1 <> friend2);
     if count "users" ("rowid = " ^ string_of_int friend2) > 0 then
-      let sql =
-        Printf.sprintf "INSERT INTO friends VALUES(%d, %d); "
-          friend1 friend2 in
-      make_response (exec db sql)
+      if friend1 < friend2 then 
+        let sql =
+          Printf.sprintf "INSERT INTO friends VALUES(%d, %d); "
+            friend1 friend2 in
+        make_response (exec db sql)
+      else 
+        let sql =
+          Printf.sprintf "INSERT INTO friends VALUES(%d, %d); "
+            friend2 friend1 in
+        make_response (exec db sql)
     else None
   with e -> 
     print_endline (Printexc.to_string e);
@@ -304,22 +313,24 @@ let rec add_user_votes group_id user_id count acc lst =
 let add_votes group_id user_id ballot = 
   let str_gid = string_of_int group_id in
   let str_uid = string_of_int user_id in
-  let rest_size = num_rests str_gid in 
-  let rec valid_ballot counter lst = 
-    if counter = 0 then true else 
-    if List.mem (counter-1) lst 
-    then valid_ballot (counter-1) lst 
-    else false in 
-  if count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gid) = 1 && 
-     List.length ballot = rest_size && valid_ballot rest_size ballot
-  then let new_votes = add_user_votes group_id user_id 1 "" ballot in 
-    if count "votes" ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) > 0
-    then let drop_sql = 
-           delete_sql "votes" ("group_id = " ^ str_gid ^ " AND user_id = "
-                               ^ str_uid) in 
-      make_response (exec db (drop_sql ^ new_votes))
-    else make_response (exec db new_votes)
-  else None
+  if count "group_info" ("voting_allowed = 1 AND rowid = " ^ str_gid) = 1
+  then begin 
+    let rest_size = num_rests str_gid in 
+    let rec valid_ballot counter lst = 
+      if counter = 0 then true else 
+      if List.mem (counter-1) lst 
+      then valid_ballot (counter-1) lst 
+      else false in 
+    if List.length ballot = rest_size && valid_ballot rest_size ballot
+    then let new_votes = add_user_votes group_id user_id 1 "" ballot in 
+      if count "votes" 
+          ("group_id = " ^ str_gid ^ " AND user_id = " ^ str_uid) > 0
+      then let drop_sql = 
+             delete_sql "votes" ("group_id = " ^ str_gid ^ " AND user_id = "
+                                 ^ str_uid) in 
+        make_response (exec db (drop_sql ^ new_votes))
+      else make_response (exec db new_votes)
+    else None end else None
 
 let login username = 
   try
@@ -380,10 +391,44 @@ let get_restrictions () =
   lst_from_col "restriction" "restriction_index" "1 = 1" (fun x -> x)
 
 let get_restriction_by_id rest_id = 
-  let rest = single_row_query 
-      "restriction" "restriction_index" 
+  let rest = single_row_query "restriction" "restriction_index" 
       ("rowid = " ^ string_of_int rest_id) in
   rest.(0)
+
+let get_preferences () = 
+  lst_from_col "preference" "preferences" "1 = 1" (fun x -> x)
+
+let get_preference_by_id pref_id = 
+  let pref = single_row_query "preference" "preferences" 
+      ("rowid = " ^ string_of_int pref_id) in
+  pref.(0)
+
+let get_cuisines () = 
+  let cuisine_id_lst = lst_from_col "cuisine_id" "cuisines" "1 = 1" 
+      (fun x -> int_of_string x) in 
+  let cuisine_lst = lst_from_col "cuisine" "cuisines" "1 = 1" (fun x -> x) in 
+  (cuisine_id_lst, cuisine_lst)
+
+let get_cuisine_by_id cuisine_id = 
+  let cuisine = single_row_query "cuisine" "cuisines" 
+      ("cuisine_id = " ^ string_of_int cuisine_id) in
+  cuisine.(0)
+
+(* let get_visited_restaurants user_id request_user_id = 
+   let str_uid = string_of_int user_id in 
+   let str_ruid = string_of_int request_user_id in 
+   let count_int = if user_id < request_user_id then count "friends" 
+   ("friend_1 = " ^ str_uid ^ " AND friend_2 = " ^ str_ruid) else
+   count "friends" ("friend_1 = " ^ str_ruid ^ " AND friend_2 = " ^ str_uid) in
+   if count_int > 0 || user_id = request_user_id then 
+   lst_from_col "restaurant" "visited_restaurants" ("user_id = " ^ str_ruid)
+   (fun x -> x)
+   else [] *)
+
+let get_visited_restaurants user_id = 
+  let str_uid = string_of_int user_id in
+  lst_from_col "restaurant" "visited_restaurants" 
+    ("user_id = " ^ str_uid) (fun x -> x)
 
 let deletion_updates str_gid str_uid = 
   let sql_grouprm = delete_sql 
@@ -464,9 +509,9 @@ let ranks str_gid =
       ("group_id = " ^ str_gid) int_of_string in
   let matched_ranks = List.combine rest_lst rank_lst in 
   let rec ranked_lst acc = function
-    | [] -> acc
+    | [] -> acc 
     | (rest, rank) :: t -> if List.mem_assoc rest acc 
-      then begin
+      then begin 
         let current_vote = rank + (List.assoc rest acc) in 
         let new_acc = acc |> List.remove_assoc rest 
                       |> List.cons (rest, current_vote) in 
@@ -475,6 +520,21 @@ let ranks str_gid =
         let new_acc = (rest, rank) :: acc in
         ranked_lst new_acc t in 
   ranked_lst [] matched_ranks
+
+let empty_survey_votes str_gid = 
+  let votes = delete_sql "votes" ("group_id = " ^ str_gid) in
+  let updated_surveys = "UPDATE groups SET loc_x = NULL, loc_y = NULL, 
+  target_price = NULL, cuisines = NULL, range = NULL, preferences = NULL, 
+  surveyed = 0 WHERE group_id = " ^ str_gid ^ "; " in
+  votes ^ updated_surveys
+
+let visited_entries str_gid top = 
+  let member_lst = lst_from_col "member_id" "groups" ("group_id = " ^ str_gid)
+      (fun x -> x) in 
+  let sql_lst = List.map 
+      (fun x -> "INSERT INTO visited_restaurants (user_id, restaurant) 
+VALUES(" ^ x ^ ", '" ^ top ^ "'); ") member_lst in 
+  List.fold_right (fun x y -> x ^ y) sql_lst ""
 
 let calculate_votes g_id h_id = 
   let str_gid = string_of_int g_id in 
@@ -490,11 +550,12 @@ let calculate_votes g_id h_id =
               |> fun row -> row.(0) 
                             |> sanitize 
                             |> Search.get_winner top_pick in 
-    let sql = Printf.sprintf 
-        {|UPDATE group_info SET top_pick = '%s', voting_allowed = 0 
-    WHERE rowid = %d; |}
+    let sql = Printf.sprintf {|UPDATE group_info SET top_pick = '%s',
+     voting_allowed = 0 WHERE rowid = %d; |}
         (sanitize top) g_id in 
-    make_response (exec db sql) else None
+    let sql_visited = visited_entries str_gid (sanitize top) in 
+    let empty_tables = empty_survey_votes str_gid in
+    make_response (exec db (sql ^ sql_visited ^ empty_tables)) else None
 
 let format_cuisines group_id = 
   lst_from_col "cuisines" "groups" ("group_id = " ^ (string_of_int group_id)) 
@@ -559,5 +620,16 @@ let process_survey g_id h_id =
     ignore(calculate_survey cuisines x y range price g_id);
     Some (Int64.zero)
   end else None
+
+let add_feedback rating comments = 
+  let str_rating = string_of_float rating in
+  if comments = "" then 
+    let sql = "INSERT INTO feedback (rating) VALUES(" ^ str_rating ^ "); " in 
+    make_response (exec db sql)
+  else
+    let sql = "INSERT INTO feedback VALUES(" ^ str_rating ^ 
+              ", '" ^ comments ^ "'); " in 
+    make_response (exec db sql)
+
 
 let create_tables () = Db.create_tables ()

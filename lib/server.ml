@@ -94,13 +94,13 @@ let user_inserter json ins_func =
   end with _ -> raise (Password_failure "invalid password")
 
 let user_delete_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in 
-ins_func 
-u_id
-(member "user_id" json |> to_int)
+  let u_id = id_by_usr (member "username" json |> to_string) in 
+  ins_func 
+    u_id
+    (member "user_id" json |> to_int)
 
 let friend_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in
+  let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func
     u_id
     (member "friend" json |> to_int) 
@@ -115,18 +115,18 @@ let rest_indx_inserter json ins_func =
   ins_func u_id (member "restriction" json |> to_string)
 
 let rm_rest_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in
-ins_func
-  u_id (member "restriction_id" json |> to_int)
+  let u_id = id_by_usr (member "username" json |> to_string) in
+  ins_func
+    u_id (member "restriction_id" json |> to_int)
 
 let pref_indx_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func u_id (member "preference" json |> to_string)
 
 let rm_pref_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in
-ins_func
-  u_id (member "preference_id" json |> to_int)
+  let u_id = id_by_usr (member "username" json |> to_string) in
+  ins_func
+    u_id (member "preference_id" json |> to_int)
 
 let add_cuisine_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in
@@ -136,12 +136,12 @@ let add_cuisine_inserter json ins_func =
     (member "cuisine" json |> to_string)
 
 let rm_cuisine_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in
-ins_func
-  u_id (member "cuisine_id" json |> to_int)
+  let u_id = id_by_usr (member "username" json |> to_string) in
+  ins_func
+    u_id (member "cuisine_id" json |> to_int)
 
 let group_info_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in
+  let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func
     (member "group_name" json |> to_string)
     u_id
@@ -152,10 +152,10 @@ let group_inserter json ins_func =
     (member "username" json |> to_string |> id_by_usr)
 
 let delete_group_inserter json ins_func = 
-let u_id = id_by_usr (member "username" json |> to_string) in
-ins_func 
-u_id
-(member "group_id" json |> to_int)
+  let u_id = id_by_usr (member "username" json |> to_string) in
+  ins_func 
+    u_id
+    (member "group_id" json |> to_int)
 
 let group_host_user_inserter json ins_func = 
   let h_id = id_by_usr (member "username" json |> to_string) in 
@@ -163,6 +163,11 @@ let group_host_user_inserter json ins_func =
     (member "group_id" json |> to_int)
     (member "user_id" json |> to_int)
     h_id
+
+let feedback_inserter json ins_func = 
+  ins_func 
+    (member "rating" json |> to_float)
+    (member "comments" json |> to_string)
 
 let survey_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in
@@ -226,9 +231,8 @@ let get_list = [
       try 
         let restriction = Dbquery.get_restriction_by_id 
             (int_of_string (param req "id")) in 
-        (`Json 
-           (Ezjsonm.from_string 
-              (Printf.sprintf {|{"success": true, "data": "%s"}|} restriction)))
+        (`Json (Ezjsonm.from_string 
+                  (Printf.sprintf {|{"success": true, "data": "%s"}|} restriction)))
         |> respond'
       with e -> ignore (e); 
         respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
@@ -236,15 +240,57 @@ let get_list = [
   (* get all restrictions *)
   get "/restrictions" 
     (fun _ -> let restriction = Dbquery.get_restrictions () in 
-      `Json (Ezjsonm.list Ezjsonm.string restriction) |>  
-      respond');
+      `Json (Ezjsonm.list Ezjsonm.string restriction) |> respond');
+
+  get "/preferences/:id" (fun req ->
+      try 
+        let preference = Dbquery.get_preference_by_id 
+            (int_of_string (param req "id")) in 
+        (`Json (Ezjsonm.from_string 
+                  (Printf.sprintf {|{"success": true, "data": "%s"}|} preference)))
+        |> respond'
+      with e -> ignore (e); 
+        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
+
+  get "/preferences" 
+    (fun _ -> let preference = Dbquery.get_preferences () in 
+      `Json (Ezjsonm.list Ezjsonm.string preference) |> respond');
+
+  get "/cuisines/:id" (fun req ->
+      try 
+        let cuisine = Dbquery.get_cuisine_by_id 
+            (int_of_string (param req "id")) in 
+        (`Json (Ezjsonm.from_string 
+                  (Printf.sprintf {|{"success": true, "data": "%s"}|} cuisine)))
+        |> respond'
+      with e -> ignore (e); 
+        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
+
+  (* get "/cuisine" 
+     (fun _ -> let cuisine_id, cuisine_str = Dbquery.get_cuisines () in 
+      let cuisine_id_lst = List.map (fun x -> Ezjsonm.int x) cuisine_id in 
+      let cuisine_str_lst = List.map (fun x -> Ezjsonm.string x) cuisine_str in 
+      `Json (Ezjsonm.list (List.combine cuisine_id_lst cuisine_str_lst)) 
+      |> respond')); *)
+
+  get "/visited/:id" (fun req ->
+      try 
+        let visited = Dbquery.get_visited_restaurants 
+            (int_of_string (param req "id")) in 
+        (`Json (Ezjsonm.list Ezjsonm.from_string visited))
+        |> respond'
+      with e -> ignore (e); 
+        respond' (`Json (Ezjsonm.from_string {|{"success": false|})));
 ]
 
 let post_list = [
+  post "/feedback"(fun req -> 
+      load_json_login req add_feedback feedback_inserter);
+
   (* let insert_user =  *)
   post "/users" (fun req -> 
       load_json req add_user user_inserter >>= fun a -> make_response a);
-  
+
   post "/users/delete" (fun req -> 
       load_json_login req delete_user user_delete_inserter);
 

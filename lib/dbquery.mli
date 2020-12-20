@@ -163,14 +163,42 @@ val get_user : int -> user
     database. *)
 val get_group : int -> group
 
-(** [get_restriction_by_id rest_id] is the restriction with [rest_id]
-    Requires: [rest_id] is associated with a user that exists in the 
-    database. *)
-val get_restriction_by_id : int -> string
-
 (** [get_restrictions] gets a list of all restrictions that exist in the 
     database *)
 val get_restrictions : unit -> string list
+
+(** [get_restriction_by_id rest_id] is the restriction with [rest_id]
+    Requires: [rest_id] is associated with a restriction that exists in the 
+    database. *)
+val get_restriction_by_id : int -> string
+
+(** [get_preferences] gets a list of all preferences that exist in the 
+    database *)
+val get_preferences : unit -> string list 
+
+(** [get_preference_by_id pref_id] is the preference with [pref_id]
+    Requires: [pref_id] is associated with a preference that exists in the 
+    database. *)
+val get_preference_by_id : int -> string
+
+(** [get_cuisines] gets an association list of all cuisine_id's and cuisines 
+    that exist in the database *)
+val get_cuisines : unit -> int list * string list
+
+(** [get_cuisine_by_id cuisine_id] is the cuisine with [cuisine_id]
+    Requires: [cuisine_id] is associated with a cuisine that exists in the 
+    database. *)
+val get_cuisine_by_id : int -> string
+
+(** [get_visited_restaurants user_id] gets a list of restaurants a specified 
+    user has visited
+    Requires: [user_id] is associated with a user that exists in the 
+    database. *)
+val get_visited_restaurants : int -> string list 
+
+(** [add_feedback rating comments] inserts a users feedback about the 
+    application into the database anonymously *)
+val add_feedback : float -> string -> int64 option
 
 (** [create_tables] creates all tables if they do not already exist in the 
     database *)

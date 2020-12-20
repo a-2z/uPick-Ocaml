@@ -79,8 +79,6 @@ let create_groups_info_table () =
     top_pick TEXT, --JSON
     PRIMARY KEY(group_name, host_id),
     FOREIGN KEY(host_id) REFERENCES users(rowid)
-          ON DELETE SET NULL, 
-    FOREIGN KEY(host_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
   |}
   in match exec db create_groups_info_table with
@@ -171,12 +169,39 @@ let create_preferences_table () =
              "Can't create table preferences (malformed sql/already exists)" in
     error err message
 
+let create_visited_restaurant_table () = 
+  let create_visit_table = {|
+  CREATE TABLE IF NOT EXISTS visited_restaurants (
+    user_id INTEGER NOT NULL,
+    restaurant TEXT NOT NULL, --JSON
+    FOREIGN KEY(user_id) REFERENCES users(rowid)
+          ON DELETE SET NULL);
+  |}
+  in match exec db create_visit_table with
+  | Rc.OK -> ()
+  | err -> let message = "Can't 
+      create table visited_restaurants (malformed sql/already exists)" in
+    error err message
+
+let create_feedbacks_table () = 
+  let create_feedback_table = {|
+  CREATE TABLE IF NOT EXISTS feedback (
+    rating FLOAT NOT NULL,
+    comments TEXT DEFAULT NULL);
+  |}
+  in match exec db create_feedback_table with
+  | Rc.OK -> ()
+  | err -> let message = "Can't 
+      create table feedback (malformed sql/already exists)" in
+    error err message
+
 
 let set_admins () = 
   let env_field fld = List.assoc fld (Dotenv.parse ())
                       |> String.split_on_char ',' in
   let usernames = env_field "ADMINS" in
-  let passwords = List.map (fun pw -> pw |> Bcrypt.hash |> Bcrypt.string_of_hash)
+  let passwords = List.map (fun pw -> pw |> Bcrypt.hash 
+  |> Bcrypt.string_of_hash)
       (env_field "PASSWORDS") in 
   let names = env_field "NAMES" in 
   try begin
@@ -203,5 +228,7 @@ let create_tables _ =
   |> create_group_invites_table
   |> create_cuisines_table
   |> create_preferences_table
+  |> create_visited_restaurant_table
+  |> create_feedbacks_table
   |> set_admins
 
