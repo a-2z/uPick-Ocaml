@@ -18,8 +18,7 @@ type result = {
 }  
 
 (*Zomato API Key*)
-(* let user_key = List.assoc "USER_KEY" (Dotenv.parse ())  *)
-let user_key = "0b2c1f4d2cea4f954b70b3d12683036c"
+let user_key = List.assoc "USER_KEY" (Dotenv.parse ()) 
 
 let string_of_rest r = Printf.sprintf 
     {|{
