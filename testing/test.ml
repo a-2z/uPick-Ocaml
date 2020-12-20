@@ -107,7 +107,7 @@ let test_passes name ?succ:(s = true) ins_func data =
 
 (**[try_get get_func id] is false if an attempt to retrieve data with [id] 
    using get_func raises and exception. The resulting data are ignored.*)
-let try_get name get_func id = 
+let try_get ?succ:(b = true) name get_func id = 
   let success = begin
     try 
       match get_func id with 
@@ -115,7 +115,7 @@ let try_get name get_func id =
     with 
       | Not_found -> true 
       | _ -> false end in
-  test_equal name true success
+  test_equal name b success
 
 (**ensures that the user matching [n] in the database matches the user 
    generated with [make_user]*) 
@@ -151,8 +151,8 @@ let add_user_test = [
   test_user "ensure that all users have been added" 11
     ("peterparker", "Peter1234", "Peter");
   (*users 12 and 13*)
-  (* test_passes "names can be shared"
-    ~succ:true ins_user ("andrew1234", "Baa5j1", "Andrew"); *)
+  test_passes "names can be shared"
+    ~succ:true ins_user ("andrew1234", "Baa5j1", "Andrew");
   test_passes "usernames must be unique"
     ~succ:false ins_user ("andrewosorio", "Andrew3", "John");
   (* test_passes "makes sure two people can have the same password"
@@ -168,6 +168,7 @@ let get_user_test = [
   try_get "ids that are out of bounds are handled" get_user 13;
   try_get "negative ids are not permitted" get_user ~-10;
   try_get "0th id is" get_user 0;
+  try_get "invalid users can not be gotten" get_user 1000;
   try_get "min int" get_user min_int;
   try_get "max int" get_user max_int;
 ]
@@ -205,9 +206,10 @@ let add_friends_test = [
   (*attempt new insertions*)
   (* test_passes "insert two valid friends" ~succ:true ins_friends (5, 8); 
   test_passes "friend first and last users" ~succ:true ins_friends (5, 13);
-  test_friends ~are_friends:true "users are friends following insertion" 5 8;  *)
-  test_passes "the same friendship, reversed" ~succ:false ins_friends (8, 5);
-  test_passes "friendships are unique" ~succ:false ins_friends (5, 8);
+  test_friends ~are_friends:true "users are friends following insertion" 5 8;*)
+  (* test_passes "the same friendship, reversed" ~succ:false ins_friends 
+  (8, 5); *)
+  (* test_passes "friendships are unique" ~succ:false ins_friends (5, 8); *)
   test_passes "cannot friend oneself" ~succ:false ins_friends (3, 3);
   test_friends ~are_friends:false "test that previous insert was blocked" 3 3;
 ]
@@ -264,16 +266,16 @@ let add_group_info_test = [
     ins_group_info ("birthday party", 2); *)
   (* test_passes ~succ:true "one host can create two groups with different names" 
     ins_group_info ("garden party", 2); *)
-  test_passes ~succ:false "one host cannot create two groups with the same name"
-    ins_group_info ("birthday party", 3);
-  test_passes ~succ:false "incorrect host_id cannot create group" 
-    ins_group_info ("birthday party", 0);     
+  (* test_passes ~succ:false "one host cannot create two groups with the same name"
+    ins_group_info ("birthday party", 3); *)
+  (* test_passes ~succ:false "incorrect host_id cannot create group" 
+    ins_group_info ("birthday party", 0);      *)
 ]
 
 (**[ins_group_invite] inserts [u_id] into [g_id] by invitation of [h_id]*)
 let ins_group_invite (g_id, u_id, h_id) = add_group_invites g_id u_id h_id
 
-let invite_1 = add_group_invites 3 1 2
+let invite_1 = add_group_invites 3 1 6
 let invite_2 = add_group_invites 2 3 1
 let invite_3 = add_group_invites 1 2 3
 let invite_4 = () (*5, 1, 2*)
@@ -296,7 +298,7 @@ let group_invites_test = [
 (*group membership ids, hosts are inserted by default*)
 let group_mem1 = () (*(1, 3)*)
 let group_mem2 = () (*(2, 1)*)
-let group_mem3 = () (*(3, 2)*)
+let group_mem3 = () (*(3, 6)*)
 let group_mem4 = () (*(4, 5)*)
 let group_mem5 = () (*(5, 2)*)
 let group_mem6 = () (*(6, 2)*)
@@ -324,10 +326,11 @@ let add_group_test = [
 
 let get_group_test = [
   try_get "correctly returns a valid group" get_group 1;
-  try_get "ensures that nonexisting group cannot be returned" get_group 0;
-  try_get "negative groups are not permitted" get_group ~-10;
-  try_get "min group" get_group min_int;
-  try_get "max group" get_group max_int;
+  try_get ~succ:false "ensures that nonexisting group cannot be returned" 
+  get_group 0;
+  try_get ~succ:false "negative groups are not permitted" get_group ~-10;
+  try_get ~succ:false "min group" get_group min_int;
+  try_get ~succ:false "max group" get_group max_int;
 ]
 
 let is_member ?succ:(b = true) name g_id h_id = 
@@ -339,10 +342,12 @@ let is_member ?succ:(b = true) name g_id h_id =
   test_equal name b res
 
 let member_test = [
-  is_member "correctly returns member is in group" 1 3;
-  is_member "ensure member in add_group suite was inserted" 3 4;
+  is_member "check that the host is a member by default (no invitation)" 1 7;
+  is_member "check that a non-host's invitation was acepted" 3 1;
+  (* is_member "ensure member in add_group suite was inserted" 3 4; *)
   is_member ~succ: false "member that is not in a group" 1 5;
-  is_member "check if nonexistent group contains an existing user" 0 3;
+  is_member ~succ:false 
+  "check if nonexistent group contains an existing user" 0 3;
 ]
 
 let test_restriction ?succ:(b = true) name rest_id rest_name = 
@@ -353,8 +358,8 @@ let test_restriction ?succ:(b = true) name rest_id rest_name =
 let ins_restriction (ad_id, rest_name) = add_restrictions_index 
     ad_id rest_name
 
-let del_restriction (ad_id, rest_name) = remove_restrictions_index 
-    ad_id rest_name
+let del_restriction (ad_id, rest_id) = remove_restrictions_index 
+    ad_id rest_id
 
 let restriction_1 = add_restrictions_index 1 "Vegan"
 let restriction_2 = add_restrictions_index 2 "dairy"
@@ -362,8 +367,8 @@ let restriction_3 = add_restrictions_index 3 "Gluten"
 let restriction_4 = () (*("peanuts")*)
 
 let change_restriction_test = [
-  test_passes "insertion of a valid restriction by an admin" ins_restriction 
-    (2, "peanuts");  
+  (* test_passes "insertion of a valid restriction by an admin" ins_restriction 
+    (2, "peanuts");   *)
   test_passes "invalid restriction name" ~succ:false ins_restriction 
     (2, ""); 
   test_passes "duplicate restriction name" ~succ:false ins_restriction 
@@ -373,20 +378,20 @@ let change_restriction_test = [
   test_passes "insertion of restriction not by admin" ~succ:false 
     ins_restriction (8, "shellfish");
   (*test deletions*)
-  test_passes "delete an existing restriction" ~succ:true del_restriction 
-    (2, 4);
-  test_passes "delete nonexistent restriction" ~succ:false ins_restriction 
-    (2, "soy");
+  (* test_passes "delete an existing restriction" ~succ:true del_restriction 
+    (2, 1); *)
+  test_passes "delete nonexistent restriction" ~succ:false del_restriction 
+    (2, 0);
 ] 
 
 let get_restrictions_test = [
   test_restriction ~succ:true "correctly returns a valid restriction" 
     1 "Vegan";
   test_restriction ~succ:true "case insensitive restriction"
-    2 "Dairy";
-  try_get "nonexistent restriction" get_restriction_by_id 15;
-  try_get "min restriction" get_restriction_by_id min_int;
-  try_get "max restriction" get_restriction_by_id max_int;
+    2 "dairy";
+  try_get ~succ:false "nonexistent restriction" get_restriction_by_id 15;
+  try_get ~succ:false "min restriction" get_restriction_by_id min_int;
+  try_get ~succ:false "max restriction" get_restriction_by_id max_int;
 ]
 
 let test_preference ?succ:(b = true) name pref_id pref_name = 
@@ -407,12 +412,12 @@ let change_preferences_test = [
     "check first preferences added to empty preferences" 1 "Takeout";
   test_preference ~succ:true "more than one person can add preference" 
     2 "Dog Friendly"; 
-  test_passes ~succ:true "test that user can add preference" 
-    ins_pref (1, "Takeout");
+  (* test_passes ~succ:true "test that user can add preference" 
+    ins_pref (1, "Takeout"); *)
   test_passes ~succ:false "ensures invalid member cannot add to preferences"
     ins_pref (0, "Outdoors");
-  test_passes ~succ:true "test that admin can delete preference"
-    del_pref (1, 1);
+  (* test_passes ~succ:true "test that admin can delete preference"
+    del_pref (1, 1); *)
   test_passes ~succ:false "test that invalid user cannot delete a preference"
     del_pref (0, 3);
   test_passes ~succ:false 
@@ -421,10 +426,12 @@ let change_preferences_test = [
 
 let get_preferences_test = [
   try_get "correctly returns the first preference id" get_preference_by_id 1;
-  try_get "ensures that nonexisting admin cannot get preference" 
+  try_get ~succ:false "ensures that nonexisting admin cannot get preference" 
     get_preference_by_id 5;
-  try_get "returns the minimum preference id" get_preference_by_id min_int;
-  try_get "returns the maximum preference id" get_preference_by_id max_int;
+  try_get ~succ:false "returns the minimum preference id"
+   get_preference_by_id min_int;
+  try_get ~succ:false "returns the maximum preference id" 
+  get_preference_by_id max_int;
 ]
 
 let test_cuisine ?succ:(b = true) name c_id c_name = 
@@ -480,36 +487,82 @@ let delete_group_test = [
 
 let kick_member (g_id, u_id, h_id) = delete_from_group g_id u_id h_id
 
-let has_members (g_id, h_id) = List.mem h_id (get_group g_id).members
+let has_member (g_id, h_id) = List.mem h_id (get_group g_id).members
 
 (*use [is_member] to assess whether a user has a group*)
 let delete_from_group_test = [
-
+  test_passes ~succ:true 
+  "kick first member of group" kick_member (1, 3, 7);
+  test_passes ~succ:false 
+  "kick somone not in group" kick_member (1, 2, 7);
+  test_passes ~succ:false 
+  "cannot kick host from group" kick_member (1, 7, 7);
+  test_passes ~succ:false 
+  "kick the maximum user_id from the group" kick_member (2, max_int, 7);
+  test_passes ~succ:false
+  "kick the minimum user_id from the group" kick_member (2, min_int, 7);
+  try_get ~succ:true
+  "get the host of the group, since cannot delete host" has_member (1, 7);
+  try_get ~succ:false 
+  "cannot get a nonexisting member of the group" has_member (1, 3);
+  try_get ~succ:false
+  "cannot get from a member from a nonexisting group" has_member (0, 3);
 ]
 
 let is_host (g_id, u_id) = (get_group g_id).host_id = u_id
 
 let change_host (g_id, u_id, h_id) = reassign_host g_id u_id h_id 
 
-let reassign_host_test = []
+let reassign_host_test = [
+  test_passes ~succ:true "ensures that original host is correct" is_host (1, 7);
+  test_passes ~succ:false "cannot return invalid host" is_host (2, 0);
+  test_passes ~succ:false "cannot get host of invalid group" is_host (0, 2);
+  test_passes ~succ:true 
+  "successfully change host" change_host (1, 2, 7);
+  test_passes ~succ:false 
+  "ensures cannot change host of invalid group" change_host (0, 2, 5);
+  test_passes ~succ:false
+  "cannot change host if user does not exist" change_host (3, 10, 6);
+  test_passes ~succ:false 
+  "cannot change host if host_id is invalid" change_host (4, 2, 5);
+  test_passes ~succ:false
+  "cannot assign host if user_id is already host" change_host (4, 5, 5);
+]
 
-let rests_exist name ?survey:(s = true) grp_id = 
+let rests_exist ?survey:(s = true) ?succ:(b = false) name grp_id = 
   let restaurants =   
     if s then (get_group grp_id).top_5 else (get_group grp_id).top_pick in 
   let result = 
     match restaurants with 
     | Some _ -> true
     | None -> false in 
-  name >:: fun _ -> assert_bool "result was not determined" result
+  name >:: fun _ -> assert_bool "result was not determined" (result = b)
 
-(* let submit_survey = calculate_survey  *)
-(* let survey_1 = ans_survey  *)
+(*submit surveys for group 3*)
+let survey_1 = ans_survey 1 3 76.423 70.5005 "25" "3" 
+let survey_2 = ans_survey 6 3 ~-76.423 64.5005 "25" "14" 
 
-let survey_test = []
+(*submit survey for group 2*)
+let survey_3 = ans_survey 5 2 76.423 70.5005 "25,55" "3,5" 
 
-let vote_exists grp_id = (get_group grp_id).top_5 
+let submit_group_3 = 3 6
+let submit_group_2 = 2 5 
 
-let voting_test = []
+let survey_test = [
+  rests_exist "results for two-person group exist" 3;
+  rests_exist "results for a group with incomplete votes" 2;
+  rests_exist ~succ:false "no results for a group without a survey" 1;
+]
+
+let vote_1 = add_votes 3 1 [4;1;2;0;3]
+let vote_2 = add_votes 3 6 [1;0;2;3;4]
+let vote_3 = add_votes 2 5 [4;1;2;0;3]
+
+let voting_test = [
+  rests_exist "results for two-person group exist" 3;
+  rests_exist "vote with only the host succeeds" 2;
+  rests_exist ~succ:false "votes for a group that did not have a vote" 1;
+]
 
 let search_test = []
 
@@ -527,12 +580,12 @@ let tests = "test suite for uPick" >::: List.flatten [
     add_group_info_test;
     add_group_test;
     get_group_test;
-    (* member_test;
+    member_test;
     change_restriction_test;
     get_restrictions_test;
     change_preferences_test;
     get_preferences_test;
-    cuisines_test;
+    (* cuisines_test;
     group_invites_test;
     delete_group_test;
     visited_test;
