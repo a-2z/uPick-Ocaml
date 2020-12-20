@@ -1,4 +1,3 @@
 (test 
-  (name unit_test) 
+  (name test) 
     (libraries lib ounit2))
-    (rule (copy a b))

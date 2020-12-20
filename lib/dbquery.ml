@@ -626,5 +626,15 @@ let add_feedback rating comments =
               ", '" ^ comments ^ "'); " in 
     make_response (exec db sql)
 
-
+let top_visited () =
+(* let rest_list = lst_from_col "restaurant" "visited_restaurants" 
+  "1 = 1" (fun x -> x) in  *)
+  let sql = "SELECT restaurant, 
+  COUNT (restaurant) AS 'value_occurrance' 
+  FROM visited_restaurants
+  GROUP BY restaurant
+  ORDER BY 'value_occurrence' DESC; " in
+  ignore(make_response (exec db sql));
+  ["apple"]
+  
 let create_tables () = Db.create_tables ()

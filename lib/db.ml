@@ -197,13 +197,17 @@ let create_feedbacks_table () =
 
 
 let set_admins () = 
-  let env_field fld = List.assoc fld (Dotenv.parse ())
+  (* let env_field fld = List.assoc fld (Dotenv.parse ())
                       |> String.split_on_char ',' in
   let usernames = env_field "ADMINS" in
   let passwords = List.map (fun pw -> pw |> Bcrypt.hash 
                                       |> Bcrypt.string_of_hash)
       (env_field "PASSWORDS") in 
-  let names = env_field "NAMES" in 
+  let names = env_field "NAMES" in  *)
+  let usernames, passwords, names = 
+  ["andrew123";"2";"3";"4"], 
+  ["Password123";"Password123";"Password123";"Password123"], 
+  ["Andrew";"Andrew";"Andrew";"Andrew"] in
   try begin
     assert (List.length usernames = List.length passwords && 
             List.length usernames = List.length names);
