@@ -33,6 +33,16 @@ exception Not_found
 (**[add_user username password_hash name] inserts a user in the database.*)
 val add_user : string -> string -> string -> int64 option
 
+(**[update_username user_id username] updates the database with the new 
+   desired username for the user.
+   Requires: user_id exists in the database *)
+val update_username : int -> string -> int64 option
+
+(**[update_password user_id password] updates the database with the new 
+   desired password for the user.
+   Requires: user_id exists in the database *)
+val update_password : int -> string -> int64 option
+
 (** [delete_user user_id delete_id] removes the user associated with the 
     delete_id as long as user_id is equivalent to delete_id or user_id 
     associates with a user who is also an admin. 

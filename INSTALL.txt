@@ -1,0 +1,34 @@
+Upon installation this should include various files including the folder lib 
+and testing, which contains most of the source code we have written and
+folder with our unit tests respectively, and general other documents such as 
+dune files and the Makefile . 
+
+In order to use current version make sure to install the following 
+dependencies:
+
+cohttp-lwt-unix
+dotenv
+opium
+safepass
+sqlite3 
+odoc
+ssl
+tls
+
+NOTE: Packages with system dependencies may prompt further installations that 
+must also be installed
+
+Once these dependencies are installed, you can run the command make build to 
+have all the files compile. 
+
+Afterward, you can run the make test command to execute the OUnit test suite. 
+In addition, you can also run make docs to extract the HTML documentation for
+our compilation units.
+
+You may run make script to preload some data into our database, and then you 
+can run make app to run the system on localhost. 
+
+We use the app Postman to model changes (making get/post requests to 
+various routes) and DB Browser for SQLite to have a visualization for everytime
+we make updates for our tables including insertions and deletions for all 
+our tables -- users, friends, group_invites, groups, visited etc.

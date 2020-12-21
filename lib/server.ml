@@ -93,6 +93,22 @@ let user_inserter json ins_func =
       (member "name" json |> to_string)
   end with _ -> raise (Password_failure "invalid password")
 
+let username_update_inserter json ins_func = 
+  let u_id = id_by_usr (member "username" json |> to_string) in 
+  ins_func
+    u_id
+    (member "new_username" json |> to_string)
+
+let password_update_inserter json ins_func = 
+  let u_id = id_by_usr (member "username" json |> to_string) in 
+  let raw_pw = member "new_password" json |> to_string in 
+  try 
+    assert (Passwords.is_valid raw_pw);
+    ins_func
+      u_id
+      (raw_pw |> Bcrypt.hash |> Bcrypt.string_of_hash) 
+  with _ -> raise (Password_failure "invalid password")
+
 let user_delete_inserter json ins_func = 
   let u_id = id_by_usr (member "username" json |> to_string) in 
   ins_func 
@@ -294,6 +310,12 @@ let post_list = [
   (* let insert_user =  *)
   post "/users" (fun req -> 
       load_json req add_user user_inserter >>= fun a -> make_response a);
+
+  post "/users/newusername" (fun req -> 
+      load_json_login req update_username username_update_inserter);
+
+  post "/users/newpassword" (fun req -> 
+      load_json_login req update_password password_update_inserter);
 
   post "/users/delete" (fun req -> 
       load_json_login req delete_user user_delete_inserter);

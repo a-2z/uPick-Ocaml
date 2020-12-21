@@ -117,6 +117,22 @@ let add_user username password name =
     print_endline username;
     make_response (exec db sql)
 
+let update_username user_id username = 
+  let str_uid = string_of_int user_id in 
+  if username <> "" then
+    let sql = "UPDATE users 
+SET username = '" ^ username ^ "' 
+WHERE rowid = " ^ str_uid ^ ";" in 
+    make_response (exec db sql)
+  else None
+
+let update_password user_id password = 
+  let str_uid = string_of_int user_id in 
+  let sql = "UPDATE users 
+SET password = '" ^ password ^ "' 
+WHERE rowid = " ^ str_uid ^ ";" in 
+  make_response (exec db sql)
+
 (**[add_friends friend1 friend2 inserts a pairing of two friends]
    Requires: friend1 is not friend2
    Raises: Invalid_arg*)
