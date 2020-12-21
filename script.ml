@@ -1,14 +1,13 @@
 open Lib.Dbquery
 
-(* make passwords good? *)
 let user_list = [
   ("reetuparikh", "Reetu123", "Reetu");
   ("andrewzeng", "Andrew123", "Andrew");
   ("andrewosorio", "Andrewo123", "Andrew");
   ("zachtegtmeier", "Zach123", "Zachary");
-  ("johndoe", "johnny", "John");
-  ("janedoe", "jane123", "Jane");
-  ("ben", "benny", "Ben");
+  ("johndoe", "Johnny", "John");
+  ("janedoe", "Jane123", "Jane");
+  ("ben", "Benny135", "Ben");
 ]
 
 let friends_list = [
