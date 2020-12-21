@@ -26,7 +26,8 @@ In addition, you can also run make docs to extract the HTML documentation for
 our compilation units.
 
 You may run make script to preload some data into our database, and then you 
-can run make app to run the system on localhost. 
+can run make app to run the system on localhost. If you ever want to reset to 
+an empty database run make clear. 
 
 We use the app Postman to model changes (making get/post requests to 
 various routes) and DB Browser for SQLite to have a visualization for everytime

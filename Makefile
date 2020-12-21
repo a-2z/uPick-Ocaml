@@ -16,6 +16,9 @@ test:
 	@dune clean
 	@dune runtest -j 1
 
+clear:
+	rm upick.db
+
 clean:
 	@dune clean
 	rm -rf doc.public project.zip
