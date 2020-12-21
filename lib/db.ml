@@ -48,6 +48,7 @@ let create_restrictions_table () =
     restriction INT NOT NULL, 
     PRIMARY KEY(user_id, restriction),
     FOREIGN KEY(restriction) REFERENCES restriction_index(rowid)
+    ON DELETE SET NULL,
     FOREIGN KEY(user_id) REFERENCES users(rowid)
     ON DELETE SET NULL);
     |}
@@ -102,7 +103,7 @@ let create_groups_table () =
     voted INTEGER DEFAULT 0,
     PRIMARY KEY(group_id, member_id),
     FOREIGN KEY(group_id) REFERENCES group_info(rowid)
-          ON DELETE SET NULL
+          ON DELETE SET NULL,
     FOREIGN KEY(member_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
   |}
@@ -120,7 +121,7 @@ let create_votes_table () =
     ranking INTEGER NOT NULL,
     restaurant_id INTEGER NOT NULL,
     FOREIGN KEY(group_id) REFERENCES group_info(rowid)
-          ON DELETE SET NULL
+          ON DELETE SET NULL,
     FOREIGN KEY(user_id) REFERENCES groups(member_id)
           ON DELETE SET NULL);
     |}
@@ -136,7 +137,7 @@ let create_group_invites_table () =
     group_id INTEGER NOT NULL,  
     user_id INTEGER NOT NULL, 
     FOREIGN KEY(group_id) REFERENCES group_info(rowid)
-          ON DELETE SET NULL
+          ON DELETE SET NULL,
     FOREIGN KEY(user_id) REFERENCES users(rowid)
           ON DELETE SET NULL);
     |}
@@ -150,7 +151,8 @@ let create_cuisines_table () =
   let create_cuisine_table = {|
     CREATE TABLE IF NOT EXISTS cuisines ( 
     cuisine_id INTEGER NOT NULL,  
-    cuisine TEXT NOT NULL);
+    cuisine TEXT NOT NULL,
+    PRIMARY KEY(cuisine_id, cuisine));
     |}
   in match exec db create_cuisine_table with
   | Rc.OK -> ()
@@ -161,7 +163,8 @@ let create_cuisines_table () =
 let create_preferences_table () = 
   let create_preference_table = {|
     CREATE TABLE IF NOT EXISTS preferences ( 
-    preference TEXT NOT NULL);
+    preference TEXT UNIQUE NOT NULL,
+    PRIMARY KEY(preference));
     |}
   in match exec db create_preference_table with
   | Rc.OK -> ()

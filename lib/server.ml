@@ -106,8 +106,9 @@ let friend_inserter json ins_func =
     (member "friend" json |> to_int) 
 
 let rest_inserter json ins_func = 
+  let u_id = id_by_usr (member "username" json |> to_string) in
   ins_func
-    (member "user_id" json |> to_int)
+    u_id
     (member "restriction_id" json |> to_int)
 
 let rest_indx_inserter json ins_func = 
@@ -245,7 +246,7 @@ let get_list = [
         respond' (`Json (Ezjsonm.from_string {|{"success": false}|})));
 
   (* get all restrictions *)
-  get "/restrictions" 
+  get "/restrictions/index" 
     (fun _ -> let restriction = Dbquery.get_restrictions () in 
       `Json (Ezjsonm.list Ezjsonm.string restriction) |> respond');
 
@@ -288,6 +289,7 @@ let get_list = [
 ]
 
 let post_list = [
+
   post "/feedback"(fun req -> 
       load_json_login req add_feedback feedback_inserter);
 
@@ -303,32 +305,36 @@ let post_list = [
       load_json_login req add_friends friend_inserter);
 
   (* let insert_restriction =  *)
-  post "/restrictions" (fun req -> 
+  post "/restrictions/add" (fun req -> 
       load_json req add_restrictions rest_inserter >>= 
       fun a -> make_response a);
 
+  post "/restrictions/remove" (fun req -> 
+      load_json req rm_restrictions rm_rest_inserter >>= 
+      fun a -> make_response a);
+
   (* let insert_restrictions_index =  *)
-  post "/restrictions/add" (fun req -> 
+  post "/restrictions/index/add" (fun req -> 
       load_json req add_restrictions_index rest_indx_inserter >>= 
       fun a -> make_response a);
 
-  post "/preferences/add" (fun req -> 
+  post "/preferences/index/add" (fun req -> 
       load_json req add_preferences_index pref_indx_inserter >>= 
       fun a -> make_response a);
 
-  post "/cuisine/add" (fun req -> 
+  post "/cuisine/index/add" (fun req -> 
       load_json req add_cuisine add_cuisine_inserter >>= 
       fun a -> make_response a);
 
-  post "/restrictions/remove" (fun req -> 
+  post "/restrictions/index/remove" (fun req -> 
       load_json req remove_restrictions_index rm_rest_inserter >>= 
       fun a -> make_response a);
 
-  post "/preferences/remove" (fun req -> 
+  post "/preferences/index/remove" (fun req -> 
       load_json req remove_preferences_index rm_pref_inserter >>= 
       fun a -> make_response a);
 
-  post "/cuisine/remove" (fun req -> 
+  post "/cuisine/index/remove" (fun req -> 
       load_json req remove_cuisine rm_cuisine_inserter >>= 
       fun a -> make_response a);
 

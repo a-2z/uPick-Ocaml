@@ -49,6 +49,12 @@ val add_friends : int -> int -> int64 option
     Requires: restriction_id and user_id exist in the database *)
 val add_restrictions : int -> int -> int64 option 
 
+(** [rm_restrictions user_id restriction_id] performs a restriction deletion 
+    into a table where a user is paired with a dietary restriction
+    associatd with restriction_id.
+    Requires: restriction_id and user_id exist in the database *)
+val rm_restrictions : int -> int -> int64 option
+
 (** [add_restrictions_index user_id restriction] inserts a restriction into a 
     table and associates it with an id if the user is an admin.
     Requires: user_id exists in the database and that the restriciton is a 

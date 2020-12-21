@@ -140,11 +140,32 @@ let add_friends friend1 friend2 =
     print_endline "Cannot friend yourself";
     None
 
-let add_restrictions user_id restriction = 
-  let sql =
-    Printf.sprintf "INSERT INTO restrictions VALUES(%d, %d); "
-      user_id restriction in
-  make_response (exec db sql)
+let add_restrictions user_id restriction_id = 
+  if count "restriction_index" ("rowid = " ^ 
+                                string_of_int restriction_id) > 0 then
+    let sql = Printf.sprintf "INSERT INTO restrictions VALUES(%d, %d); "
+        user_id restriction_id in
+    make_response (exec db sql)
+  else None
+
+let rm_restrictions user_id restriction_id = 
+  let str_uid = string_of_int user_id in
+  let str_rid = string_of_int restriction_id in 
+  if count "restrictions" ("user_id = " ^ str_uid ^
+                           " AND restriction = " ^ str_rid) > 0 then
+    let sql = delete_sql "restrictions" ("user_id = " ^ str_uid ^
+                                         " AND restriction = " ^ str_rid) in 
+    make_response (exec db sql)
+  else None
+
+let edit_entry text = 
+  let lst = text |> String.trim |> String.lowercase_ascii 
+            |> String.split_on_char ' '
+  in 
+  let rec uppercase acc = function 
+    | [] -> acc
+    | h :: t -> uppercase (acc ^ String.capitalize_ascii h ^ " ") t in 
+  String.trim (uppercase "" lst)
 
 let add_rest_pref_helper user_id sql_text = 
   if is_admin user_id
@@ -154,16 +175,18 @@ let add_rest_pref_helper user_id sql_text =
   else None
 
 let add_restrictions_index user_id restriction = 
-  let sql =
-    Printf.sprintf "INSERT INTO restriction_index VALUES('%s'); "
-      restriction in
-  add_rest_pref_helper user_id sql
+  if restriction = "" then None else
+    let sql =
+      Printf.sprintf "INSERT INTO restriction_index VALUES('%s'); "
+        (edit_entry restriction) in
+    add_rest_pref_helper user_id sql
 
 let add_preferences_index user_id preference = 
-  let sql =
-    Printf.sprintf "INSERT INTO preferences VALUES('%s'); "
-      preference in
-  add_rest_pref_helper user_id sql
+  if preference = "" then None else
+    let sql =
+      Printf.sprintf "INSERT INTO preferences VALUES('%s'); "
+        (edit_entry preference) in
+    add_rest_pref_helper user_id sql
 
 let rm_rest_pref_helper user_id sql_text = 
   if is_admin user_id
@@ -191,11 +214,12 @@ let remove_preferences_index user_id preference_id =
   else None
 
 let add_cuisine user_id cuisine_id cuisine = 
+  if cuisine = "" then None else
   if is_admin user_id
   then
     let sql =
       Printf.sprintf "INSERT INTO cuisines VALUES(%d, '%s'); "
-        cuisine_id cuisine in
+        cuisine_id (edit_entry cuisine) in
     make_response (exec db sql)
   else None
 
@@ -234,17 +258,18 @@ let add_group_invites group_id user_id host_id =
   else None
 
 let add_group_info group_name host_id = 
-  let sql =
-    Printf.sprintf 
-      "INSERT INTO group_info (group_name, host_id) VALUES('%s', %d); "
-      group_name host_id in
-  match exec db sql with
-  | Rc.OK ->
-    let id = Sqlite3.last_insert_rowid db in
-    Printf.printf "Row inserted with id %Ld\n" id;
-    ignore (add_group_invites (Int64.to_int id) host_id host_id);
-    ignore (join_group (Int64.to_int id) host_id); Some id
-  | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None 
+  if group_name = "" then None else
+    let sql =
+      Printf.sprintf 
+        "INSERT INTO group_info (group_name, host_id) VALUES('%s', %d); "
+        group_name host_id in
+    match exec db sql with
+    | Rc.OK ->
+      let id = Sqlite3.last_insert_rowid db in
+      Printf.printf "Row inserted with id %Ld\n" id;
+      ignore (add_group_invites (Int64.to_int id) host_id host_id);
+      ignore (join_group (Int64.to_int id) host_id); Some id
+    | r -> prerr_endline (Rc.to_string r); prerr_endline (errmsg db); None 
 
 let remove_a_user str_did = 
   let lst = lst_from_col "group_id" "groups" ("member_id = " ^ str_did) 
@@ -654,5 +679,7 @@ let top_visited () =
     let value = (row_data stmnt).(0) |> Data.to_string_coerce in
     arr := Array.append !arr [|value|] done;
   Array.to_list !arr
+
+
 
 let create_tables () = Db.create_tables ()

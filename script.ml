@@ -123,8 +123,8 @@ let _ =
   add_friends' friends_list;
   add_group_info' group_info_list;
   add_groups' group_invite_list;
-  add_restrictions' restriction_list;
   add_rest_idx' restriction_index_list;
+  add_restrictions' restriction_list;
   add_pref_idx' preference_index_list;
   add_cuisine_idx' cuisine_index_list;
   add_survey' sample_survey;
