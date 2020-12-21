@@ -122,7 +122,7 @@ let try_get ?succ:(b = true) name get_func id =
 let test_user name id (u, p, n) = 
   (*add a user to the database*)
   let user = make_user id u 
-  (Bcrypt.hash p |> Bcrypt.string_of_hash) n in 
+      (Bcrypt.hash p |> Bcrypt.string_of_hash) n in 
   test_equal name 
     {(get_user id) with password = p} 
     {user with password = p}
@@ -208,17 +208,17 @@ let add_friends_test = [
   test_friends "insertion of the last friendship is valid" 7 8;
   test_friends "insertion of first friend and last user are valid" 6 7; 
   try_get "insert two valid friends" 
-      ~succ:true ins_friends (1, 2); 
+    ~succ:true ins_friends (1, 2); 
   try_get "friend first and last users" 
-      ~succ:true ins_friends (2, 3); 
+    ~succ:true ins_friends (2, 3); 
   test_friends ~are_friends:true 
-      "users are friends following insertion" 6 7; 
+    "users are friends following insertion" 6 7; 
   test_passes "the same friendship, reversed" 
-      ~succ:false ins_friends (8, 5);
+    ~succ:false ins_friends (8, 5);
   test_passes "friendships are unique" 
-      ~succ:false ins_friends (5, 8);
+    ~succ:false ins_friends (5, 8);
   test_friends ~are_friends:false 
-      "test that previous insert was blocked" 1 1;
+    "test that previous insert was blocked" 1 1;
 ]
 
 let is_friend_test = [
@@ -267,9 +267,9 @@ let add_group_info_test = [
 
   (* attempt new insertions*)
   test_passes ~succ:false "one host cannot create two groups with the same name"
-     ins_group_info ("birthday party", 3);
+    ins_group_info ("birthday party", 3);
   test_passes ~succ:false "incorrect host_id cannot create group" 
-     ins_group_info ("birthday party", 0);
+    ins_group_info ("birthday party", 0);
 ]
 
 (**[ins_group_invite] inserts [u_id] into [g_id] by invitation of [h_id]*)
@@ -382,7 +382,7 @@ let get_restrictions_test = [
   test_restriction ~succ:true "correctly returns a valid restriction" 
     1 "Vegan";
   test_restriction "case insensitive restriction"
-     2 "dairy";
+    2 "dairy";
   try_get "nonexistent restriction" get_restriction_by_id 15;
   try_get "min restriction" get_restriction_by_id min_int;
   try_get  "max restriction" get_restriction_by_id max_int;

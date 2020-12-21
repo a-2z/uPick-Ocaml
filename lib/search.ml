@@ -44,7 +44,7 @@ let string_of_t t =
   |> (fun l -> "{\"restaurants\": [\n" ^ l ^ "\n]}")
 
 (** [let split_str_lst s] is the first string in the comma-separated string 
-[s] *)
+    [s] *)
 let split_str_lst s = 
   match String.split_on_char ',' s with
   | [] -> ""
@@ -114,9 +114,11 @@ let rank_highlights preferences =
     | [] -> acc 
     | h :: t -> begin if List.mem_assoc h acc then 
           let count = List.assoc h acc in 
-          let new_lst = acc |> List.remove_assoc h |> List.cons (h, count+1) in 
-          helper new_lst t else 
-          helper (List.cons (h,1) acc) t end in 
+          let new_lst = acc 
+                        |> List.remove_assoc h 
+                        |> List.cons (h, count + 1) in 
+          helper new_lst t 
+        else helper (List.cons (h,1) acc) t end in 
   let pref = helper [] preferences in
   List.sort compare_op pref
 
@@ -176,7 +178,7 @@ let get_rests ?cuisine:(c = []) loc_x loc_y range price pref =
             "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
             ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ 
             "&cuisines=" ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" 
-            in bind_request hdr url price pref
+  in bind_request hdr url price pref
 
 (*Calculate the winner of a vote given by an id (position in a list)*)
 let to_winner json = 

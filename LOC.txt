@@ -1,12 +1,13 @@
-language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-OCaml                           15            327            320           1876
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+OCaml                           15            319            303           1870
 make                             1              9              0             26
-D                               13              0              0             13
-Markdown                         1              3              0              4
+Markdown                         1              4              0              6
 JSON                             1              0              0              3
 -------------------------------------------------------------------------------
-SUM:                            31            339            320           1922
+SUM:                            18            332            303           1905
+-------------------------------------------------------------------------------
 
 Our physical lines of code originally numbered a hair over 2000, but we opted
 to refactor our solution to produce a more complete and polished product. 

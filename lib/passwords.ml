@@ -5,11 +5,9 @@ let ascii_range min max c =
 
 let has_digit = List.exists (ascii_range 48 57)
 
-let has_upper = 
-  List.exists (ascii_range 65 90)
+let has_upper = List.exists (ascii_range 65 90)
 
-let has_lower = 
-	List.exists (ascii_range 97 122)
+let has_lower = List.exists (ascii_range 97 122)
 
 let is_long pw = List.length pw >= 7
 
