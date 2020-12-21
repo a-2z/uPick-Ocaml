@@ -1,12 +1,14 @@
-Upon installation this should include an a folder of demo_code, primarily used 
-as a model from MS1 and database files. These create tables and allow you to 
-get and post information to the database tables. 
+Upon installation this should include various files including the folder lib and testing, 
+which contains most of the source code we have written and
+folder with our unit tests respectively, and general other documents such as dune files 
+and the Makefile . 
 
-In order to use current version make sure to first run "dune build main.exe" in 
+In order to use current version make sure to install the following dependencies:
+ to first run "dune build main.exe" in 
 terminal (in the 3110Project folder) to compile all necessary files. If 
 dependencies are required, please install them with OPAM. After that 
 run "dune exec ./main.exe" to run a server on localhost to use any functionality 
 that would involve creating/getting users, groups, restrictions, and friends. 
 We use the app Postman to model these changes (making get/post requests to 
 various routes) and DB Browser for SQLite to browse the database we have 
-created. 
+created.

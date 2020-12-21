@@ -680,6 +680,4 @@ let top_visited () =
     arr := Array.append !arr [|value|] done;
   Array.to_list !arr
 
-
-
 let create_tables () = Db.create_tables ()

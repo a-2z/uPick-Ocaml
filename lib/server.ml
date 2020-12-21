@@ -9,10 +9,10 @@ open Yojson.Basic.Util
 (* module type ServerMaker = functor (M1 : Dbquery) -> functor (M2 : Db) ->  *)
 
 (**************************JSON builders and parsers***************************)
-exception Login_failure of string
+exception Login_failure of string 
 exception Password_failure of string 
 
-let login json =
+let login json = 
   let pw = (member "password" json |> to_string) in 
   let stor_pw = (member "username" json |> to_string |> login) in 
   match stor_pw with 
@@ -211,7 +211,7 @@ let vote_inserter json ins_func =
 (* Route not found *)     
 let default =
   not_found (fun _req ->
-      `Json Ezjsonm.(dict [("message", string "Route not found")]) |> respond')
+      `Json (Ezjsonm.from_string "Route not found") |> respond')
 
 (* grabs a list of all restrictions that exist *)
 (*Added a function for restrictions even though it was not in interface *)

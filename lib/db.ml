@@ -29,10 +29,10 @@ let create_friends_table () =
   CREATE TABLE IF NOT EXISTS friends ( 
     friend_1 INTEGER NOT NULL, 
     friend_2 INTEGER NOT NULL, 
-    PRIMARY KEY(friend_1, friend_2),
-    FOREIGN KEY(friend_1) REFERENCES users(rowid)
+    PRIMARY KEY (friend_1, friend_2),
+    FOREIGN KEY (friend_1) REFERENCES users (rowid)
     ON DELETE SET NULL, 
-    FOREIGN KEY(friend_2) REFERENCES users(rowid)
+    FOREIGN KEY (friend_2) REFERENCES users (rowid)
     ON DELETE SET NULL);
   |}
   in match exec db create_friends with
@@ -46,10 +46,10 @@ let create_restrictions_table () =
   CREATE TABLE IF NOT EXISTS restrictions ( 
     user_id INT NOT NULL, 
     restriction INT NOT NULL, 
-    PRIMARY KEY(user_id, restriction),
-    FOREIGN KEY(restriction) REFERENCES restriction_index(rowid)
+    PRIMARY KEY (user_id, restriction),
+    FOREIGN KEY (restriction) REFERENCES restriction_index (rowid)
     ON DELETE SET NULL,
-    FOREIGN KEY(user_id) REFERENCES users(rowid)
+    FOREIGN KEY (user_id) REFERENCES users (rowid)
     ON DELETE SET NULL);
     |}
   in match exec db create_restrictions with
@@ -78,8 +78,8 @@ let create_groups_info_table () =
     voting_allowed INTEGER DEFAULT 0,
     top_5 TEXT, --JSON
     top_pick TEXT, --JSON
-    PRIMARY KEY(group_name, host_id),
-    FOREIGN KEY(host_id) REFERENCES users(rowid)
+    PRIMARY KEY (group_name, host_id),
+    FOREIGN KEY (host_id) REFERENCES users (rowid)
           ON DELETE SET NULL);
   |}
   in match exec db create_groups_info_table with
@@ -101,10 +101,10 @@ let create_groups_table () =
     preferences TEXT,
     surveyed INTEGER DEFAULT 0,
     voted INTEGER DEFAULT 0,
-    PRIMARY KEY(group_id, member_id),
-    FOREIGN KEY(group_id) REFERENCES group_info(rowid)
+    PRIMARY KEY (group_id, member_id),
+    FOREIGN KEY (group_id) REFERENCES group_info (rowid)
           ON DELETE SET NULL,
-    FOREIGN KEY(member_id) REFERENCES users(rowid)
+    FOREIGN KEY (member_id) REFERENCES users (rowid)
           ON DELETE SET NULL);
   |}
   in match exec db create_groups_table with
@@ -120,9 +120,9 @@ let create_votes_table () =
     user_id INTEGER NOT NULL, 
     ranking INTEGER NOT NULL,
     restaurant_id INTEGER NOT NULL,
-    FOREIGN KEY(group_id) REFERENCES group_info(rowid)
+    FOREIGN KEY (group_id) REFERENCES group_info (rowid)
           ON DELETE SET NULL,
-    FOREIGN KEY(user_id) REFERENCES groups(member_id)
+    FOREIGN KEY (user_id) REFERENCES groups (member_id)
           ON DELETE SET NULL);
     |}
   in match exec db create_vote_table with
@@ -136,9 +136,9 @@ let create_group_invites_table () =
     CREATE TABLE IF NOT EXISTS group_invites ( 
     group_id INTEGER NOT NULL,  
     user_id INTEGER NOT NULL, 
-    FOREIGN KEY(group_id) REFERENCES group_info(rowid)
+    FOREIGN KEY (group_id) REFERENCES group_info (rowid)
           ON DELETE SET NULL,
-    FOREIGN KEY(user_id) REFERENCES users(rowid)
+    FOREIGN KEY (user_id) REFERENCES users (rowid)
           ON DELETE SET NULL);
     |}
   in match exec db create_group_invite_table with
@@ -152,7 +152,7 @@ let create_cuisines_table () =
     CREATE TABLE IF NOT EXISTS cuisines ( 
     cuisine_id INTEGER NOT NULL,  
     cuisine TEXT NOT NULL,
-    PRIMARY KEY(cuisine_id, cuisine));
+    PRIMARY KEY (cuisine_id, cuisine));
     |}
   in match exec db create_cuisine_table with
   | Rc.OK -> ()
@@ -164,7 +164,7 @@ let create_preferences_table () =
   let create_preference_table = {|
     CREATE TABLE IF NOT EXISTS preferences ( 
     preference TEXT UNIQUE NOT NULL,
-    PRIMARY KEY(preference));
+    PRIMARY KEY (preference));
     |}
   in match exec db create_preference_table with
   | Rc.OK -> ()
@@ -177,7 +177,7 @@ let create_visited_restaurant_table () =
   CREATE TABLE IF NOT EXISTS visited_restaurants (
     user_id INTEGER NOT NULL,
     restaurant TEXT NOT NULL, --JSON
-    FOREIGN KEY(user_id) REFERENCES users(rowid)
+    FOREIGN KEY (user_id) REFERENCES users (rowid)
           ON DELETE SET NULL);
   |}
   in match exec db create_visit_table with
@@ -202,8 +202,8 @@ let set_admins () =
   let env_field fld = List.assoc fld (Dotenv.parse ())
                       |> String.split_on_char ',' in
   let usernames = env_field "ADMINS" in
-  let passwords = List.map (fun pw -> pw |> Bcrypt.hash 
-                                      |> Bcrypt.string_of_hash)
+  let passwords = List.map 
+  (fun pw -> pw |> Bcrypt.hash |> Bcrypt.string_of_hash)
       (env_field "PASSWORDS") in 
   let names = env_field "NAMES" in 
   try begin

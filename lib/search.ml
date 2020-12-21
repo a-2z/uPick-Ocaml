@@ -44,7 +44,7 @@ let string_of_t t =
   |> (fun l -> "{\"restaurants\": [\n" ^ l ^ "\n]}")
 
 (** [let split_str_lst s] is the first string in the comma-separated string 
-[s] *)
+    [s] *)
 let split_str_lst s = 
   match String.split_on_char ',' s with
   | [] -> ""
@@ -77,7 +77,8 @@ let to_result json =
     timing = json |> member "timings" |> to_string;
     phone = json |> member "phone_numbers" |> to_string 
             |> split_str_lst;
-    reservation = json |> member "is_table_reservation_supported" 
+    reservation = json 
+                  |> member "is_table_reservation_supported" 
                   |> to_int 
                   |> ( <> ) 0;
     takeout = json |> member "has_online_delivery" 
@@ -114,7 +115,9 @@ let rank_highlights preferences =
     | [] -> acc 
     | h :: t -> begin if List.mem_assoc h acc then 
           let count = List.assoc h acc in 
-          let new_lst = acc |> List.remove_assoc h |> List.cons (h, count+1) in 
+          let new_lst = acc 
+                        |> List.remove_assoc h 
+                        |> List.cons (h, count + 1) in 
           helper new_lst t else 
           helper (List.cons (h,1) acc) t end in 
   let pref = helper [] preferences in
@@ -141,7 +144,10 @@ let filter_highlights highlights results =
     let rest_scores = 
       List.rev (results_recurser [] sorted_highlights results) in 
     let sorted_rests = List.sort compare_op rest_scores in 
-    sorted_rests |> List.split |> fst |> splice 5
+    sorted_rests 
+    |> List.split 
+    |> fst 
+    |> splice 5
 
 let process_results price pref inbound =  
   inbound 
@@ -158,8 +164,7 @@ let process_results price pref inbound =
    as well as the API key *)
 let bind_request header url price pref = 
   Cohttp_lwt_unix.Client.get ~headers:header (Uri.of_string url)
-  >>= fun a -> snd a 
-               |> Cohttp_lwt__.Body.to_string 
+  >>= fun a -> snd a |> Cohttp_lwt__.Body.to_string 
   >>= fun b -> b |> process_results price pref |> Lwt.return
 
 (**[get_rests num cuisine loc_x Loc_y range price] returns a list of [num] 
@@ -176,7 +181,7 @@ let get_rests ?cuisine:(c = []) loc_x loc_y range price pref =
             "&lat=" ^ string_of_float loc_x ^ "&lon=" ^ string_of_float loc_y 
             ^ "&radius=" ^ (string_of_float (float_of_int range)) ^ 
             "&cuisines=" ^ (String.concat "%2c" c) ^ "&sort=rating&order=desc" 
-            in bind_request hdr url price pref
+  in bind_request hdr url price pref
 
 (*Calculate the winner of a vote given by an id (position in a list)*)
 let to_winner json = 
