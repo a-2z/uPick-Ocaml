@@ -33,3 +33,7 @@ We use the app Postman to model changes (making get/post requests to
 various routes) and DB Browser for SQLite to have a visualization for everytime
 we make updates for our tables including insertions and deletions for all 
 our tables -- users, friends, group_invites, groups, visited etc.
+
+Additionally, we created a Figma to demonstrate our vision for the front end:
+https://www.figma.com/file/VkkgEwXpyWk0SeY5td7TOV/
+uPick-Application-Figma?node-id=0%3A1
