@@ -1,4 +1,0 @@
-(library 
-  (name lib)
-  (public_name lib)
-    (libraries yojson opium safepass sqlite3 lwt str dotenv))

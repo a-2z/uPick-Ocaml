@@ -1,0 +1,4 @@
+(test 
+  (name test) 
+    (deps .env)
+    (libraries lib ounit2))
